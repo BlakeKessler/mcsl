@@ -104,4 +104,9 @@ constexpr unsigned long long operator"" _m(const unsigned long long x) {
    return x ? 1LU << (x - 1) : 0;
 }
 
+
+
+//variadic macro argument count
+template<typename... ARGV_T> consteval auto __VA_ARG_COUNT__(const ARGV_T&... argv) { return sizeof...(ARGV_T); }
+
 #endif //MCSL_DEFINES_HPP
