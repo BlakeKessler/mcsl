@@ -3,26 +3,23 @@
 
 #include "MCSL.hpp"
 
-//!NOTE: maybe rewrite using [std::source_location](https://en.cppreference.com/w/cpp/utility/source_location)
+#include <source_location>
 
-#ifndef assert
-   #define assert(expr) (static_cast<bool>(expr) ? void(0) : mcsl::__assert_fail(__FILE__, __LINE__, __func__, #expr))
-#endif
+namespace mcsl {
+   [[noreturn]] void __assert_fail(const char* msg, const std::source_location loc = std::source_location::current());
+};
+constexpr void assert(const bool expr, const char* msg, const std::source_location loc = std::source_location::current()) {
+   if (!expr) { [[unlikely]]
+      mcsl::__assert_fail(msg, loc);
+   }
+}
 
 #ifndef debug_assert
    #ifndef NDEBUG
-      #define debug_assert(expr) assert(expr)
-      #define UNREACHABLE mcsl::__unreachable(__FILE__, __LINE__, __func__)
+      #define debug_assert(expr) assert(expr, #expr)
    #else
       #define debug_assert(expr) void(0)
-      #define UNREACHABLE std::unreachable()
-      #include <utility>
    #endif
 #endif
-
-namespace mcsl {
-   void __assert_fail(const char* file, const uint line, const char* func, const char* exprStr);
-   void __unreachable(const char* file, const uint line, const char* func);
-};
 
 #endif //MCSL_ASSERT_HPP

@@ -50,7 +50,7 @@ template<typename T, uint _capacity> class mcsl::heap_buf : mcsl::contig_base<T>
 template<typename T, uint _capacity> mcsl::heap_buf<T,_capacity>::heap_buf(const contig_t auto& other):
    _buf(mcsl::malloc<T>(_capacity)),
    _size(other.size()) {
-      assert(_size <= _capacity);
+      assert(_size <= _capacity, "cannot copy larger container into buffer");
 
       for (uint i = 0; i < _size; ++i) {
          _buf[i] = other[i];
@@ -60,7 +60,7 @@ template<typename T, uint _capacity> mcsl::heap_buf<T,_capacity>::heap_buf(casta
    _buf(initList...),
    // _buf(mcsl::malloc<T>(_capacity)),
    _size(sizeof...(initList)) {
-      assert(_size <= _capacity);
+      assert(_size <= _capacity, "buffer too small to contain the number of elements passed to it");
 
       // for (uint i = 0; i < _size; ++i) {
       //    _buf[i] = initList[i];

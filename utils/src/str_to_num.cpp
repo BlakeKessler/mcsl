@@ -147,8 +147,7 @@
    //https://dl.acm.org/doi/pdf/10.1145/93548.93557?download=false
    //https://www.netlib.org/fp/
    
-   
-   assert(strlen);
+   assert(str && strlen, "cannot parse null string");
 
    //deduce sign, radix, and starting index
    bool isNegative = str[0] == '-';

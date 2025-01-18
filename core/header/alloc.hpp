@@ -11,7 +11,7 @@ namespace mcsl {
    template<typename T> [[gnu::malloc]] T* calloc(const uint itemCount);
    template<typename T> [[gnu::malloc]] T* dalloc(const uint itemCount);
    template<typename T> [[gnu::malloc]] T* realloc(T* buf, const uint newItemCount);
-   void free(void* ptr);
+   inline void free(void* ptr);
 }
 
 #include "../src/alloc.cpp"
