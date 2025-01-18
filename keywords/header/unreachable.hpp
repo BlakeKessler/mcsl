@@ -1,5 +1,5 @@
-#ifndef MCSL_ASSERT_HPP
-#define MCSL_ASSERT_HPP
+#ifndef MCSL_UNREACHABLE_HPP
+#define MCSL_UNREACHABLE_HPP
 
 #include "MCSL.hpp"
 
@@ -16,4 +16,4 @@ namespace mcsl {
    [[noreturn]] void __unreachable(const std::source_location loc = std::source_location::current());
 };
 
-#endif //MCSL_ASSERT_HPP
+#endif //MCSL_UNREACHABLE_HPP
