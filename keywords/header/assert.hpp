@@ -3,6 +3,7 @@
 
 #include "MCSL.hpp"
 
+#include "unreachable.hpp"
 #include <source_location>
 
 namespace mcsl {
@@ -13,6 +14,11 @@ namespace mcsl {
          mcsl::__assert_fail(msg, code, loc);
       }
    }
+   #pragma GCC diagnostic push
+   #pragma GCC diagnostic ignored "-Wunused-parameter"
+   constexpr void __assert(const bool expr, const char* msg, const mcsl::ErrCode code, const char* dummy) { if (!expr) { UNREACHABLE; } }
+   constexpr void __assert(const bool expr, const char* msg, const char* dummy1, const char* dummy2 = "") { if (!expr) { UNREACHABLE; } }
+   #pragma GCC diagnostic pop
 };
 
 #define assert(...)\
