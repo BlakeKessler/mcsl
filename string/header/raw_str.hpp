@@ -37,7 +37,7 @@ template<uint _size> class [[clang::trivial_abi]] mcsl::raw_str : public str_bas
 };
 
 template<uint _size> constexpr mcsl::raw_str<_size>::raw_str(const char* str, const uint strsize): _buf{} {
-   assert(_size <= _capacity, __OVERSIZED_COPY_MSG, ErrCode::SEGFAULT);
+   assert(strsize <= _size, __OVERSIZED_COPY_MSG, ErrCode::SEGFAULT);
    for (uint i = 0; i < strsize; ++i) {
       if (!str[i]) { break; }
       _buf[i] = str[i];
