@@ -6,20 +6,26 @@
 #include <source_location>
 
 namespace mcsl {
-   [[noreturn]] void __assert_fail(const char* msg, const std::source_location loc = std::source_location::current());
-};
-constexpr void assert(const bool expr, const char* msg, const std::source_location loc = std::source_location::current()) {
-   if (!expr) { [[unlikely]]
-      mcsl::__assert_fail(msg, loc);
-   }
-}
+   [[noreturn]] void __assert_fail(const char* msg, const ErrCode code = ErrCode::UNSPEC, const std::source_location loc = std::source_location::current());
 
-#ifndef debug_assert
-   #ifndef NDEBUG
-      #define debug_assert(expr) assert(expr, #expr)
-   #else
-      #define debug_assert(expr) void(0)
-   #endif
+   constexpr void __assert(const bool expr, const char* msg = "", const mcsl::ErrCode code = mcsl::ErrCode::UNSPEC, const std::source_location loc = std::source_location::current()) {
+      if (!expr) { [[unlikely]]
+         mcsl::__assert_fail(msg, code, loc);
+      }
+   }
+};
+
+#define assert(...)\
+   if constexpr (__VA_ARG_COUNT__(__VA_ARGS__) == 1) { mcsl::__assert(__VA_ARGS__ __VA_OPT__(,) #__VA_ARGS__); }\
+   else { mcsl::__assert(__VA_ARGS__); }\
+   void(0)
+
+
+#ifndef NDEBUG
+   #define debug_assert(expr) assert(expr, #expr, mcsl::ErrCode::DEBUG_ASSERT_FAIL)
+#else
+   #define debug_assert(expr) void(0)
 #endif
+
 
 #endif //MCSL_ASSERT_HPP
