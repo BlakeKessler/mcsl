@@ -9,7 +9,6 @@ namespace mcsl {
    [[noreturn]] void quick_exit();
    [[noreturn]] void terminate();
    [[noreturn]] void abort();
-   [[noreturn]] void unreachable();
 };
 
 #endif //MCSL_HALT_HPP
