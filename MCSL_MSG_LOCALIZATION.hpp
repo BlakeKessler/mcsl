@@ -6,6 +6,6 @@
    #define __OVERSIZED_INIT_LIST_MSG "initializer list cannot be longer than buffer"
    #define __OVERSIZED_SPAN_MSG "span must not extend past the end of its base container"
    #define __END_BEFORE_BEGIN_MSG "span must begin before it ends"
-   #define __ALLOC_FAIL_MSG "allocation failure"
+   #define __ALLOC_FAIL_MSG ""
 
 #endif //MCSL_MSG_LOCALIZATION_HPP

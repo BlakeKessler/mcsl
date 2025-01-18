@@ -50,7 +50,7 @@ template<typename T, uint _capacity> class mcsl::heap_buf : mcsl::contig_base<T>
 template<typename T, uint _capacity> mcsl::heap_buf<T,_capacity>::heap_buf(const contig_t auto& other):
    _buf(mcsl::malloc<T>(_capacity)),
    _size(other.size()) {
-      assert(_size <= _capacity, __OVERSIZED_COPY_MSG);
+      assert(_size <= _capacity, __OVERSIZED_COPY_MSG, ErrCode::SEGFAULT);
 
       for (uint i = 0; i < _size; ++i) {
          _buf[i] = other[i];
@@ -60,7 +60,7 @@ template<typename T, uint _capacity> mcsl::heap_buf<T,_capacity>::heap_buf(casta
    _buf(initList...),
    // _buf(mcsl::malloc<T>(_capacity)),
    _size(sizeof...(initList)) {
-      assert(_size <= _capacity, __OVERSIZED_INIT_LIST_MSG);
+      assert(_size <= _capacity, __OVERSIZED_INIT_LIST_MSG, ErrCode::SEGFAULT);
 
       // for (uint i = 0; i < _size; ++i) {
       //    _buf[i] = initList[i];

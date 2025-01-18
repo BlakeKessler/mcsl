@@ -12,7 +12,7 @@
 //!legal radices: {0, 2, ... , 36}
 //!when radix is 0, base is deduced from contents of string
 [[gnu::pure]] constexpr ulong mcsl::str_to_uint(const char* str, const uint strlen, uint radix) {
-   assert(str && strlen, __PARSE_NULL_STR_MSG);
+   assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    uint i = 0;
 
@@ -67,7 +67,7 @@
 //!legal radices: {0, 2, ... , 36}
 //!when radix is 0, base is deduced from contents of string
 [[gnu::pure]] constexpr slong mcsl::str_to_sint(const char* str, const uint strlen, uint radix) {
-   assert(str && strlen, __PARSE_NULL_STR_MSG);
+   assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    if (str[0] == '-') {
       return -str_to_uint(str+1, strlen-1, radix);
@@ -126,7 +126,7 @@
 
 //!returns whether or not an entire string is digits for the specifed base
 [[gnu::pure]] constexpr bool mcsl::is_uint(const char* str, const uint strlen, const uint radix) {
-   assert(str && strlen, __PARSE_NULL_STR_MSG);
+   assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    for (uint i = 0; i < strlen; ++i) {
       if (!is_digit(str[i], radix)) {
@@ -145,7 +145,7 @@
    //https://dl.acm.org/doi/pdf/10.1145/93548.93557?download=false
    //https://www.netlib.org/fp/
    
-   assert(str && strlen, __PARSE_NULL_STR_MSG);
+   assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    //deduce sign, radix, and starting index
    bool isNegative = str[0] == '-';
