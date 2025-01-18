@@ -20,10 +20,10 @@ class [[clang::trivial_abi]] mcsl::raw_str_span : public str_base<char> {
       //constructors
       constexpr raw_str_span(): _buf(),_size() {}
       constexpr raw_str_span(char* str, const uint size):_buf(str),_size(size) {}
-      constexpr raw_str_span(char* begin, char* end):_buf(begin),_size(end-begin) { assert(begin <= end, "span must begin before it ends"); }
+      constexpr raw_str_span(char* begin, char* end):_buf(begin),_size(end-begin) { assert(begin <= end, __END_BEFORE_BEGIN_MSG); }
       template<mcsl::str_t Other_t> constexpr raw_str_span(Other_t& other): raw_str_span(other.begin(),other.size()) {}
-      template<mcsl::str_t Other_t> constexpr raw_str_span(Other_t& other, const uint size): raw_str_span(other.begin(),size) { assert(other.size() >= size, "span must not extend past the end of its base container"); }
-      template<mcsl::str_t Other_t> constexpr raw_str_span(Other_t& other, const uint begin, const uint size): raw_str_span(other.begin() + begin, size) { assert(other.size() >= (begin + size), "span must not extend past the end of its base container"); }
+      template<mcsl::str_t Other_t> constexpr raw_str_span(Other_t& other, const uint size): raw_str_span(other.begin(),size) { assert(other.size() >= size, __OVERSIZED_SPAN_MSG); }
+      template<mcsl::str_t Other_t> constexpr raw_str_span(Other_t& other, const uint begin, const uint size): raw_str_span(other.begin() + begin, size) { assert(other.size() >= (begin + size), __OVERSIZED_SPAN_MSG); }
 
       //properties
       [[gnu::pure]] constexpr uint size() const { return _size; }

@@ -3,6 +3,7 @@
 #define MCSL_HPP
 
 #include "MCSL_DEFINES.hpp"
+#include "MCSL_MSG_LOCALIZATION.hpp"
 #include "mcsl_throw.hpp"
 #include "concepts.hpp"
 

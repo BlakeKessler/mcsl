@@ -38,7 +38,7 @@ class [[clang::trivial_abi]] mcsl::raw_buf_str : public str_base<char> {
 
 template<uint _capacity, typename size_t>
 constexpr mcsl::raw_buf_str<_capacity,size_t>::raw_buf_str(const char* str, const size_t strsize): _buf{},_size(strsize) {
-   assert(_size <= _capacity, "cannot copy larger container into buffer");
+   assert(_size <= _capacity, __OVERSIZED_COPY_MSG);
    for (uint i = 0; i < strsize; ++i) {
       if (!str[i]) { _size = i; break; }
       _buf[i] = str[i];

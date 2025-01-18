@@ -23,8 +23,8 @@ class [[clang::trivial_abi]] mcsl::dyn_str_span : public str_base<char> {
       constexpr dyn_str_span():_ptrToBuf(),_begin(),_size() {}
       constexpr dyn_str_span(char* const* str, const uint strlen);
       constexpr dyn_str_span(str_t auto& other): _ptrToBuf(other.ptr_to_buf()),_begin(0),_size(other.size()) {}
-      constexpr dyn_str_span(str_t auto& other, const uint size): _ptrToBuf(other.ptr_to_buf()),_begin(0),_size(size) { assert(other.size() >= size, "span must not extend past the end of its base container"); }
-      constexpr dyn_str_span(str_t auto& other, const uint begin, const uint size): _ptrToBuf(other.ptr_to_buf()),_begin(begin),_size(size) { assert(other.size() >= (begin + size)), "span must not extend past the end of its base container"; }
+      constexpr dyn_str_span(str_t auto& other, const uint size): _ptrToBuf(other.ptr_to_buf()),_begin(0),_size(size) { assert(other.size() >= size, __OVERSIZED_SPAN_MSG); }
+      constexpr dyn_str_span(str_t auto& other, const uint begin, const uint size): _ptrToBuf(other.ptr_to_buf()),_begin(begin),_size(size) { assert(other.size() >= (begin + size)), __OVERSIZED_SPAN_MSG; }
 
       //properties
       [[gnu::pure]] constexpr uint size() const { return _size; }

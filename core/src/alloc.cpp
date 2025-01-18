@@ -29,7 +29,7 @@ template<typename T> [[gnu::malloc]] T* mcsl::malloc(const uint itemCount) {
    } else {
       ptr = reinterpret_cast<T*>(std::malloc(itemCount * sizeof(T)));
    }
-   assert(ptr, "allocation failure");
+   assert(ptr, __ALLOC_FAIL_MSG);
    return ptr;
 }
 //!dynamically allocate and null-initialize a contiguous array large enough to hold itemCount items of type T
@@ -41,7 +41,7 @@ template<typename T> [[gnu::malloc]] T* mcsl::calloc(const uint itemCount) {
    } else {
       ptr = reinterpret_cast<T*>(std::calloc(itemCount, sizeof(T)));
    }
-   assert(ptr, "allocation failure");
+   assert(ptr, __ALLOC_FAIL_MSG);
    return ptr;
 }
 //!dynamically allocate and debug-initialize a contiguous array large enough to hold itemCount items of type T
@@ -65,7 +65,7 @@ template<typename T> [[gnu::malloc]] T* mcsl::realloc(T* buf, const uint newItem
    } else {
       ptr = reinterpret_cast<T*>(std::realloc(buf, newItemCount * sizeof(T)));
    }
-   assert(ptr, "reallocation failure");
+   assert(ptr, __ALLOC_FAIL_MSG);
    return ptr;
 }
 
