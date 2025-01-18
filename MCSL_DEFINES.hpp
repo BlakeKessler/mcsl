@@ -108,6 +108,7 @@ constexpr unsigned long long operator"" _m(const unsigned long long x) {
 
 
 //variadic macro argument count
-template<typename... ARGV_T> consteval auto __VA_ARG_COUNT__(const ARGV_T&... argv) { return sizeof...(ARGV_T); }
+#include <tuple>
+#define __VA_ARG_COUNT__(...) std::tuple_size_v<decltype(std::forward_as_tuple(__VA_ARGS__))>
 
 #endif //MCSL_DEFINES_HPP
