@@ -101,7 +101,7 @@ struct mcsl::str_base : public contig_base<char_t> {
       uint len = s.size() < other.size() ? s.size() : other.size();
       for (uint i = 0; i < len; ++i) {
          if (s[i] != other[i]) {
-            return s[i] - other[i];
+            return (s[i] && other[i]) ? s[i] - other[i] : 0;
          }
       }
       return 0;
