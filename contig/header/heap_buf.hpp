@@ -24,7 +24,7 @@ template<typename T, uint _capacity> class mcsl::heap_buf : mcsl::contig_base<T>
       heap_buf(const contig_t auto& other);
       heap_buf(castable_to<T> auto&&... initList);
 
-      ~heap_buf() { self.free(); }
+      ~heap_buf() { for (uint i = 0; i < _size; ++i) { std::destroy_at(_buf + i); } self.free(); }
       void free() const { mcsl::free(_buf); const_cast<T*&>(_buf) = nullptr; const_cast<uint&>(_size) = 0; }
       T* release() { T* temp = _buf; _buf = nullptr; _size = 0; return temp; }
 

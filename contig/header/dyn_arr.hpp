@@ -29,7 +29,7 @@ template <typename T> class mcsl::dyn_arr : public contig_base<T> {
       dyn_arr(castable_to<T> auto&&... initList);
       dyn_arr(dyn_arr&& other);
       dyn_arr(const dyn_arr& other);
-      ~dyn_arr() { self.free(); }
+      ~dyn_arr() { for (uint i = 0; i < _size; ++i) { std::destroy_at(_buf + i); } self.free(); }
       void free() const { mcsl::free(_buf); const_cast<T*&>(_buf) = nullptr; const_cast<uint&>(_capacity) = 0; const_cast<uint&>(_size) = 0; }
 
       [[gnu::pure]] constexpr uint size() const { return _size; }

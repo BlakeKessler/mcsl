@@ -26,7 +26,7 @@ template <typename T> class mcsl::array : public contig_base<T> {
       array(array&& other);
       array(const array& other);
       array(castable_to<T> auto&&... initList);
-      ~array() { self.free(); }
+      ~array() { for (uint i = 0; i < _size; ++i) { std::destroy_at(_buf + i); } self.free(); }
       void free() const { mcsl::free(_buf); const_cast<T*&>(_buf) = nullptr; const_cast<uint&>(_size) = 0; }
 
       [[gnu::pure]] constexpr uint size() const { return _size; }
