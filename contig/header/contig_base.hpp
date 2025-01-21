@@ -4,6 +4,7 @@
 
 #include "MCSL.hpp"
 #include "alloc.hpp"
+#include "assert.hpp"
 
 #include <typeinfo>
 
@@ -28,10 +29,10 @@ template<typename T> struct mcsl::contig_base {
    [[gnu::pure]] constexpr T* begin(this auto&& obj)   { return obj.begin(); }
 
    [[gnu::pure]] inline constexpr auto end(this auto&& obj) -> decltype(auto)   { return obj.begin() + obj.size(); }
-   [[gnu::pure]] inline constexpr auto operator[](this auto&& obj, const uint i) -> decltype(auto)   { return obj.begin()[i]; }
-   [[gnu::pure]] inline constexpr auto at(this auto&& obj, const uint i) -> decltype(auto)   { if (i >= obj.size()) { mcsl_throw(ErrCode::SEGFAULT, "%s of size %u accessed at index %u", obj.nameof(), obj.size(), i); } return obj[i]; }
-   [[gnu::pure]] inline constexpr auto front(this auto&& obj) -> decltype(auto)   { return obj.begin()[0]; }
-   [[gnu::pure]] inline constexpr auto back(this auto&& obj) -> decltype(auto)   { return obj.begin()[obj.size()-1]; }
+   [[gnu::pure]] inline constexpr auto operator[](this auto&& obj, const uint i) -> decltype(auto)   { safe_mode_assert(obj.data() && i < obj.size()); return obj.begin()[i]; }
+   [[gnu::pure]] inline constexpr auto at(this auto&& obj, const uint i) -> decltype(auto)   { if (i >= obj.size()) { mcsl_throw(ErrCode::SEGFAULT, "%s of size %u accessed at index %u", obj.nameof(), obj.size(), i); } if (!obj.data()) { mcsl_throw(ErrCode::SEGFAULT, "null %s dereferenced", obj.nameof()); } return obj[i]; }
+   [[gnu::pure]] inline constexpr auto front(this auto&& obj) -> decltype(auto)   { return obj[0]; }
+   [[gnu::pure]] inline constexpr auto back(this auto&& obj) -> decltype(auto)   { return obj[obj.size()-1]; }
 
    //slicing
    [[gnu::pure]] inline decltype(auto) slice(this const auto&& obj, const uint stop) { return obj.slice(0, stop, 1); }

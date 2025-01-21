@@ -25,7 +25,7 @@ template <typename T> class mcsl::array : public contig_base<T> {
       array(const T* buf, const uint size);
       array(array&& other);
       array(const array& other);
-      array(castable_to<T> auto... initList) requires requires { sizeof...(initList) == _size; }:_buf{std::forward<decltype(initList)>(initList)...} {}
+      array(castable_to<T> auto&&... initList);
       ~array() { self.free(); }
       void free() const { mcsl::free(_buf); const_cast<T*&>(_buf) = nullptr; const_cast<uint&>(_size) = 0; }
 
@@ -41,7 +41,7 @@ template <typename T> class mcsl::array : public contig_base<T> {
 
       //MODIFIERS
       constexpr T* emplace(const uint i, auto&&... args);
-      T* release() { T* temp = _buf; _buf = nullptr; const_cast<uint&>(_size) = 0; return temp; }
+      T* release() { const_cast<uint&>(_size) = 0; T* temp = _buf; _buf = nullptr; return temp; }
 };
 
 #pragma region src
@@ -58,10 +58,20 @@ template<typename T> mcsl::array<T>::array(const uint size):
 //!copy constructor from raw pointer to buffer and size of buffer (in elements)
 template<typename T> mcsl::array<T>::array(const T* buf, const uint size):
    _buf(mcsl::malloc<T>(size)),_size(size) {
+      safe_mode_assert(buf || !size);
       for (uint i = 0; i < _size; ++i) {
          _buf[i] = buf[i];
       }
 }
+//!constructor from initialzier list
+template<typename T> mcsl::array<T>::array(castable_to<T> auto&&... initList):
+   _buf(mcsl::malloc<T>(sizeof...(initList))),_size(sizeof...(initList)) {
+      std::initializer_list<T> tmp{initList...};
+
+      for (uint i = 0; i < _size; ++i) {
+         _buf[i] = tmp[i];
+      }
+   }
 //!move constructor
 template<typename T> mcsl::array<T>::array(array&& other):
    _buf(other._buf),_size(other._size) {
@@ -77,10 +87,7 @@ template<typename T> mcsl::array<T>::array(const array& other):
 
 //!construct in place
 template<typename T> constexpr T* mcsl::array<T>::emplace(const uint i, auto&&... args) {
-   if (i >= _size) {
-      mcsl_throw(ErrCode::SEGFAULT, "emplace at \033[4m%u\033[24m in %s of size \033[4m%u\033[24m", i, self.nameof().begin(), _size);
-      return nullptr;
-   }
+   safe_mode_assert(i < _size);
    return new (begin() + i) T{args...};
 }
 

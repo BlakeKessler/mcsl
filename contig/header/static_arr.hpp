@@ -46,10 +46,7 @@ namespace mcsl {
 
 //!construct in place
 template<typename T,uint _size> constexpr T* mcsl::static_arr<T,_size>::emplace(const uint i, auto&&... args) {
-   if (i >= _size) {
-      mcsl_throw(ErrCode::SEGFAULT, "emplace at \033[4m%u\033[24m in %s of size \033[4m%u\033[24m", i, self.nameof(), _size);
-      return nullptr;
-   }
+   safe_mode_assert(i < _size);
    return new (begin() + i) T{args...};
 }
 

@@ -25,7 +25,7 @@ template <typename T> class mcsl::dyn_arr : public contig_base<T> {
 
       constexpr dyn_arr();
       dyn_arr(const uint size);
-      dyn_arr(const uint size, const uint bufSize);
+      dyn_arr(const uint size, const uint capacity);
       dyn_arr(castable_to<T> auto&&... initList);
       dyn_arr(dyn_arr&& other);
       dyn_arr(const dyn_arr& other);
@@ -69,18 +69,17 @@ template<typename T> mcsl::dyn_arr<T>::dyn_arr(const uint size):
 
 }
 //!constructor from array size and buffer size
-template<typename T> mcsl::dyn_arr<T>::dyn_arr(const uint size, const uint bufSize):
-   _capacity(bufSize), _size(size) {
+template<typename T> mcsl::dyn_arr<T>::dyn_arr(const uint size, const uint capacity):
+   _capacity(capacity), _size(size) {
       if (_capacity < _size) {
-         mcsl::mcsl_throw(ErrCode::SEGFAULT, "cannot construct %s with array size greater than buffer size (\033[4m%u\033[24m < \033[4m%u\033[24m)", _nameof,_capacity,_size);
-         _buf = nullptr;
+         mcsl_throw(ErrCode::SEGFAULT, "cannot construct %s with array size greater than buffer size (\033[4m%u\033[24m < \033[4m%u\033[24m)", _nameof,_capacity,_size);
       }
       else {
          _buf = mcsl::calloc<T>(_capacity);
       }
 }
 //!constructor from initializer list
-template<typename T> mcsl::dyn_arr<T>::dyn_arr(castable_to<T> auto&&... initList):dyn_arr(<sizeof...(initList)>) {
+template<typename T> mcsl::dyn_arr<T>::dyn_arr(castable_to<T> auto&&... initList):dyn_arr(sizeof...(initList)) {
    std::initializer_list<T> tmp{initList...};
    for (uint i = 0; i < tmp.size(); ++i) {
       _buf[i] = tmp[i];
@@ -128,17 +127,15 @@ template<typename T> bool mcsl::dyn_arr<T>::push_back(const T& obj) {
 //!returns the removed element
 //!zeroes out the index in the array
 template<typename T> T mcsl::dyn_arr<T>::pop_back() {
+   safe_mode_assert(_size);
    T temp = _buf[--_size];
-   // std::memset(_buf + _size, 0, sizeof(T));
    std::destroy_at(self.end());
    return temp;
 }
 //!construct in place
 template<typename T> T* mcsl::dyn_arr<T>::emplace(const uint i, auto&&... args) {
-   if (i >= _size) {
-      mcsl_throw(ErrCode::SEGFAULT, "emplace at \033[4m%u\033[24m in %s of size \033[4m%u\033[24m", i, self.nameof(), _size);
-      return nullptr;
-   }
+   safe_mode_assert(i < _size);
+
    return new (begin() + i) T{args...};
 }
 //!construct in place at back of array
@@ -146,7 +143,7 @@ template<typename T> T* mcsl::dyn_arr<T>::emplace_back(auto&&... args) {
    if (_size >= _capacity) {
       resize(_size ? std::bit_floor(_size) << 1 : 1);
    }
-   return emplace(_size++, std::forward<decltype(args)>(args)...);
+   return new (begin() + _size++) T{args...};
 }
 
 #pragma endregion src

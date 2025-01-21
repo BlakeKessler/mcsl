@@ -6,6 +6,7 @@
 #include "alloc.hpp"
 
 #include <memory>
+#include <initializer_list>
 #include "assert.hpp"
 
 template<typename T, uint _capacity> class mcsl::heap_buf : mcsl::contig_base<T> {
@@ -42,7 +43,7 @@ template<typename T, uint _capacity> class mcsl::heap_buf : mcsl::contig_base<T>
       //modifiers
       T* push_back(T&& obj);
       T* push_back(const T& obj);
-      bool pop_back();
+      T pop_back();
       T* emplace(const uint i, auto&&... args);
       T* emplace_back(auto&&... args);
 };
@@ -57,48 +58,40 @@ template<typename T, uint _capacity> mcsl::heap_buf<T,_capacity>::heap_buf(const
       }
 }
 template<typename T, uint _capacity> mcsl::heap_buf<T,_capacity>::heap_buf(castable_to<T> auto&&... initList):
-   _buf(initList...),
-   // _buf(mcsl::malloc<T>(_capacity)),
+   _buf(mcsl::malloc<T>(_capacity)),
    _size(sizeof...(initList)) {
       assert(_size <= _capacity, __OVERSIZED_INIT_LIST_MSG, ErrCode::SEGFAULT);
 
-      // for (uint i = 0; i < _size; ++i) {
-      //    _buf[i] = initList[i];
-      // }
+      std::initializer_list<T> tmp{initList...};
+      for (uint i = 0; i < _size; ++i) {
+         _buf[i] = tmp[i];
+      }
 }
 
 template<typename T, uint _capacity> T* mcsl::heap_buf<T,_capacity>::push_back(T&& obj) {
-   if (_size >= _capacity) {
-      return nullptr;
-   }
+   safe_mode_assert(_size < _capacity);
    _buf[_size] = obj;
    return _buf + (_size++);
 }
 template<typename T, uint _capacity> T* mcsl::heap_buf<T,_capacity>::push_back(const T& obj) {
-   if (_size >= _capacity) {
-      return nullptr;
-   }
+   safe_mode_assert(_size < _capacity);
+
    return new (begin() + (_size++)) T{std::forward<decltype(obj)>(obj)};
 }
-template<typename T, uint _capacity> bool mcsl::heap_buf<T,_capacity>::pop_back() {
-   if (!_size) {
-      return false;
-   }
-   --_size;
+template<typename T, uint _capacity> T mcsl::heap_buf<T,_capacity>::pop_back() {
+   safe_mode_assert(_size);
+   T tmp = _buf[--_size];
    std::destroy_at(self.end());
-   return true;
+   return tmp;
 }
 template<typename T, uint _capacity> T* mcsl::heap_buf<T,_capacity>::emplace(const uint i, auto&&... args) {
-   if (i >= _size) {
-      mcsl_throw(ErrCode::SEGFAULT, "emplace at \033[4m%u\033[24m in %s of size \033[4m%u\033[24m", i, nameof(), _size);
-      return nullptr;
-   }
+   safe_mode_assert(i < _size);
+
    return new (begin() + i) T{args...};
 }
 template<typename T, uint _capacity> T* mcsl::heap_buf<T,_capacity>::emplace_back(auto&&... args) {
-   if (_size >= _capacity) {
-      return nullptr;
-   }
+   safe_mode_assert(_size < _capacity);
+   
    return new (begin() + (_size++)) T{args...};
 }
 

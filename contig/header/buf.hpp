@@ -18,7 +18,7 @@ template<typename T, uint _capacity> class [[clang::trivial_abi]] mcsl::buf : mc
       
       constexpr buf():_buf{},_size{} {}
       constexpr buf(const contig_t auto& other);
-      constexpr buf(castable_to<T> auto&&... initList);
+      constexpr buf(castable_to<T> auto&&... initList) requires (sizeof...(initList) <= _capacity);
 
       [[gnu::pure]] constexpr uint size() const { return _size; }
       [[gnu::pure]] constexpr uint capacity() const { return _capacity; }
@@ -48,50 +48,36 @@ template<typename T, uint _capacity> constexpr mcsl::buf<T,_capacity>::buf(const
          _buf[i] = other[i];
       }
 }
-template<typename T, uint _capacity> constexpr mcsl::buf<T,_capacity>::buf(castable_to<T> auto&&... initList):
+template<typename T, uint _capacity> constexpr mcsl::buf<T,_capacity>::buf(castable_to<T> auto&&... initList) requires (sizeof...(initList) <= _capacity):
    _buf{initList...},
    _size(sizeof...(initList)) {
-      assert(_size <= _capacity, __OVERSIZED_INIT_LIST_MSG, ErrCode::SEGFAULT);
 
-      // for (uint i = 0; i < _size; ++i) {
-      //    _buf[i] = initList[i];
-      // }
 }
 
 template<typename T, uint _capacity> T* mcsl::buf<T,_capacity>::push_back(T&& obj) {
-   if (_size >= _capacity) {
-      return nullptr;
-   }
+   safe_mode_assert(_size < _capacity);
    _buf[_size] = obj;
    return _buf + (_size++);
 }
 template<typename T, uint _capacity> T* mcsl::buf<T,_capacity>::push_back(const T& obj) {
-   if (_size >= _capacity) {
-      return nullptr;
-   }
+   safe_mode_assert(_size < _capacity);
    return new (begin() + (_size++)) T{std::forward<decltype(obj)>(obj)};
 }
 template<typename T, uint _capacity> bool mcsl::buf<T,_capacity>::pop_back() {
-   if (!_size) {
-      return false;
-   }
+   safe_mode_assert(_size);
    --_size;
    std::destroy_at(self.end());
    return true;
 }
 template<typename T, uint _capacity> T* mcsl::buf<T,_capacity>::emplace(const uint i, auto&&... args) {
-   if (i >= _size) {
-      mcsl_throw(ErrCode::SEGFAULT, "emplace at \033[4m%u\033[24m in %s of size \033[4m%u\033[24m", i, nameof(), _size);
-      return nullptr;
-   }
+   safe_mode_assert(i < _size);
    
    return new (begin() + i) T{args...};
 }
 template<typename T, uint _capacity> T* mcsl::buf<T,_capacity>::emplace_back(auto&&... args) {
-   if (_size >= _capacity) {
-      return nullptr;
-   }
-   return new (begin() + _size) T{args...};
+   safe_mode_assert(_size < _capacity);
+
+   return new (begin() + _size++) T{args...};
 }
 
 
