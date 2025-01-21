@@ -25,7 +25,7 @@ template <typename T> class mcsl::dyn_arr : public contig_base<T> {
       constexpr dyn_arr();
       dyn_arr(const uint size);
       dyn_arr(const uint size, const uint bufSize);
-      dyn_arr(castable_to<T> auto&... initList) requires requires { sizeof...(initList) == _size; }:_buf{std::forward<decltype(initList)>(initList)...} {}
+      dyn_arr(castable_to<T> auto... initList);
       dyn_arr(dyn_arr&& other);
       dyn_arr(const dyn_arr& other);
       ~dyn_arr() { self.free(); }
