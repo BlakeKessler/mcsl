@@ -26,11 +26,16 @@ namespace mcsl {
    else { mcsl::__assert(__VA_ARGS__); }\
    void(0)
 
-
 #ifndef NDEBUG
    #define debug_assert(expr) assert(expr, #expr, mcsl::ErrCode::DEBUG_ASSERT_FAIL)
 #else
    #define debug_assert(expr) void(0)
+#endif
+
+#if defined(SAFE_MODE) || !defined(NDEBUG)
+   #define safe_mode_assert(expr) assert(expr, #expr, mcsl::ErrCode::SAFE_ASSERT_FAIL)
+#else
+   #define safe_mode_assert(expr) void(0)
 #endif
 
 
