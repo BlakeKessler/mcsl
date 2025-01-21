@@ -44,7 +44,7 @@ class mcsl::string : public str_base<char> {
       inline bool resize(const uint newSize) { return _buf.resize(newSize + 1); }
       inline bool resize_exact(const uint newSize) { return _buf.resize_exact(newSize + 1); }
       char* release() { return _buf.release(); }
-      bool push_back(const char ch) { _buf.back() = ch; return _buf.push_back('\0'); }
+      char* push_back(const char ch) { _buf.back() = ch; return _buf.push_back('\0'); }
       char pop_back() { const char tmp = back(); _buf.pop_back(); _buf.back() = '\0'; return tmp; }
 
 

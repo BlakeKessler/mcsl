@@ -49,8 +49,8 @@ template <typename T> class mcsl::dyn_arr : public contig_base<T> {
       bool resize(const uint newSize) { return resize_exact(std::bit_ceil(newSize)); }
       bool resize_exact(const uint newSize);
       T* release() { _size = 0; _capacity = 0; T* temp = _buf; _buf = nullptr; return temp; }
-      bool push_back(T&& obj);
-      bool push_back(const T& obj);
+      T* push_back(T&& obj);
+      T* push_back(const T& obj);
       T pop_back();
       T* emplace(const uint i, auto&&... args);
       T* emplace_back(auto&&... args);
@@ -106,8 +106,7 @@ template<typename T> bool mcsl::dyn_arr<T>::resize_exact(const uint newSize) {
 }
 
 //!push to the back of the the array
-//!returns if a reallocation was required
-template<typename T> bool mcsl::dyn_arr<T>::push_back(T&& obj) {
+template<typename T> T* mcsl::dyn_arr<T>::push_back(T&& obj) {
    bool realloced = false;
    if (_size >= _capacity) {
       realloced = resize(_size ? std::bit_floor(_size) << 1 : 1);
@@ -115,7 +114,7 @@ template<typename T> bool mcsl::dyn_arr<T>::push_back(T&& obj) {
    new (&_buf[_size++]) T{std::forward<decltype(obj)>(obj)};
    return realloced;
 }
-template<typename T> bool mcsl::dyn_arr<T>::push_back(const T& obj) {
+template<typename T> T* mcsl::dyn_arr<T>::push_back(const T& obj) {
    bool realloced = false;
    if (_size >= _capacity) {
       realloced = resize(_size ? std::bit_floor(_size) << 1 : 1);
@@ -125,7 +124,6 @@ template<typename T> bool mcsl::dyn_arr<T>::push_back(const T& obj) {
 }
 //!remove last element of array
 //!returns the removed element
-//!zeroes out the index in the array
 template<typename T> T mcsl::dyn_arr<T>::pop_back() {
    safe_mode_assert(_size);
    T temp = _buf[--_size];
