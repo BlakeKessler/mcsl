@@ -66,10 +66,10 @@ template<typename T> mcsl::array<T>::array(const T* buf, const uint size):
 //!constructor from initialzier list
 template<typename T> mcsl::array<T>::array(castable_to<T> auto&&... initList):
    _buf(mcsl::malloc<T>(sizeof...(initList))),_size(sizeof...(initList)) {
-      std::initializer_list<T> tmp{initList...};
+      T* tmp = const_cast<T*>(std::data(std::initializer_list<T>{initList...}));
 
       for (uint i = 0; i < _size; ++i) {
-         _buf[i] = std::data(tmp)[i];
+         _buf[i] = tmp[i];
       }
    }
 //!move constructor

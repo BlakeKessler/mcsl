@@ -62,9 +62,10 @@ template<typename T, uint _capacity> mcsl::heap_buf<T,_capacity>::heap_buf(casta
    _size(sizeof...(initList)) {
       assert(_size <= _capacity, __OVERSIZED_INIT_LIST_MSG, ErrCode::SEGFAULT);
 
-      std::initializer_list<T> tmp{initList...};
+      T* tmp = const_cast<T*>(std::data(std::initializer_list<T>{initList...}));
+
       for (uint i = 0; i < _size; ++i) {
-         _buf[i] = std::data(tmp)[i];
+         _buf[i] = tmp[i];
       }
 }
 
