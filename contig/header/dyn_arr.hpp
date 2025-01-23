@@ -82,7 +82,7 @@ template<typename T> mcsl::dyn_arr<T>::dyn_arr(const uint size, const uint capac
 template<typename T> mcsl::dyn_arr<T>::dyn_arr(castable_to<T> auto&&... initList):dyn_arr(sizeof...(initList)) {
    std::initializer_list<T> tmp{initList...};
    for (uint i = 0; i < tmp.size(); ++i) {
-      _buf[i] = tmp[i];
+      _buf[i] = std::data(tmp)[i];
    }
 }
 //!move constructor

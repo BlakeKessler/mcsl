@@ -69,7 +69,7 @@ template<typename T> mcsl::array<T>::array(castable_to<T> auto&&... initList):
       std::initializer_list<T> tmp{initList...};
 
       for (uint i = 0; i < _size; ++i) {
-         _buf[i] = tmp[i];
+         _buf[i] = std::data(tmp)[i];
       }
    }
 //!move constructor

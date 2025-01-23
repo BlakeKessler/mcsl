@@ -64,7 +64,7 @@ template<typename T, uint _capacity> mcsl::heap_buf<T,_capacity>::heap_buf(casta
 
       std::initializer_list<T> tmp{initList...};
       for (uint i = 0; i < _size; ++i) {
-         _buf[i] = tmp[i];
+         _buf[i] = std::data(tmp)[i];
       }
 }
 
