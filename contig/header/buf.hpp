@@ -3,6 +3,8 @@
 #define MCSL_BUF_HPP
 
 #include "MCSL.hpp"
+#include "contig_base.hpp"
+#include "alloc.hpp"
 
 #include <memory>
 #include "assert.hpp"
