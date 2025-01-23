@@ -72,7 +72,7 @@ template<typename T> mcsl::dyn_arr<T>::dyn_arr(const uint size):
 template<typename T> mcsl::dyn_arr<T>::dyn_arr(const uint size, const uint capacity):
    _capacity(capacity), _size(size) {
       if (_capacity < _size) {
-         mcsl_throw(ErrCode::SEGFAULT, "cannot construct %s with array size greater than buffer size (\033[4m%u\033[24m < \033[4m%u\033[24m)", _nameof,_capacity,_size);
+         __throw(ErrCode::SEGFAULT, "cannot construct %s with array size greater than buffer size (\033[4m%u\033[24m < \033[4m%u\033[24m)", _nameof,_capacity,_size);
       }
       else {
          _buf = mcsl::calloc<T>(_capacity);

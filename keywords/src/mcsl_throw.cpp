@@ -1,7 +1,7 @@
 #ifndef MCSL_ERR_CPP
 #define MCSL_ERR_CPP
 
-#include "mcsl_throw.hpp"
+#include "throw.hpp"
 
 //!array of MCSL error message prefix strings
 const char* mcsl::ERR_MSG_ARR[] {
