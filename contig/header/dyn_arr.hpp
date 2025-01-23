@@ -107,20 +107,18 @@ template<typename T> bool mcsl::dyn_arr<T>::resize_exact(const uint newSize) {
 
 //!push to the back of the the array
 template<typename T> T* mcsl::dyn_arr<T>::push_back(T&& obj) {
-   bool realloced = false;
    if (_size >= _capacity) {
-      realloced = resize(_size ? std::bit_floor(_size) << 1 : 1);
+      resize(_size ? std::bit_floor(_size) << 1 : 1);
    }
-   new (&_buf[_size++]) T{std::forward<decltype(obj)>(obj)};
-   return realloced;
+   return new (_buf + _size++) T{std::forward<decltype(obj)>(obj)};
 }
 template<typename T> T* mcsl::dyn_arr<T>::push_back(const T& obj) {
-   bool realloced = false;
    if (_size >= _capacity) {
-      realloced = resize(_size ? std::bit_floor(_size) << 1 : 1);
+      resize(_size ? std::bit_floor(_size) << 1 : 1);
    }
-   _buf[_size++] = obj;
-   return realloced;
+   T* addr = _buf + _size++;
+   *addr = obj;
+   return addr;
 }
 //!remove last element of array
 //!returns the removed element
