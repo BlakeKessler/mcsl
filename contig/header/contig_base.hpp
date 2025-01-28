@@ -29,7 +29,8 @@ template<typename T> struct mcsl::contig_base {
    [[gnu::pure]] constexpr T* begin(this auto&& obj)   { return obj.begin(); }
 
    [[gnu::pure]] inline constexpr auto end(this auto&& obj) -> decltype(auto)   { return obj.begin() + obj.size(); }
-   [[gnu::pure]] inline constexpr auto operator[](this auto&& obj, const uint i) -> decltype(auto)   { safe_mode_assert(i < obj.size()); return obj.begin()[i]; }
+   [[gnu::pure]] inline constexpr auto operator[](this auto&& obj, const uint i) -> decltype(auto)   { return *(obj + i); }
+   [[gnu::pure]] inline constexpr auto operator+(this auto&& obj, const uint i) -> decltype(auto)   { safe_mode_assert(i < obj.size()); return obj.begin() + i; }
    [[gnu::pure]] inline constexpr auto at(this auto&& obj, const uint i) -> decltype(auto)   { if (i >= obj.size()) { __throw(ErrCode::SEGFAULT, "%s of size %u accessed at index %u", obj.nameof(), obj.size(), i); } if (!obj.data()) { __throw(ErrCode::SEGFAULT, "null %s dereferenced", obj.nameof()); } return obj[i]; }
    [[gnu::pure]] inline constexpr auto front(this auto&& obj) -> decltype(auto)   { return obj[0]; }
    [[gnu::pure]] inline constexpr auto back(this auto&& obj) -> decltype(auto)   { return obj[obj.size()-1]; }
