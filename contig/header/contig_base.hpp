@@ -22,6 +22,7 @@ template<typename T> struct mcsl::contig_base {
 
    //properties
    [[gnu::pure]] constexpr uint size(this auto&& obj) { return obj.size(); }
+   [[gnu::pure]] constexpr operator bool() const { return size(); }
 
    //element access
    [[gnu::pure]] constexpr T* const* ptr_to_buf(this auto&& obj)   { return obj.ptr_to_buf(); }
@@ -34,13 +35,6 @@ template<typename T> struct mcsl::contig_base {
    [[gnu::pure]] inline constexpr auto at(this auto&& obj, const uint i) -> decltype(auto)   { if (i >= obj.size()) { __throw(ErrCode::SEGFAULT, "%s of size %u accessed at index %u", obj.nameof(), obj.size(), i); } if (!obj.data()) { __throw(ErrCode::SEGFAULT, "null %s dereferenced", obj.nameof()); } return obj[i]; }
    [[gnu::pure]] inline constexpr auto front(this auto&& obj) -> decltype(auto)   { return obj[0]; }
    [[gnu::pure]] inline constexpr auto back(this auto&& obj) -> decltype(auto)   { return obj[obj.size()-1]; }
-
-   //slicing
-   [[gnu::pure]] inline decltype(auto) slice(this const auto&& obj, const uint stop) { return obj.slice(0, stop, 1); }
-   [[gnu::pure]] inline decltype(auto) slice(this const auto&& obj, const uint start, const uint stop) { return obj.slice(start, stop, 1); }
-   [[gnu::pure]] decltype(auto) slice(this const auto&& obj, const uint start, const uint stop, const uint step);
-
-   [[gnu::pure]] inline operator bool() const { return static_cast<bool>(size()); }
 };
 
 #endif //MCSL_CONTIG_BASE_HPP
