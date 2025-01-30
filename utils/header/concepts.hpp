@@ -27,6 +27,18 @@ namespace mcsl {
    template<typename T> concept ptr_t = std::is_pointer<T>::value;
    #pragma endregion basic
 
+   #pragma region mods
+
+   template<typename T> using remove_ptr = std::remove_pointer_t<T>;
+   template<typename T> using remove_ref = std::remove_reference_t<T>;
+
+   template<typename T> using remove_const = std::remove_const_t<T>;
+   template<typename T> using remove_volatile = std::remove_volatile_t<T>;
+   template<typename T> using remove_cv = std::remove_cv_t<T>;
+   template<typename T> using remove_cvref = std::remove_cvref_t<T>;
+
+   #pragma endregion mods
+
    #pragma region containers
    template<typename T> concept contig_container_t = requires(T a) {
       { a.size() } -> int_t;
