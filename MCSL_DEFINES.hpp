@@ -112,4 +112,15 @@ constexpr unsigned long long operator"" _m(const unsigned long long x) {
 #include <tuple>
 #define __VA_ARG_COUNT__(...) std::tuple_size_v<decltype(std::forward_as_tuple(__VA_ARGS__))>
 
+
+//RNG parameters
+//sourced from https://nuclear.llnl.gov/CNP/rng/rngman/node4.html
+
+#define MCSL_LCG64_MULT 2862933555777941757ul
+#define MCSL_LCG64_INC 3037000493ul
+#define MCSL_LCG64_MIN 0ul
+#define MCSL_LCG64_MAX 0ul
+#define MCSL_LCG64_SEED 1ul
+
+
 #endif //MCSL_DEFINES_HPP
