@@ -8,6 +8,8 @@ namespace mcsl {
    void srand(const ulong seed) { rand.seed() = seed; }
 };
 
+//max == 0 -> skip modulus step
+//!NOTE: maybe replace with a PCG[https://en.wikipedia.org/wiki/Permuted_congruential_generator]
 template<mcsl::uint_t T = ulong,
    T _max = MCSL_LCG64_MIN,
    T _min = MCSL_LCG64_MAX,
@@ -26,7 +28,7 @@ struct mcsl::lcg_engine {
 
       constexpr T& seed() { return _seed; }
       constexpr T  seed() const { return _seed; }
-      
+
       constexpr T getCurr() const { return _seed + _min; }
 
       constexpr T rand();
