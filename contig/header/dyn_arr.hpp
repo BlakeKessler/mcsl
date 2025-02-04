@@ -55,8 +55,8 @@ template <typename T> class mcsl::dyn_arr : public contig_base<T> {
       T* push_back(T&& obj);
       T* push_back(const T& obj);
       T pop_back();
-      T* emplace(const uint i, auto&&... args);
-      T* emplace_back(auto&&... args);
+      T* emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...>;
+      T* emplace_back(auto&&... args) requires valid_ctor<T, decltype(args)...>;
 };
 
 #pragma region src
@@ -133,13 +133,13 @@ template<typename T> T mcsl::dyn_arr<T>::pop_back() {
    return temp;
 }
 //!construct in place
-template<typename T> T* mcsl::dyn_arr<T>::emplace(const uint i, auto&&... args) {
+template<typename T> T* mcsl::dyn_arr<T>::emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...> {
    safe_mode_assert(i < _size);
 
    return new (begin() + i) T{args...};
 }
 //!construct in place at back of array
-template<typename T> T* mcsl::dyn_arr<T>::emplace_back(auto&&... args) {
+template<typename T> T* mcsl::dyn_arr<T>::emplace_back(auto&&... args) requires valid_ctor<T, decltype(args)...> {
    if (_size >= _capacity) {
       resize(_size ? std::bit_floor(_size) << 1 : 1);
    }

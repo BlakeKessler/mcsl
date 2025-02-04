@@ -33,7 +33,7 @@ template <typename T, uint _size> class [[clang::trivial_abi]] mcsl::static_arr 
       [[gnu::pure]] constexpr const T* begin() const { return _buf; }
 
       //MODIFIERS
-      constexpr T* emplace(const uint i, auto&&... args);
+      constexpr T* emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...>;
 };
 
 #pragma region CTAD
@@ -45,7 +45,7 @@ namespace mcsl {
 #pragma region src
 
 //!construct in place
-template<typename T,uint _size> constexpr T* mcsl::static_arr<T,_size>::emplace(const uint i, auto&&... args) {
+template<typename T,uint _size> constexpr T* mcsl::static_arr<T,_size>::emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...> {
    safe_mode_assert(i < _size);
    return new (begin() + i) T{args...};
 }

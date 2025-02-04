@@ -40,7 +40,7 @@ template <typename T> class mcsl::array : public contig_base<T> {
       [[gnu::pure]] constexpr const T* begin() const { return _buf; }
 
       //MODIFIERS
-      constexpr T* emplace(const uint i, auto&&... args);
+      constexpr T* emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...>;
       T* release() { const_cast<uint&>(_size) = 0; T* temp = _buf; _buf = nullptr; return temp; }
 };
 
@@ -86,7 +86,7 @@ template<typename T> mcsl::array<T>::array(const array& other):
 }
 
 //!construct in place
-template<typename T> constexpr T* mcsl::array<T>::emplace(const uint i, auto&&... args) {
+template<typename T> constexpr T* mcsl::array<T>::emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...> {
    safe_mode_assert(i < _size);
    return new (begin() + i) T{args...};
 }

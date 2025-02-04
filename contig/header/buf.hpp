@@ -37,8 +37,8 @@ template<typename T, uint _capacity> class [[clang::trivial_abi]] mcsl::buf : mc
       T* push_back(T&& obj);
       T* push_back(const T& obj);
       bool pop_back();
-      T* emplace(const uint i, auto&&... args);
-      T* emplace_back(auto&&... args);
+      T* emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...>;
+      T* emplace_back(auto&&... args) requires valid_ctor<T, decltype(args)...>;
 };
 
 template<typename T, uint _capacity> constexpr mcsl::buf<T,_capacity>::buf(const contig_t auto& other):
@@ -71,12 +71,12 @@ template<typename T, uint _capacity> bool mcsl::buf<T,_capacity>::pop_back() {
    std::destroy_at(self.end());
    return true;
 }
-template<typename T, uint _capacity> T* mcsl::buf<T,_capacity>::emplace(const uint i, auto&&... args) {
+template<typename T, uint _capacity> T* mcsl::buf<T,_capacity>::emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...> {
    safe_mode_assert(i < _size);
    
    return new (begin() + i) T{args...};
 }
-template<typename T, uint _capacity> T* mcsl::buf<T,_capacity>::emplace_back(auto&&... args) {
+template<typename T, uint _capacity> T* mcsl::buf<T,_capacity>::emplace_back(auto&&... args) requires valid_ctor<T, decltype(args)...> {
    safe_mode_assert(_size < _capacity);
 
    return new (begin() + _size++) T{args...};
