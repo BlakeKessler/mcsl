@@ -73,6 +73,10 @@ namespace mcsl {
    template<typename func_t, typename ...Args> concept callable_t = requires (func_t f, Args... args) {
       f(args...);
    };
+
+   template<typename T, typename ...Args> concept valid_ctor = requires (Args... args) {
+      T{args...};
+   };
    #pragma endregion utils
 };
 
