@@ -10,24 +10,27 @@ template<typename T, uint _bufCapacity = DEFAULT_ARR_LIST_BUF_SIZE> class arr_li
    private:
       mcsl::dyn_arr<mcsl::heap_buf<T,_bufCapacity>> _bufBuf;
    public:
-      struct it;
+      // typedef it = it<T,arr_list>;
+      // typedef const_it = it<const T, const arr_list>;
+      // typedef span = span<T, arr_list>;
+      // typedef const_span = span<const T, const arr_list>;
 
       uint size() const;
       operator bool() const { return size(); }
 
-      it operator+(const uint i);
+      mcsl::it<T,arr_list> operator+(const uint i);
       T& operator[](const uint i);
       T& at(const uint i);
-      it begin();
-      it end();
+      mcsl::it<T,arr_list> begin();
+      mcsl::it<T,arr_list> end();
       T& front();
       T& back();
 
-      const it operator+(const uint i) const;
+      mcsl::it<const T, const arr_list> operator+(const uint i) const;
       const T& operator[](const uint i) const;
       const T& at(const uint i) const;
-      const it begin() const;
-      const it end() const;
+      mcsl::it<const T, const arr_list> begin() const;
+      mcsl::it<const T, const arr_list> end() const;
       const T& front() const;
       const T& back() const;
 
