@@ -151,7 +151,7 @@
    bool isNegative = str[0] == '-';
    const char* it = str + isNegative;
 
-   if (strlen >= (2 + isNegative) && *it == '0') {
+   if (strlen >= (2U + isNegative) && *it == '0') {
       if (radix == 0) {
          switch(*++it) {
             case 'b': case 'B': radix = 2;  ++it; break;
