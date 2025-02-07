@@ -14,6 +14,8 @@ namespace mcsl {
 
    template<typename T> struct container_base;
 
+   template<typename T, uint _bufCapacity> class arr_list;
+
    template<typename T> struct contig_base;
    template<typename T, uint _capacity> class buf;
    template<typename T, uint _capacity> class heap_buf;

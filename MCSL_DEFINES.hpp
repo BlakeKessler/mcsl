@@ -96,7 +96,7 @@ constexpr const uint DEBUG_INT = 0x7ff01954;
 
 //container parameters
 constexpr const uint DEFAULT_BUCKET_SIZE = 4;
-
+constexpr const uint DEFAULT_ARR_LIST_BUF_SIZE = 16;
 
 
 
