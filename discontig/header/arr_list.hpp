@@ -64,14 +64,14 @@ template<typename T, uint _bufCapacity = DEFAULT_ARR_LIST_BUF_SIZE> class mcsl::
 
 #pragma region inlinesrc
 
-template<typename T, uint _bufCapacity> mcsl::arr_list<T,_bufCapacity>::arr_list(const view data) {
+template<typename T, uint _bufCapacity> mcsl::arr_list<T,_bufCapacity>::arr_list(const view data):_buf{},_size{} {
    const it end = data.end();
    for (it i = data.begin(); i != end; ++i) {
       push_back(*i);
    }
 }
 
-template<typename T, uint _bufCapacity> mcsl::arr_list<T,_bufCapacity>::arr_list(castable_to<T> auto&&... initList) {
+template<typename T, uint _bufCapacity> mcsl::arr_list<T,_bufCapacity>::arr_list(castable_to<T> auto&&... initList):_buf{},_size{} {
    T* tmp = const_cast<T*>(std::data(std::initializer_list<T>{initList...}));
 
    for (uint i = 0; i < _size; ++i) {
