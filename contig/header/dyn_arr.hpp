@@ -82,12 +82,14 @@ template<typename T> mcsl::dyn_arr<T>::dyn_arr(const uint size, const uint capac
       }
 }
 //!constructor from initializer list
-template<typename T> mcsl::dyn_arr<T>::dyn_arr(castable_to<T> auto&&... initList):dyn_arr(sizeof...(initList)) {
-   T* tmp = const_cast<T*>(std::data(std::initializer_list<T>{initList...}));
+template<typename T> mcsl::dyn_arr<T>::dyn_arr(castable_to<T> auto&&... initList):
+   _capacity(std::bit_ceil(sizeof...(initList))), _size(sizeof...(initList)),
+   _buf(mcsl::calloc<T>(_capacity)) {
+      T* tmp = const_cast<T*>(std::data(std::initializer_list<T>{initList...}));
 
-   for (uint i = 0; i < _size; ++i) {
-      _buf[i] = tmp[i];
-   }
+      for (uint i = 0; i < _size; ++i) {
+         _buf[i] = tmp[i];
+      }
 }
 //!move constructor
 template<typename T> mcsl::dyn_arr<T>::dyn_arr(dyn_arr&& other):

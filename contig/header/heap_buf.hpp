@@ -9,7 +9,7 @@
 #include <initializer_list>
 #include "assert.hpp"
 
-template<typename T, uint _capacity> class mcsl::heap_buf : mcsl::contig_base<T> {
+template<typename T, uint _capacity> class mcsl::heap_buf : public mcsl::contig_base<T> {
    private:
       T* _buf;
       uint _size;
