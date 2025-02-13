@@ -23,6 +23,9 @@ namespace mcsl {
    template<typename T> concept sint_t = std::signed_integral<T>;
    template<typename T> concept float_t = std::floating_point<T>;
    template<typename T> concept num_t = mcsl::int_t<T> || mcsl::float_t<T>;
+   template<typename T, typename other_t> concept more_precise_t = (num_t<T> && num_t<other_t>)
+      && (float_t<other_t> || !float_t<T>)
+      && (sizeof(other_t) >= sizeof(T));
 
    template<typename T> concept ptr_t = std::is_pointer<T>::value;
    #pragma endregion basic
