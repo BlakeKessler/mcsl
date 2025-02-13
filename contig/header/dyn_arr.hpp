@@ -73,19 +73,14 @@ template<typename T> mcsl::dyn_arr<T>::dyn_arr(const uint size):
 }
 //!constructor from array size and buffer size
 template<typename T> mcsl::dyn_arr<T>::dyn_arr(const uint size, const uint capacity):
-   _capacity(capacity), _size(size) {
-      if (_capacity < _size) {
-         __throw(ErrCode::SEGFAULT, "cannot construct %s with array size greater than buffer size (\033[4m%u\033[24m < \033[4m%u\033[24m)", _nameof,_capacity,_size);
-      }
-      else {
-         _buf = mcsl::calloc<T>(_capacity);
-      }
+   _capacity(capacity), _size(size), _buf{mcsl::calloc<T>(_capacity)} {
+      safe_mode_assert(_capacity >= _size);
 }
 //!constructor from initializer list
 template<typename T> mcsl::dyn_arr<T>::dyn_arr(castable_to<T> auto&&... initList):
    _capacity(std::bit_ceil(sizeof...(initList))), _size(sizeof...(initList)),
    _buf(mcsl::calloc<T>(_capacity)) {
-      T* tmp = const_cast<T*>(std::data(std::initializer_list<T>{initList...}));
+      const T* tmp = std::data(std::initializer_list<T>{initList...});
 
       for (uint i = 0; i < _size; ++i) {
          _buf[i] = tmp[i];
@@ -108,6 +103,7 @@ template<typename T> mcsl::dyn_arr<T>::dyn_arr(const dyn_arr& other):
 template<typename T> bool mcsl::dyn_arr<T>::resize_exact(const uint newSize) {
    _buf = mcsl::realloc<T>(_buf, newSize);
    _capacity = newSize;
+   _size = _size > _capacity ? _capacity : _size;
    return true;
 }
 
@@ -122,9 +118,7 @@ template<typename T> T* mcsl::dyn_arr<T>::push_back(const T& obj) {
    if (_size >= _capacity) {
       resize(_size ? std::bit_floor(_size) << 1 : 1);
    }
-   T* addr = _buf + _size++;
-   *addr = obj;
-   return addr;
+   return new (_buf + _size++) T{obj};
 }
 //!remove last element of array
 //!returns the removed element

@@ -105,6 +105,7 @@ template<typename T, uint _bufCapacity> T* mcsl::arr_list<T,_bufCapacity>::push_
 }
 
 template<typename T, uint _bufCapacity> T* mcsl::arr_list<T,_bufCapacity>::emplace(const uint i, auto&&... initList) requires valid_ctor<T, decltype(initList)...> {
+   safe_mode_assert(i < size());
    return new (_buf[i / _bufCapacity] + (i % _bufCapacity)) T{initList...};
 }
 template<typename T, uint _bufCapacity> T* mcsl::arr_list<T,_bufCapacity>::emplace_back(auto&&... initList) requires valid_ctor<T, decltype(initList)...> {
