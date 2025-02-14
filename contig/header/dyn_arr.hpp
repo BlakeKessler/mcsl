@@ -49,8 +49,8 @@ template <typename T> class mcsl::dyn_arr : public contig_base<T> {
 
       //MODIFIERS
       //!realloc buffer to at least the specified size
-      bool resize(const uint newSize) { return resize_exact(std::bit_ceil(newSize)); }
-      bool resize_exact(const uint newSize);
+      bool reserve(const uint newSize) { return reserve_exact(std::bit_ceil(newSize)); }
+      bool reserve_exact(const uint newSize);
       T* release() { _size = 0; _capacity = 0; T* temp = _buf; _buf = nullptr; return temp; }
       T* push_back(T&& obj);
       T* push_back(const T& obj);
@@ -100,7 +100,7 @@ template<typename T> mcsl::dyn_arr<T>::dyn_arr(const dyn_arr& other):
 }
 
 //!realloc buffer to the specified size
-template<typename T> bool mcsl::dyn_arr<T>::resize_exact(const uint newSize) {
+template<typename T> bool mcsl::dyn_arr<T>::reserve_exact(const uint newSize) {
    _buf = mcsl::realloc<T>(_buf, newSize);
    _capacity = newSize;
    _size = _size > _capacity ? _capacity : _size;
@@ -110,13 +110,13 @@ template<typename T> bool mcsl::dyn_arr<T>::resize_exact(const uint newSize) {
 //!push to the back of the the array
 template<typename T> T* mcsl::dyn_arr<T>::push_back(T&& obj) {
    if (_size >= _capacity) {
-      resize(_size ? std::bit_floor(_size) << 1 : 1);
+      reserve(_size ? std::bit_floor(_size) << 1 : 1);
    }
    return new (_buf + _size++) T{std::forward<decltype(obj)>(obj)};
 }
 template<typename T> T* mcsl::dyn_arr<T>::push_back(const T& obj) {
    if (_size >= _capacity) {
-      resize(_size ? std::bit_floor(_size) << 1 : 1);
+      reserve(_size ? std::bit_floor(_size) << 1 : 1);
    }
    return new (_buf + _size++) T{obj};
 }
@@ -137,7 +137,7 @@ template<typename T> T* mcsl::dyn_arr<T>::emplace(const uint i, auto&&... args) 
 //!construct in place at back of array
 template<typename T> T* mcsl::dyn_arr<T>::emplace_back(auto&&... args) requires valid_ctor<T, decltype(args)...> {
    if (_size >= _capacity) {
-      resize(_size ? std::bit_floor(_size) << 1 : 1);
+      reserve(_size ? std::bit_floor(_size) << 1 : 1);
    }
    return new (begin() + _size++) T{args...};
 }

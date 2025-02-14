@@ -9,7 +9,7 @@
 //!concatenate other onto the end of this
 mcsl::string& mcsl::string::operator+=(const str_t auto& other) {
    char* addr = end();
-   resize(size() + other.size());
+   reserve(size() + other.size());
    //copy other
    std::memcpy(addr, other.begin(), other.size()*sizeof(char));
    //return
@@ -18,7 +18,7 @@ mcsl::string& mcsl::string::operator+=(const str_t auto& other) {
 //!repeat string
 mcsl::string& mcsl::string::operator*=(const uint repeatCount) {
    const uint oldSize = size();
-   resize_exact(repeatCount * size());
+   reserve_exact(repeatCount * size());
    for (uint pos = oldSize; pos < size(); pos+=oldSize) {
       std::memcpy(begin() + pos, begin(), oldSize*sizeof(char));
    }
