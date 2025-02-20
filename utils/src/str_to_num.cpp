@@ -140,6 +140,7 @@
 //!legal radices: {0, 2, 8, 10, 16}
 //!when radix is 0, base is deduced from contents of string
 //!NOTE: might have minor imprecision when scientific notation is used
+//!implementation heavily based on a [LibCL implementation](https://github.com/ochafik/LibCL/blob/master/src/main/resources/LibCL/strtod.c)
 [[gnu::pure]] constexpr double mcsl::str_to_real(const char* str, const uint strlen, uint radix) {
    //https://dl.acm.org/doi/pdf/10.1145/93548.93559?download=false
    //https://dl.acm.org/doi/pdf/10.1145/93548.93557?download=false
@@ -172,91 +173,137 @@
       }
    } else if (radix == 0) { radix = 10; }
 
-   //find first non-zero digit and radix point/separator
-   const char* firstNonZero = nullptr;
-   const char* radixPoint = nullptr;
-   const char* radixSeparator = nullptr;
-   const char* numEnd = nullptr;
+   const uint maxMantDigits = 18; //!TODO: calculate this based on the value of `radix`
+   const int _strtod_maxExponent_ = 511; //!TODO: calculate this based on the value of `radix`
+   double powers[9];
+   powers[0] = radix;
+   for (uint i = 0; i < 8; ++i) {
+      powers[i+1] = powers[i] * powers[i];
+   }
+   
+   bool expSign = false;
+	int fracExp = 0;		/* Exponent that derives from the fractional
+	 * part.  Under normal circumstatnces, it is
+	 * the negative of the number of digits in F.
+	 * However, if I is very long, the last digits
+	 * of I get dropped (otherwise a long I with a
+	 * large negative exponent could cause an
+	 * unnecessary overflow on I alone).  In this
+	 * case, fracExp is incremented one for each
+	 * dropped digit. */
+	uint mantSize = 0;		//Number of digits in mantissa.
+	sint digBeforeRadixPt = -1;			//Number of mantissa digits BEFORE decimal point
 
-   {
-      const char* strEnd = str + strlen;
-      for (; it < strEnd; ++it) {
-         if (*it == '.') {
-            if (radixPoint) {
-               numEnd = it;
-               break;
-            }
-            radixPoint = it;
-            if (!firstNonZero) {
-               ++it;
-               if (is_digit(*it, radix)) {
-                  firstNonZero = it;
-               } else {
-                  numEnd = it;
-                  break;
-               }
-            }
-         } 
-         else if ((radix < (10 + 'e' - 'a') && *it == 'e') || *it == 'p') {
-            if (radixSeparator) {
-               numEnd = it;
-               break;
-            }
+	/*
+	 * Count the number of digits in the mantissa (including the decimal
+	 * point), and also locate the decimal point.
+	 */
 
-            radixSeparator = it;
-            ++it;
-            if (it < strEnd) {
-               if (!is_digit(*it, radix) && *it != '-' && *it != '+') {
-                  numEnd = it;
-                  break;
-               }
-            }
-         }
-         else {
-            if (!is_digit(*it, radix)) {
-               numEnd = it;
-               break;
-            }
-            else if (*it != '0') {
-               firstNonZero = firstNonZero ? firstNonZero : it;
-            }
-         }
+	while (true) {
+		const char c = *it;
+		if (!is_digit(c, radix)) {
+			if ((c != '.') || (digBeforeRadixPt >= 0)) {
+				break;
+			}
+			digBeforeRadixPt = mantSize;
+		}
+		++it;
+      ++mantSize;
+	}
+
+	/*
+	 * Now suck up the digits in the mantissa.  Use two integers to
+	 * collect 9 digits each (this is faster than using floating-point).
+	 * If the mantissa has more than 18 digits, ignore the extras, since
+	 * they can't affect the value anyway.
+	 */
+
+	const char* pExp = it;
+	it -= mantSize;
+	if (digBeforeRadixPt < 0) {
+		digBeforeRadixPt = mantSize;
+	} else {
+		--mantSize;			/* One of the digits was the point. */
+	}
+   if (mantSize == 0) {
+      return isNegative ? -0.0 : 0.0;
+	}
+
+	mantSize = (mantSize > maxMantDigits) ? maxMantDigits : mantSize;
+   fracExp = digBeforeRadixPt - mantSize;
+   
+   ulong tmp = 0;
+   for ( ; mantSize > 0; --mantSize) {
+      if (*it == '.') {
+         ++it;
       }
-      numEnd = numEnd ? numEnd : strEnd;
+      tmp = radix*tmp + digit_to_uint(*it);
+      ++it;
+   }
+   double fraction = tmp;
+
+	/*
+	 * Skim off the exponent.
+	 */
+
+	it = pExp;
+   sint exp = 0;
+	if ((radix < 0xE && *it == 'e') || *it == 'p') {
+		++it;
+		if (*it == '-') {
+			expSign = true;
+			++it;
+		} else {
+			if (*it == '+') {
+				++it;
+			}
+			expSign = false;
+		}
+		while (is_digit(*it, radix)) {
+			exp = exp*radix + digit_to_uint(*it);
+			++it;
+		}
+	}
+	if (expSign) {
+		exp = fracExp - exp;
+	} else {
+		exp = fracExp + exp;
+	}
+
+	/*
+	 * Generate a floating-point number that represents the exponent.
+	 * Do this by processing the exponent one bit at a time to combine
+	 * many powers of 2 of 10. Then combine the exponent with the
+	 * fraction.
+	 */
+
+	if (exp < 0) {
+		expSign = true;
+		exp = -exp;
+	} else {
+		expSign = false;
+	}
+	exp = (exp > _strtod_maxExponent_) ? _strtod_maxExponent_ : exp;
+
+	double dblExp = 1.0;
+   {
+      double d = radix;
+      while (exp) {
+         if (exp & 1) {
+            dblExp *= d;
+         }
+         exp >>= 1;
+         d *= d;
+      }
    }
 
-   //check validity
-   if (!firstNonZero || (radixSeparator && radixSeparator < radixPoint)) {
-      return SigNaN;
-   }
-   
-   //parse float
-   uint_n<128> significand = 0;
-   // uint_n<(uint)(0.5 + 0.125 * std::log2(TYPEMAX<double>()))> significand;
-   uint bitWidth;
-   double num = isNegative ? -1.0 : 1.0;
+	if (expSign) {
+		fraction /= dblExp;
+	} else {
+		fraction *= dblExp;
+	}
 
-   if (radixSeparator) {
-      num *= std::pow(radix, str_to_sint(radixSeparator + 1, numEnd, radix));
-      numEnd = radixSeparator;
-   }
-   for (it = firstNonZero; it < radixPoint; ++it) {
-      significand *= radix;
-      significand += digit_to_uint(*it);
-   }
-   if (radixPoint) { bitWidth = significand.bit_width(); ++it; }
-   for (; it < numEnd; ++it) {
-      significand *= radix;
-      significand += digit_to_uint(*it);
-   }
-   if (!radixPoint) { bitWidth = significand.bit_width(); }
-   
-
-   //convert to floating point number and return
-   mcsl::pair<ulong, ushort> msw = significand.get_msw();
-   sint exp = bitWidth - significand.bit_width() - msw.second;
-
-   return num * std::ldexp(msw.first, exp);
+	return isNegative ? -fraction : fraction;
 }
 
 #endif //MCSL_STR_TO_NUM_CPP
