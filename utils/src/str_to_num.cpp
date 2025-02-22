@@ -71,6 +71,8 @@
 
    if (str[0] == '-') {
       return -str_to_uint(str+1, strlen-1, radix);
+   } else if (str[0] == '+') {
+      return str_to_uint(str+1, strlen-1, radix);
    } else {
       return str_to_uint(str, strlen, radix);
    }
@@ -139,8 +141,9 @@
 //!convert string to floating point number
 //!legal radices: {0, 2, 8, 10, 16}
 //!when radix is 0, base is deduced from contents of string
-//!NOTE: might have minor imprecision when scientific notation is used
+//!NOTE: slightly imprecise
 //!implementation heavily based on a [LibCL implementation](https://github.com/ochafik/LibCL/blob/master/src/main/resources/LibCL/strtod.c)
+//!TODO: fix inf, nan, signan
 [[gnu::pure]] constexpr double mcsl::str_to_real(const char* str, const uint strlen, uint radix) {
    //https://dl.acm.org/doi/pdf/10.1145/93548.93559?download=false
    //https://dl.acm.org/doi/pdf/10.1145/93548.93557?download=false
@@ -150,7 +153,7 @@
 
    //deduce sign, radix, and starting index
    bool isNegative = str[0] == '-';
-   const char* it = str + isNegative;
+   const char* it = str + (isNegative || str[0] == '+');
 
    if (strlen >= (2U + isNegative) && *it == '0') {
       if (radix == 0) {
@@ -173,137 +176,78 @@
       }
    } else if (radix == 0) { radix = 10; }
 
-   const uint maxMantDigits = 18; //!TODO: calculate this based on the value of `radix`
-   const int _strtod_maxExponent_ = 511; //!TODO: calculate this based on the value of `radix`
-   double powers[9];
-   powers[0] = radix;
-   for (uint i = 0; i < 8; ++i) {
-      powers[i+1] = powers[i] * powers[i];
-   }
+   const uint maxMantDigits = 18; //!TODO: calculate this based on the value of `radix` - these numbers come from long double
    
-   bool expSign = false;
-	int fracExp = 0;		/* Exponent that derives from the fractional
-	 * part.  Under normal circumstatnces, it is
-	 * the negative of the number of digits in F.
-	 * However, if I is very long, the last digits
-	 * of I get dropped (otherwise a long I with a
-	 * large negative exponent could cause an
-	 * unnecessary overflow on I alone).  In this
-	 * case, fracExp is incremented one for each
-	 * dropped digit. */
-	uint mantSize = 0;		//Number of digits in mantissa.
-	sint digBeforeRadixPt = -1;			//Number of mantissa digits BEFORE decimal point
+	//calculate bounds of fields
+   const char* end = str + strlen;
+   const char* mantStart = it;
+   const char* mantEnd = end;
+   const char* radixPt = nullptr;
 
-	/*
-	 * Count the number of digits in the mantissa (including the decimal
-	 * point), and also locate the decimal point.
-	 */
-
-	while (true) {
-		const char c = *it;
-		if (!is_digit(c, radix)) {
-			if ((c != '.') || (digBeforeRadixPt >= 0)) {
-				break;
-			}
-			digBeforeRadixPt = mantSize;
-		}
-		++it;
-      ++mantSize;
-	}
-
-	/*
-	 * Now suck up the digits in the mantissa.  Use two integers to
-	 * collect 9 digits each (this is faster than using floating-point).
-	 * If the mantissa has more than 18 digits, ignore the extras, since
-	 * they can't affect the value anyway.
-	 */
-
-	const char* pExp = it;
-	it -= mantSize;
-	if (digBeforeRadixPt < 0) {
-		digBeforeRadixPt = mantSize;
-	} else {
-		--mantSize;			/* One of the digits was the point. */
-	}
-   if (mantSize == 0) {
-      return isNegative ? -0.0 : 0.0;
-	}
-
-	mantSize = (mantSize > maxMantDigits) ? maxMantDigits : mantSize;
-   fracExp = digBeforeRadixPt - mantSize;
-   
-   ulong tmp = 0;
-   for ( ; mantSize > 0; --mantSize) {
-      if (*it == '.') {
-         ++it;
+	while (it < end) {
+      if (!is_digit(*it, radix)) {
+         if (*it == '.' && !radixPt) {
+            radixPt = it;
+         } else {
+            mantEnd = it;
+            break;
+         }
       }
-      tmp = radix*tmp + digit_to_uint(*it);
+
       ++it;
    }
-   double fraction = tmp;
 
-	/*
-	 * Skim off the exponent.
-	 */
-
-	it = pExp;
-   sint exp = 0;
-	if ((radix < 0xE && *it == 'e') || *it == 'p') {
-		++it;
-		if (*it == '-') {
-			expSign = true;
-			++it;
-		} else {
-			if (*it == '+') {
-				++it;
-			}
-			expSign = false;
-		}
-		while (is_digit(*it, radix)) {
-			exp = exp*radix + digit_to_uint(*it);
-			++it;
-		}
-	}
-	if (expSign) {
-		exp = fracExp - exp;
-	} else {
-		exp = fracExp + exp;
-	}
-
-	/*
-	 * Generate a floating-point number that represents the exponent.
-	 * Do this by processing the exponent one bit at a time to combine
-	 * many powers of 2 of 10. Then combine the exponent with the
-	 * fraction.
-	 */
-
-	if (exp < 0) {
-		expSign = true;
-		exp = -exp;
-	} else {
-		expSign = false;
-	}
-	exp = (exp > _strtod_maxExponent_) ? _strtod_maxExponent_ : exp;
-
-	double dblExp = 1.0;
-   {
-      double d = radix;
-      while (exp) {
-         if (exp & 1) {
-            dblExp *= d;
-         }
-         exp >>= 1;
-         d *= d;
+   //calculate exponent and adjust mantissa
+   // sint exp = radixPt ? (radixPt - mantEnd - 1) : 0;
+   sint mantExpAdj = 0;
+   const char* mantProcessEnd = mantStart + maxMantDigits + (bool)radixPt;
+   if (mantProcessEnd > mantEnd) {
+      mantProcessEnd = mantEnd;
+   } else {
+      if (!radixPt) {
+         mantExpAdj += mantEnd - mantProcessEnd;
+      } else if (radixPt > mantProcessEnd) {
+         mantExpAdj += radixPt - mantProcessEnd;
       }
    }
+   if (radixPt < mantProcessEnd) {
+      mantExpAdj += radixPt - mantProcessEnd + 1;
+   }
+   sint exp = 0;
+   if (it + 1 < end) {
+      if ((radix < 0xE && (*it | CASE_BIT) == 'e') || (*it | CASE_BIT) == 'p') {
+         exp += str_to_sint(it + 1, end, 10);
+         // exp += str_to_sint(it + 1, end, radix);
+      }
+   }
+   // //check exponent bounds
+   // if (exp > _strtod_maxExponent_) {
+   //    return isNegative ? -Inf : Inf;
+   // }
+   // if (-exp > _strtod_maxExponent_) {
+   //    return isNegative ? -0.0 : 0.0;
+   // }
 
-	if (expSign) {
-		fraction /= dblExp;
-	} else {
-		fraction *= dblExp;
-	}
+	//process mantissa   
+   ulong tmp = 0;
+   for (it = mantStart; it < mantProcessEnd; ++it) {
+      if (*it == '.') {
+         continue;
+      }
+      tmp = radix*tmp + digit_to_uint(*it);
+   }
+   long double fraction = tmp;
+   fraction *= std::pow(radix, mantExpAdj);
 
+   //return
+   // fraction *= std::pow((long double)radix, exp);
+   if (radix == 10) {
+      fraction *= std::pow(10, exp);
+   } else {
+      fraction *= std::pow(2, exp);
+   }
 	return isNegative ? -fraction : fraction;
 }
+
 
 #endif //MCSL_STR_TO_NUM_CPP
