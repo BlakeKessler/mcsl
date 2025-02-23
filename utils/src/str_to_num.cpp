@@ -8,6 +8,8 @@
 
 #include <cmath>
 
+//!TODO: add template parameters for radix, only deduce when radix == 0
+
 //!convert string to unsigned integer
 //!legal radices: {0, 2, ... , 36}
 //!when radix is 0, base is deduced from contents of string
@@ -141,19 +143,12 @@
 //!convert string to floating point number
 //!legal radices: {0, 2, 8, 10, 16}
 //!when radix is 0, base is deduced from contents of string
-//!NOTE: slightly imprecise
-//!implementation heavily based on a [LibCL implementation](https://github.com/ochafik/LibCL/blob/master/src/main/resources/LibCL/strtod.c)
-//!TODO: fix inf, nan, signan
 [[gnu::pure]] constexpr double mcsl::str_to_real(const char* str, const uint strlen, uint radix) {
-   //https://dl.acm.org/doi/pdf/10.1145/93548.93559?download=false
-   //https://dl.acm.org/doi/pdf/10.1145/93548.93557?download=false
-   //https://www.netlib.org/fp/
-   
    assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    //deduce sign, radix, and starting index
    bool isNegative = str[0] == '-';
-   const char* it = str + (isNegative || str[0] == '+');
+   const char* it = str + isNegative;
 
    if (strlen >= (2U + isNegative) && *it == '0') {
       if (radix == 0) {
@@ -176,7 +171,106 @@
       }
    } else if (radix == 0) { radix = 10; }
 
-   const uint maxMantDigits = 18; //!TODO: calculate this based on the value of `radix` - these numbers come from long double
+   const uint maxMantDigits = (uint)(LDBL_MANT_DIG / std::log2((float)radix));
+   
+   //calculate bounds of fields
+   const char* const end = str + strlen;
+   const char* const mantStart = it;
+   const char* mantEnd = end;
+   const char* radixPt = nullptr;
+
+	while (it < end) {
+      if (!is_digit(*it, radix)) {
+         if (*it == '.' && !radixPt) {
+            radixPt = it;
+         } else {
+            mantEnd = it;
+            break;
+         }
+      }
+
+      ++it;
+   }
+
+   //bounds
+   const char* mantProcessEnd = mantStart + maxMantDigits;
+   if (radixPt && radixPt <= mantProcessEnd) {
+      ++mantProcessEnd;
+   }
+   if (mantProcessEnd > mantEnd) {
+      mantProcessEnd = mantEnd;
+   }
+
+   //mantissa
+   long double val;
+   {
+      ulong tmp = 0;
+      const char* mantIt = mantStart;
+      if (radixPt < mantProcessEnd) {
+         while (mantIt < radixPt) {
+            tmp = tmp * radix + digit_to_uint(*mantIt++);
+         }
+         ++mantIt;
+      }
+      while (mantIt < mantProcessEnd) {
+         tmp = tmp * radix + digit_to_uint(*mantIt++);
+      }
+      val = tmp;
+      val = isNegative ? -val : val;
+   }
+
+   //exponent
+   sint exp = (radixPt && radixPt < mantProcessEnd) ? radixPt - mantProcessEnd + 1: 0;
+   if (it + 2 < end && it[0] == '~' && it[1] == '^') { //Middle-C style
+      exp += str_to_sint(it + 2, end, radix);
+   }
+   else if (it + 1 < end && ((radix < 0xE && (it[0] | CASE_BIT) == 'e') || (it[0] | CASE_BIT) == 'p')) { //C-style
+      exp += str_to_sint(it + 1, end, radix);
+   }
+   val *= std::pow((long double)radix, exp);
+
+   //return
+   return (double)val;
+}
+
+
+//!convert string to floating point number
+//!legal radices: {0, 10, 16}
+//!when radix is 0, base is deduced from contents of string
+//!NOTE: slightly imprecise
+//!TODO: fix inf, nan, signan
+//!TODO: apostrophes?
+[[gnu::pure]] constexpr double mcsl::c_float_lit_str_to_real(const char* str, const uint strlen, uint radix) {
+   //https://dl.acm.org/doi/pdf/10.1145/93548.93559?download=false
+   //https://dl.acm.org/doi/pdf/10.1145/93548.93557?download=false
+   //https://www.netlib.org/fp/
+   
+   assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
+
+   //deduce sign, radix, and starting index
+   bool isNegative = str[0] == '-';
+   const char* it = str + (isNegative || str[0] == '+');
+
+   if (strlen >= (2U + isNegative) && *it == '0') {
+      if (radix == 0) {
+         if ((*++it | CASE_BIT) == 'x') {
+            radix = 16;
+            ++it;
+         } else {
+            radix = 10;
+         }
+      } else {
+         if ((*++it | CASE_BIT) == 'x') {
+            assert(radix == 16);
+            ++it;
+         } else {
+            assert(radix == 10);
+         }
+      }
+   } else if (radix == 0) { radix = 10; }
+
+   const uint maxMantDigits = radix == 10 ? 18 : 15;
+   debug_assert(sizeof(long double) >= 10);
    
 	//calculate bounds of fields
    const char* end = str + strlen;
@@ -197,56 +291,29 @@
       ++it;
    }
 
-   //calculate exponent and adjust mantissa
-   // sint exp = radixPt ? (radixPt - mantEnd - 1) : 0;
-   sint mantExpAdj = 0;
-   const char* mantProcessEnd = mantStart + maxMantDigits + (bool)radixPt;
-   if (mantProcessEnd > mantEnd) {
-      mantProcessEnd = mantEnd;
-   } else {
-      if (!radixPt) {
-         mantExpAdj += mantEnd - mantProcessEnd;
-      } else if (radixPt > mantProcessEnd) {
-         mantExpAdj += radixPt - mantProcessEnd;
-      }
+   //calculate value
+   long double val = str_to_uint(mantStart, maxMantDigits, radix);
+   if (mantStart + maxMantDigits < (radixPt ? radixPt : mantEnd)) {
+      val *= std::pow(radix, (radixPt ? radixPt : mantEnd) - mantStart - maxMantDigits);
    }
-   if (radixPt < mantProcessEnd) {
-      mantExpAdj += radixPt - mantProcessEnd + 1;
+   if (radixPt && radixPt + 1 < mantStart + maxMantDigits) {
+      ulong mantFrac = str_to_uint(radixPt + 1, mantEnd, radix);
+      val += mantFrac * std::pow(radix, radixPt + 1 - mantEnd);
    }
    sint exp = 0;
    if (it + 1 < end) {
       if ((radix < 0xE && (*it | CASE_BIT) == 'e') || (*it | CASE_BIT) == 'p') {
          exp += str_to_sint(it + 1, end, 10);
-         // exp += str_to_sint(it + 1, end, radix);
       }
    }
-   // //check exponent bounds
-   // if (exp > _strtod_maxExponent_) {
-   //    return isNegative ? -Inf : Inf;
-   // }
-   // if (-exp > _strtod_maxExponent_) {
-   //    return isNegative ? -0.0 : 0.0;
-   // }
-
-	//process mantissa   
-   ulong tmp = 0;
-   for (it = mantStart; it < mantProcessEnd; ++it) {
-      if (*it == '.') {
-         continue;
-      }
-      tmp = radix*tmp + digit_to_uint(*it);
+   if (radix == 10) {
+      val *= std::pow(10.0, exp);
+   } else {
+      val *= std::pow(2, exp);
    }
-   long double fraction = tmp;
-   fraction *= std::pow(radix, mantExpAdj);
 
    //return
-   // fraction *= std::pow((long double)radix, exp);
-   if (radix == 10) {
-      fraction *= std::pow(10, exp);
-   } else {
-      fraction *= std::pow(2, exp);
-   }
-	return isNegative ? -fraction : fraction;
+	return isNegative ? -val : val;
 }
 
 
