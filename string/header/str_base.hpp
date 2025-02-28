@@ -6,6 +6,7 @@
 #include "contig_base.hpp"
 #include "char_type.hpp"
 #include "dyn_arr.hpp"
+#include "algebra.hpp"
 
 #include <cstdio>
 #ifdef MCSL
@@ -81,33 +82,22 @@ struct mcsl::str_base : public contig_base<char_t> {
 
    inline constexpr sint operator<=>(this const auto& s, const char c) { if (s.size() == 1) { return s[0] - c; } else { return (s[0] != c) ? (s[0] - c) : s[1]; } }
 
+   //!TODO: make sure that cstr types use strlen when `size` is called
+   //!TODO: make sure that non-cstr types don't act like cstr types
+   template<str_t strT> constexpr sint strcmp(this const auto& lhs, const strT& rhs) {
+      const uint lhsLen = lhs.size();
+      const uint rhsLen = rhs.size();
+      const uint minLen = mcsl::min(lhsLen, rhsLen);
 
-   template<str_t strT> constexpr sint strcmp(this const auto& s, const strT& other) {
-      uint len = s.size() < other.size() ? s.size() : other.size();
-      for (uint i = 0; i < len; ++i) {
-         if (s[i] != other[i]) {
-            return s[i] - other[i];
-         }
-      }
-
-      //reached end of string
-         //can't just be a subtraction of the bytes b/c non-null-terminated to support non-null-terminated strings 
-      switch (signofdif(s.size(), other.size())) {
-         case  0: return 0; break;
-         case  1: return s[len]; break;
-         case -1: return -other[len]; break;
-         default: break;
-      }
-      return 0;
+      const sint dif = mcsl::memcmp(lhs.begin(), rhs.begin(), minLen);
+      if (dif) { return dif; }
+      else if (lhsLen > rhsLen) { return  lhs[minLen]; }
+      else if (lhsLen < rhsLen) { return -rhs[minLen]; }
+      else { return 0; }
    }
    template<str_t strT> constexpr sint substrcmp(this const auto& s, const strT& other) {
-      uint len = s.size() < other.size() ? s.size() : other.size();
-      for (uint i = 0; i < len; ++i) {
-         if (s[i] != other[i]) {
-            return (s[i] && other[i]) ? s[i] - other[i] : 0;
-         }
-      }
-      return 0;
+      const uint len = mcsl::min(s.size(), other.size());
+      return mcsl::memcmp(s.begin(), other.begin(), len);
    }
 
    //typecasts

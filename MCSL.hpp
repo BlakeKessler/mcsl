@@ -30,6 +30,7 @@ namespace mcsl {
 
    template<typename char_t> struct str_base;
    class string;
+   class cstr;
    class dyn_str_span;
    template<uint _size> class raw_str;
    class raw_str_span;
@@ -39,6 +40,14 @@ namespace mcsl {
    template<typename T> struct hash_func;
 
    template<uint_t T, T _max, T _min, T _mult, T _inc, T _defaultSeed> struct lcg_engine; //linear congruential generator engine
+
+   namespace fs {
+      class Path;
+      class C_File;
+      class UnbufferedFile;
+      class File;
+      class Dir;
+   };
 }
 
 

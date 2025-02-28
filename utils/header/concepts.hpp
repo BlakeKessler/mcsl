@@ -80,6 +80,7 @@ namespace mcsl {
    template<typename T, typename ...Args> concept valid_ctor = requires (Args... args) {
       T{args...};
    };
+   
    #pragma endregion utils
 };
 

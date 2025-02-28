@@ -5,6 +5,7 @@
 #include "MCSL.hpp"
 #include "str_base.hpp"
 #include "raw_str.hpp"
+#include "arr_span.hpp"
 
 //!non-owning potentially-non-null-terminated string
 //!invalidated if the string is reallocated
@@ -40,6 +41,12 @@ class [[clang::trivial_abi]] mcsl::raw_str_span : public str_base<char> {
       [[gnu::pure]] constexpr const char* const* ptr_to_buf() const { return &_buf; }
       [[gnu::pure]] constexpr const char* data() const { return _buf; }
       [[gnu::pure]] constexpr const char* begin() const { return _buf; }
+
+      operator arr_span<char>() { return {_buf, _size}; }
+      operator const arr_span<char>() const { return {_buf, _size}; }
+      operator arr_span<ubyte>() { return {(ubyte*)_buf, _size}; }
+      operator const arr_span<ubyte>() const { return {(ubyte*)_buf, _size}; }
+      static_assert(sizeof(ubyte) == sizeof(char));
 };
 
 #endif //MCSL_RAW_STRING_SPAN_HPP

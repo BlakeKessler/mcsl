@@ -1,0 +1,110 @@
+#pragma once
+#ifndef MCSL_FS_HPP
+#define MCSL_FS_HPP
+
+#include "MCSL.hpp"
+
+#include "arr_span.hpp"
+#include "raw_str_span.hpp"
+#include "string.hpp"
+
+class mcsl::fs::Path : public mcsl::cstr {
+   private:
+      static constexpr raw_str _nameof = "fs::Path";
+
+   public:
+      using cstr::cstr;
+};
+
+class mcsl::fs::File {
+   private:
+      FILE* _file;
+      ubyte* _buf;
+      uint _capacity;
+      uint _endIndex;
+      bool _ownsBuf;
+      //!TODO: control code stack(s)?
+      //!TODO: abstract base class? file_t template?
+
+   public:
+      static constexpr ubyte DEFAULT_BUF_SIZE = BUFSIZ;
+
+      File(const Path fileName, const char* mode);
+      File(const Path fileName, const char* mode, arr_span<ubyte> buf, bool ownsBuf = false);
+
+      ~File();
+      void close() { File::~File(); }
+      
+      void flush();
+
+      File& write(const ubyte c);
+      File& write(const arr_span<ubyte> data);
+      File& write(const char c) { return write((ubyte)c); }
+      File& write(const raw_str_span str) { return write(arr_span<ubyte>(str)); }
+      File& writeln(const raw_str_span str, const char nl = '\n') { write(str); write(nl); return self; }
+
+      char read() { return std::getc(_file); }
+      arr_span<ubyte> read(arr_span<ubyte> dest);
+      raw_str_span read(raw_str_span dest) { return {dest.begin(), read((arr_span<ubyte>)dest).size()}; }
+      raw_str_span readln(raw_str_span dest, const char nl = '\n');
+      string&& readln(const char nl = '\n');
+
+      template<typename T> File& write(const T& obj); //serialize object - to be implemented by users for their types
+      template<typename T> T read(); //deserialize object - to be implemented by users for their types
+      template<typename T, typename Buffer_t> T read(Buffer_t buf); //deserialize object - to be implemented by users for their types
+
+      uint printf(const raw_str_span fmt, const auto&... argv);
+      uint scanf(const raw_str_span fmt, auto*... argv);
+
+      template<typename T> uint printf(const T& obj, 
+         const char mode,
+         uint radix,
+         const uint minWidth = 0,
+         const uint precision = 0,
+         const bool isLeftJust = false,
+         const char pad = ' ',
+         const bool alwaysPrintSign = false,
+         const char posSignChar = '+',
+         const bool altMode = false
+      ); //to be implemented by users for their types
+      template<typename T> uint scanf(T* obj,
+         const char mode,
+         uint maxWidth = mcsl::TYPEMAX<uint>()
+      ); //to be implemented by users for their types
+
+      operator FILE*() { return _file; }
+      operator const FILE*() const { return _file; }
+};
+
+#include <type_traits>
+#define _fdeclio(T)\
+template<> mcsl::fs::File& mcsl::fs::File::write<T>(std::add_lvalue_reference_t<std::add_const_t<T>>); \
+template<> uint mcsl::fs::File::printf<T>(std::add_lvalue_reference_t<std::add_const_t<T>>, const char, uint, const uint, const uint, const bool, const char, const bool, const char, const bool); \
+template<> uint mcsl::fs::File::scanf<T>(T* obj, const char, uint)
+
+_fdeclio(uint8);
+_fdeclio(uint16);
+_fdeclio(uint32);
+_fdeclio(uint64);
+_fdeclio(uint128);
+
+_fdeclio(float);
+_fdeclio(flong);
+_fdeclio(fext);
+// _fdeclio(float8);
+// _fdeclio(float16);
+// _fdeclio(float32);
+// _fdeclio(float64);
+// _fdeclio(float128);
+
+_fdeclio(bool);
+_fdeclio(char);
+_fdeclio(char8);
+_fdeclio(char16);
+_fdeclio(char32);
+
+_fdeclio(void*); //!TODO: CTAD for printing all pointers as void pointers
+
+#undef _fdeclio
+
+#endif //MCSL_FS_HPP

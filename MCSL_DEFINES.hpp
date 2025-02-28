@@ -5,7 +5,7 @@
 #define MCSL
 
 #include <cstdint>
-// #include <stdfloat>
+#include <stdfloat>
 #include <utility>
 
 //self
@@ -45,19 +45,35 @@ using sptr  = intptr_t;
 using sword = slong;
 
 //!FIXED-WIDTH FLOATING-POINT TYPES
-// using float16  = std::float16_t;
-// using float32  = std::float32_t;
-// using float64  = std::float64_t;
-// using float128 = std::float128_t;
+using float16  = std::float16_t;
+using float32  = float;
+using float64  = double;
+using float80  = long double;
+using float128 = std::float128_t;
 
-// using half   = float16;
-// using single = float32;
+using half   = float16;
+using single = float32;
 // using double = float64;
-// using quad   = float128;
+using quad   = float128;
 
-// using fshort = float16;
+//!ARCHITECTURE-BASED FLOAT TYPES
+
+using fshort = float16;
 // using float  = float32;
-// using flong  = float64;
+using flong  = float64;
+using fext   = long double;
+// using fext   = float80;
+
+//!FIXED-WIDTH CHAR TYPES
+
+// using char = char;       //ASCII (NOT UTF-8)
+using char8  = char8_t;  //UTF-8
+using char16 = char16_t; //UTF-16
+using char32 = char32_t; //UTF-32
+
+//!ARCHITECTURE-BASED CHAR TYPES
+
+using wchar = wchar_t;
 
 //enums
 namespace mcsl {
