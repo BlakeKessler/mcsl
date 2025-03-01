@@ -7,7 +7,7 @@
 #include "cstr.hpp"
 #include <cstdio>
 
-mcsl::fs::File::File(const Path fileName, const char* mode):
+mcsl::File::File(const Path fileName, const char* mode):
    File{
       fileName,
       mode,
@@ -15,7 +15,7 @@ mcsl::fs::File::File(const Path fileName, const char* mode):
       true
    } {
 }
-mcsl::fs::File::File(const Path fileName, const char* mode, arr_span<ubyte> buf, bool ownsBuf):
+mcsl::File::File(const Path fileName, const char* mode, arr_span<ubyte> buf, bool ownsBuf):
    _file{std::fopen(fileName, mode)},
    _buf{buf.data()},
    _capacity{buf.size()},
@@ -24,7 +24,7 @@ mcsl::fs::File::File(const Path fileName, const char* mode, arr_span<ubyte> buf,
       std::setvbuf(_file, nullptr, _IONBF, 0);
 }
 
-mcsl::fs::File::~File() {
+mcsl::File::~File() {
    flush();
    std::fclose(_file);
    if (_ownsBuf) {
@@ -32,19 +32,19 @@ mcsl::fs::File::~File() {
    }
 }
 
-void mcsl::fs::File::flush() {
+void mcsl::File::flush() {
    std::fwrite(_buf, 1, _endIndex, _file);
    _endIndex = 0;
 }
 
-mcsl::fs::File& mcsl::fs::File::write(const ubyte c) {
+mcsl::File& mcsl::File::write(const ubyte c) {
    if (_endIndex == _capacity) {
       flush();
    }
    _buf[_endIndex++] = c;
 }
 
-mcsl::fs::File& mcsl::fs::File::write(const mcsl::arr_span<ubyte> data) {
+mcsl::File& mcsl::File::write(const mcsl::arr_span<ubyte> data) {
    if (data.size() + _endIndex < _capacity) {
       std::memcpy(_buf + _endIndex, data.begin(), data.size());
       _endIndex += data.size();
@@ -65,7 +65,7 @@ mcsl::fs::File& mcsl::fs::File::write(const mcsl::arr_span<ubyte> data) {
    return self;
 }
 
-mcsl::arr_span<ubyte> mcsl::fs::File::read(arr_span<ubyte> dest) {
+mcsl::arr_span<ubyte> mcsl::File::read(arr_span<ubyte> dest) {
    uint i;
    for (i = 0; i < dest.size(); ++i) {
       const char ch = read();
@@ -77,7 +77,7 @@ mcsl::arr_span<ubyte> mcsl::fs::File::read(arr_span<ubyte> dest) {
    return {dest.begin(), i};
 }
 
-mcsl::raw_str_span mcsl::fs::File::readln(raw_str_span dest, const char nl) {
+mcsl::raw_str_span mcsl::File::readln(raw_str_span dest, const char nl) {
    uint i = 0;
    while (i < dest.size()) {
       const char ch = read();
@@ -90,10 +90,10 @@ mcsl::raw_str_span mcsl::fs::File::readln(raw_str_span dest, const char nl) {
       }
       dest[i++] = ch;
    }
-   __throw(ErrCode::SEGFAULT, "buffer overflow in fs::File::readln");
+   __throw(ErrCode::SEGFAULT, "buffer overflow in File::readln");
 }
 
-mcsl::string&& mcsl::fs::File::readln(const char nl) {
+mcsl::string&& mcsl::File::readln(const char nl) {
    string str{};
    while (true) {
       const char ch = read();

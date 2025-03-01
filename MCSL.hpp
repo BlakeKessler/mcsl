@@ -41,14 +41,12 @@ namespace mcsl {
 
    template<uint_t T, T _max, T _min, T _mult, T _inc, T _defaultSeed> struct lcg_engine; //linear congruential generator engine
 
-   namespace fs {
-      class Path;
-      class C_File;
-      class UnbufferedFile;
-      class File;
-      class Dir;
-   };
-}
+   class Path;
+   class C_File;
+   class UnbufferedFile;
+   class File;
+   class Dir;
+};
 
 
 

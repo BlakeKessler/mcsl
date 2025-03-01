@@ -8,26 +8,34 @@
 #include "raw_str_span.hpp"
 #include "string.hpp"
 
-class mcsl::fs::Path : public mcsl::cstr {
+class mcsl::Path : public mcsl::cstr { //base type is implementation-defined
    private:
-      static constexpr raw_str _nameof = "fs::Path";
+      static constexpr raw_str _nameof = "Path";
 
    public:
       using cstr::cstr;
+
+      Path&  appendLoc(const raw_str_span);
+      Path&& withAppendedLoc(const raw_str_span loc) { Path other{self}; other.appendLoc(loc); return std::move(other); }
+      Path&  normalize();
+      Path&& normalized() { Path other{self}; other.normalize(); return std::move(other);}
 };
 
-class mcsl::fs::File {
+class mcsl::File {
    private:
       FILE* _file;
       ubyte* _buf;
       uint _capacity;
       uint _endIndex;
       bool _ownsBuf;
-      //!TODO: control code stack(s)?
+      //!TODO: control code stack(s)? EX: ANSI color codes
       //!TODO: abstract base class? file_t template?
+      //!TODO: maybe make reference-counted
+      //!   (since a file being opened by multiple File objects will cause issues)
+      //!   if that is done, allocate _buf in-place to avoid additional indirection (since it will never be resized)
 
    public:
-      static constexpr ubyte DEFAULT_BUF_SIZE = BUFSIZ;
+      static constexpr uint DEFAULT_BUF_SIZE = BUFSIZ;
 
       File(const Path fileName, const char* mode);
       File(const Path fileName, const char* mode, arr_span<ubyte> buf, bool ownsBuf = false);
@@ -78,9 +86,9 @@ class mcsl::fs::File {
 
 #include <type_traits>
 #define _fdeclio(T)\
-template<> mcsl::fs::File& mcsl::fs::File::write<T>(std::add_lvalue_reference_t<std::add_const_t<T>>); \
-template<> uint mcsl::fs::File::printf<T>(std::add_lvalue_reference_t<std::add_const_t<T>>, const char, uint, const uint, const uint, const bool, const char, const bool, const char, const bool); \
-template<> uint mcsl::fs::File::scanf<T>(T* obj, const char, uint)
+template<> mcsl::File& mcsl::File::write<T>(std::add_lvalue_reference_t<std::add_const_t<T>>); \
+template<> uint mcsl::File::printf<T>(std::add_lvalue_reference_t<std::add_const_t<T>>, const char, uint, const uint, const uint, const bool, const char, const bool, const char, const bool); \
+template<> uint mcsl::File::scanf<T>(T* obj, const char, uint)
 
 _fdeclio(uint8);
 _fdeclio(uint16);
