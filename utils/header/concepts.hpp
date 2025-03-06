@@ -11,27 +11,40 @@
 
 
 namespace mcsl {
-   #pragma region basic
+   #pragma region checks
    template<typename lhs, typename rhs> concept same_t = std::same_as<lhs,rhs>;
    template<typename child_t, typename parent_t> concept is_t = std::derived_from<child_t,parent_t> || same_t<child_t,parent_t>;
    template<typename orig_t, typename target_t> concept castable_to = std::convertible_to<orig_t,target_t>;
-   // template<typename lhs, typename rhs> concept priv_is_t = requires {
-   //    std::is_base_of_v<rhs,lhs>;
-   // };
+
    template<typename T> concept int_t = std::integral<T>;
    template<typename T> concept uint_t = std::unsigned_integral<T>;
    template<typename T> concept sint_t = std::signed_integral<T>;
    template<typename T> concept float_t = std::floating_point<T>;
    template<typename T> concept num_t = mcsl::int_t<T> || mcsl::float_t<T>;
+   template<typename T> concept ptr_t = std::is_pointer<T>::value;
+
    template<typename T, typename other_t> concept more_precise_t = (num_t<T> && num_t<other_t>)
       && (float_t<other_t> || !float_t<T>)
       && (sizeof(other_t) >= sizeof(T));
 
-   template<typename T> concept ptr_t = std::is_pointer<T>::value;
-   #pragma endregion basic
+   template<typename T, typename ...Ts> concept contains_num_t   =   num_t<T> || contains_num_t<Ts...>;
+   template<typename T, typename ...Ts> concept contains_float_t = float_t<T> || contains_float_t<Ts...>;
+   template<typename T, typename ...Ts> concept contains_int_t   =   int_t<T> || contains_int_t<Ts...>;
+   template<typename T, typename ...Ts> concept contains_uint_t  =  uint_t<T> || contains_uint_t<Ts...>;
+   template<typename T, typename ...Ts> concept contains_sint_t  =  sint_t<T> || contains_sint_t<Ts...>;
+
+   template<typename T, typename ...Ts> concept contains_only_num_t   =   num_t<T> && contains_only_num_t<Ts...>;
+   template<typename T, typename ...Ts> concept contains_only_float_t = float_t<T> && contains_only_float_t<Ts...>;
+   template<typename T, typename ...Ts> concept contains_only_int_t   =   int_t<T> && contains_only_int_t<Ts...>;
+   template<typename T, typename ...Ts> concept contains_only_uint_t  =  uint_t<T> && contains_only_uint_t<Ts...>;
+   template<typename T, typename ...Ts> concept contains_only_sint_t  =  sint_t<T> && contains_only_sint_t<Ts...>;
+   #pragma endregion checks
 
    #pragma region mods
+   template<int_t T> using to_sint_t = std::make_signed_t<T>;
+   template<int_t T> using to_uint_t = std::make_signed_t<T>;   
 
+   
    template<typename T> using remove_ptr = std::remove_pointer_t<T>;
    template<typename T> using remove_ref = std::remove_reference_t<T>;
 
@@ -39,26 +52,117 @@ namespace mcsl {
    template<typename T> using remove_volatile = std::remove_volatile_t<T>;
    template<typename T> using remove_cv = std::remove_cv_t<T>;
    template<typename T> using remove_cvref = std::remove_cvref_t<T>;
-
    #pragma endregion mods
 
+   #pragma region selectors
+   template<bool b, typename T1, typename T2> using select = std::conditional_t<b,T1,T2>;
+
+   namespace { //implement smaller_t
+      template<typename T1, typename T2> struct __SMALLER;
+      template<typename T1> struct __SMALLER<T1, void> { using type = T1; };
+      template<typename T2> struct __SMALLER<void, T2> { using type = T2; };
+      template<typename T1, typename T2> struct __SMALLER { using type = select<(sizeof(T1) < sizeof(T2)), T1, T2>; }; 
+   };
+   namespace { //implement larger_t
+      template<typename T1, typename T2> struct __LARGER;
+      template<typename T1> struct __LARGER<T1, void> { using type = T1; };
+      template<typename T2> struct __LARGER<void, T2> { using type = T2; };
+      template<typename T1, typename T2> struct __LARGER { using type = select<(sizeof(T1) > sizeof(T2)), T1, T2>; }; 
+   };
+   template<typename T1, typename T2> using smaller_t = __SMALLER<T1,T2>::type;
+   template<typename T1, typename T2> using larger_t = __LARGER<T1,T2>::type;
+
+   namespace { //implement largest_num_t
+      template<typename T = void, typename ...Ts> struct __LARGEST_NUM;
+      template<> struct __LARGEST_NUM<void> { using type = void; };
+      template<typename T, typename ...Ts> struct __LARGEST_NUM {
+         using type = select<num_t<T>,
+            select<sizeof...(Ts) != 0, //T is an num
+               larger_t<T, typename __LARGEST_NUM<Ts...>::type>,
+               T>,
+            select<sizeof...(Ts) != 0, //T is not an num
+               typename __LARGEST_NUM<Ts...>::type,
+               void>>;
+      };
+   };
+   namespace { //implement largest_float_t
+      template<typename T = void, typename ...Ts> struct __LARGEST_FLOAT;
+      template<> struct __LARGEST_FLOAT<void> { using type = void; };
+      template<typename T, typename ...Ts> struct __LARGEST_FLOAT {
+         using type = select<float_t<T>,
+            select<sizeof...(Ts) != 0, //T is a float
+               larger_t<T, typename __LARGEST_FLOAT<Ts...>::type>,
+               T>,
+            select<sizeof...(Ts) != 0, //T is not a float
+               typename __LARGEST_FLOAT<Ts...>::type,
+               void>>;
+      };
+   };
+   namespace { //implement largest_int_t
+      template<typename T = void, typename ...Ts> struct __LARGEST_INT;
+      template<> struct __LARGEST_INT<void> { using type = void; };
+      template<typename T, typename ...Ts> struct __LARGEST_INT {
+         using type = select<int_t<T>,
+            select<sizeof...(Ts) != 0, //T is an int
+               larger_t<T, typename __LARGEST_INT<Ts...>::type>,
+               T>,
+            select<sizeof...(Ts) != 0, //T is not an int
+               typename __LARGEST_INT<Ts...>::type,
+               void>>;
+      };
+   };
+   namespace { //implement largest_uint_t
+      template<typename T = void, typename ...Ts> struct __LARGEST_UINT;
+      template<> struct __LARGEST_UINT<void> { using type = void; };
+      template<typename T, typename ...Ts> struct __LARGEST_UINT {
+         using type = select<uint_t<T>,
+            select<sizeof...(Ts) != 0, //T is an uint
+               larger_t<T, typename __LARGEST_UINT<Ts...>::type>,
+               T>,
+            select<sizeof...(Ts) != 0, //T is not an uint
+               typename __LARGEST_UINT<Ts...>::type,
+               void>>;
+      };
+   };
+   namespace { //implement largest_sint_t
+      template<typename T = void, typename ...Ts> struct __LARGEST_SINT;
+      template<> struct __LARGEST_SINT<void> { using type = void; };
+      template<typename T, typename ...Ts> struct __LARGEST_SINT {
+         using type = select<sint_t<T>,
+            select<sizeof...(Ts) != 0, //T is an sint
+               larger_t<T, typename __LARGEST_SINT<Ts...>::type>,
+               T>,
+            select<sizeof...(Ts) != 0, //T is not an sint
+               typename __LARGEST_SINT<Ts...>::type,
+               void>>;
+      };
+   };
+   template<typename T, typename ...Ts> using largest_num_t   = __LARGEST_NUM<T, Ts...>::type;
+   template<typename T, typename ...Ts> using largest_float_t = __LARGEST_FLOAT<T, Ts...>::type;
+   template<typename T, typename ...Ts> using largest_int_t   = __LARGEST_INT<T, Ts...>::type;
+   template<typename T, typename ...Ts> using largest_uint_t  = __LARGEST_UINT<T, Ts...>::type;
+   template<typename T, typename ...Ts> using largest_sint_t  = __LARGEST_SINT<T, Ts...>::type;
+
+   template<num_t ...Ts> using most_precise_t = select<contains_float_t<Ts...>,
+      largest_float_t<Ts...>,
+      to_sint_t<largest_int_t<Ts...>>>;
+   #pragma endregion selectors
+
    #pragma region containers
-   template<typename T> concept contig_container_t = requires(T a) {
-      { a.size() } -> int_t;
-      { a.data() } -> ptr_t;
-      { a.data() } -> same_t<decltype(a.begin())>;
-      { a.data() } -> same_t<decltype(a.end()  )>;
-      { a[0]     } -> same_t<decltype(*a.data())>;
+   template<typename arr_t, typename T> concept contig_container_t = requires(arr_t a) {
+      { a.size()  } -> int_t;
+      { a.data()  } -> same_t<T*>;
+      { a.begin() } -> same_t<T*>;
+      { a.end()   } -> same_t<T*>;
+      { a[0]      } -> same_t<T&>;
    };
    template<typename T> concept container_t = requires(T a) {
       { a.begin() } -> same_t<decltype(a.end())>;
    };
 
-   template<typename arr_t> concept contig_t = contig_container_t<arr_t> && arr_t::is_contig;
+   template<typename arr_t, typename T> concept contig_t = contig_container_t<arr_t, T> && arr_t::is_contig;
 
-   template<typename string_t> concept str_t = requires (string_t str) {
-      { str[0] } -> same_t<char&>;
-   } && contig_t<string_t>;
+   template<typename string_t> concept str_t = contig_t<string_t, char>;
 
    template<typename set_t, typename T> concept assoc_t = requires (set_t set, T obj) {
       { set.contains(obj) } -> same_t<bool>;
