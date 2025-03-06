@@ -21,7 +21,7 @@ template<typename T, uint _capacity> class mcsl::heap_buf : public mcsl::contig_
       // constexpr heap_buf():_buf(),_size() {}
       heap_buf():_buf(mcsl::calloc<T>(_capacity)),_size(0) {}
       heap_buf(heap_buf&& other): _buf(other._buf),_size(other._size) { if (this != &other) { other.release(); } }
-      heap_buf(const contig_t auto& other);
+      heap_buf(const contig_t<T> auto& other);
       heap_buf(castable_to<T> auto&&... initList);
 
       ~heap_buf() { for (uint i = 0; i < _size; ++i) { std::destroy_at(_buf + i); } self.free(); }
@@ -48,7 +48,7 @@ template<typename T, uint _capacity> class mcsl::heap_buf : public mcsl::contig_
       T* emplace_back(auto&&... args) requires valid_ctor<T, decltype(args)...>;
 };
 
-template<typename T, uint _capacity> mcsl::heap_buf<T,_capacity>::heap_buf(const contig_t auto& other):
+template<typename T, uint _capacity> mcsl::heap_buf<T,_capacity>::heap_buf(const contig_t<T> auto& other):
    _buf(mcsl::malloc<T>(_capacity)),
    _size(other.size()) {
       assert(_size <= _capacity, __OVERSIZED_COPY_MSG, ErrCode::SEGFAULT);

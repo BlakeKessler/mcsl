@@ -9,7 +9,7 @@
 //!null-terminated string literal
 template<uint _size> class [[clang::trivial_abi]] mcsl::raw_str : public str_base<char> {
    private:
-      char _buf[_size + 1];
+      char _buf[_size];
 
       // static constexpr const raw_str<7> _nameof = "raw_str";
       static constexpr char _nameof[] = "raw_str";
@@ -17,12 +17,13 @@ template<uint _size> class [[clang::trivial_abi]] mcsl::raw_str : public str_bas
       //constructors
       // constexpr raw_str(const raw_str& other):_buf{other._buf} {}
       constexpr raw_str():_buf{} {}
-      template<str_t strT> constexpr raw_str(const strT& other): raw_str(other.data(),other.size()) {}
+      constexpr raw_str(const raw_str& other):_buf{other._buf} {}
+      constexpr raw_str(const str_t auto& other): raw_str(other.data(),other.size()) {}
       constexpr raw_str(const char* str, const uint strlen);
-      constexpr raw_str(const char* str);
+      constexpr raw_str(const char (&str)[_size+1]): raw_str(str, _size) {}
 
       //properties
-      [[gnu::pure]] constexpr uint size() const { return sizeof(_buf) - 1; }
+      [[gnu::pure]] constexpr uint size() const { return _size; }
       [[gnu::pure]] constexpr static const auto& nameof() { return _nameof; }
       // constexpr uint size() const { return _size; }
       // constexpr auto& nameof() const { return _nameof; }
@@ -38,16 +39,7 @@ template<uint _size> class [[clang::trivial_abi]] mcsl::raw_str : public str_bas
 
 template<uint _size> constexpr mcsl::raw_str<_size>::raw_str(const char* str, const uint strsize): _buf{} {
    assert(strsize <= _size, __OVERSIZED_COPY_MSG, ErrCode::SEGFAULT);
-   for (uint i = 0; i < strsize; ++i) {
-      if (!str[i]) { break; }
-      _buf[i] = str[i];
-   }
-}
-template<uint _size> constexpr mcsl::raw_str<_size>::raw_str(const char* str): _buf{} {
-   for (uint i = 0; i < _size; ++i) {
-      if (!str[i]) { break; }
-      _buf[i] = str[i];
-   }
+   memcpy(_buf, str, strsize);
 }
 
 #pragma region CTAD

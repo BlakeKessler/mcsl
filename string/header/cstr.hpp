@@ -5,7 +5,7 @@
 #include "MCSL.hpp"
 #include "str_base.hpp"
 #include "dyn_arr.hpp"
-#include "raw_str.hpp"
+#include "mem.hpp"
 
 //!null-terminated dynamically-sized cstr
 //!NOTE: tiny inefficienies caused by using a dyn_arr instead of re-implementing it with minor modifications
@@ -13,22 +13,21 @@ class mcsl::cstr : public str_base<char> {
    private:
       dyn_arr<char> _buf;
 
-      static constexpr const raw_str _nameof = "cstr";
+      static constexpr const char _nameof[] = "cstr";
+
+      uint __resize() { const uint len = size(); _buf._size = len + 1; return len; }
    public:
       //constructors
       constexpr cstr():_buf() {}
       cstr(const uint size);
       cstr(const char* str, const uint strlen);
       cstr(const char* str);
-      cstr(cstr&& other);
-      cstr(const cstr& other);
-
-      template<str_t strT> requires requires(strT s) { s.release(); }
-         cstr(strT&& other): cstr(other.data(),other.size()) { if (this != &other) { other.release(); } }
-      template<str_t strT> cstr(const strT& other): cstr(other.data(),other.size()) {}
+      cstr(cstr&& other):_buf(std::move(other._buf)) {}
+      cstr(const cstr& other):_buf(other._buf) {}
+      cstr(const str_t auto& other): _buf{other} {}
 
       //properties
-      inline constexpr uint size() const { return _buf.size() - 1; }
+      inline constexpr uint size() const { return cstrlen(_buf.begin(), _buf.size() - 1); }
       inline constexpr uint capacity() const { return _buf.capacity() - 1; }
       constexpr static const auto& nameof() { return _nameof; }
 
@@ -44,8 +43,8 @@ class mcsl::cstr : public str_base<char> {
       inline bool reserve(const uint newSize) { return _buf.reserve(newSize + 1); }
       inline bool reserve_exact(const uint newSize) { return _buf.reserve_exact(newSize + 1); }
       char* release() { return _buf.release(); }
-      char* push_back(const char ch) { _buf.back() = ch; return _buf.push_back('\0'); }
-      char pop_back() { const char tmp = back(); _buf.pop_back(); _buf.back() = '\0'; return tmp; }
+      char* push_back(const char ch) { __resize(); _buf.back() = ch; return _buf.push_back('\0'); }
+      char pop_back() { __resize(); const char tmp = back(); _buf.pop_back(); _buf.back() = '\0'; return tmp; }
 
 
       cstr& operator+=(const str_t auto& other);

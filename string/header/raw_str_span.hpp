@@ -4,8 +4,6 @@
 
 #include "MCSL.hpp"
 #include "str_base.hpp"
-#include "raw_str.hpp"
-#include "arr_span.hpp"
 
 //!non-owning potentially-non-null-terminated string
 //!invalidated if the string is reallocated
@@ -16,15 +14,15 @@ class [[clang::trivial_abi]] mcsl::raw_str_span : public str_base<char> {
       char* _buf;
       uint _size;
 
-      static constexpr const raw_str _nameof = "raw_str_span";
+      static constexpr const char _nameof[] = "raw_str_span";
    public:
       //constructors
       constexpr raw_str_span(): _buf(),_size() {}
       constexpr raw_str_span(char* str, const uint size):_buf(str),_size(size) {}
       constexpr raw_str_span(char* begin, char* end):_buf(begin),_size(end-begin) { assert(begin <= end, __END_BEFORE_BEGIN_MSG, ErrCode::SEGFAULT); }
-      template<mcsl::str_t Other_t> constexpr raw_str_span(Other_t& other): raw_str_span(other.begin(),other.size()) {}
-      template<mcsl::str_t Other_t> constexpr raw_str_span(Other_t& other, const uint size): raw_str_span(other.begin(),size) { assert(other.size() >= size, __OVERSIZED_SPAN_MSG); }
-      template<mcsl::str_t Other_t> constexpr raw_str_span(Other_t& other, const uint begin, const uint size): raw_str_span(other.begin() + begin, size) { assert(other.size() >= (begin + size), __OVERSIZED_SPAN_MSG); }
+      constexpr raw_str_span(str_t auto& other): raw_str_span(other, other.size()) {}
+      constexpr raw_str_span(str_t auto& other, const uint size): raw_str_span(const_cast<char*>(other.begin()),size) { assert(other.size() >= size, __OVERSIZED_SPAN_MSG); }
+      constexpr raw_str_span(str_t auto& other, const uint begin, const uint size): raw_str_span(const_cast<char*>(other.begin() + begin), size) { assert(other.size() >= (begin + size), __OVERSIZED_SPAN_MSG); }
 
       //properties
       [[gnu::pure]] constexpr uint size() const { return _size; }
@@ -41,12 +39,6 @@ class [[clang::trivial_abi]] mcsl::raw_str_span : public str_base<char> {
       [[gnu::pure]] constexpr const char* const* ptr_to_buf() const { return &_buf; }
       [[gnu::pure]] constexpr const char* data() const { return _buf; }
       [[gnu::pure]] constexpr const char* begin() const { return _buf; }
-
-      operator arr_span<char>() { return {_buf, _size}; }
-      operator const arr_span<char>() const { return {_buf, _size}; }
-      operator arr_span<ubyte>() { return {(ubyte*)_buf, _size}; }
-      operator const arr_span<ubyte>() const { return {(ubyte*)_buf, _size}; }
-      static_assert(sizeof(ubyte) == sizeof(char));
 };
 
 #endif //MCSL_RAW_STRING_SPAN_HPP

@@ -19,7 +19,7 @@ template<typename T, uint _capacity> class [[clang::trivial_abi]] mcsl::buf : mc
       static constexpr const auto& nameof() { return _nameof; }
       
       constexpr buf():_buf{},_size{} {}
-      constexpr buf(const contig_t auto& other);
+      constexpr buf(const contig_t<T> auto& other);
       constexpr buf(castable_to<T> auto&&... initList) requires (sizeof...(initList) <= _capacity);
 
       [[gnu::pure]] constexpr uint size() const { return _size; }
@@ -41,7 +41,7 @@ template<typename T, uint _capacity> class [[clang::trivial_abi]] mcsl::buf : mc
       T* emplace_back(auto&&... args) requires valid_ctor<T, decltype(args)...>;
 };
 
-template<typename T, uint _capacity> constexpr mcsl::buf<T,_capacity>::buf(const contig_t auto& other):
+template<typename T, uint _capacity> constexpr mcsl::buf<T,_capacity>::buf(const contig_t<T> auto& other):
    _buf{},
    _size(other.size()) {
       assert(_size <= _capacity, __OVERSIZED_COPY_MSG, ErrCode::SEGFAULT);

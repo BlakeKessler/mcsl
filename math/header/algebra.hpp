@@ -24,9 +24,9 @@ namespace mcsl {
    }
    template<float_t T> constexpr T fma(const T mulLHS, const T mulRHS, const T addend) { if consteval { return mulLHS * mulRHS + addend; } else { return std::fma(mulLHS, mulRHS, addend); } }
    template<  int_t T> constexpr T fma(const T mulLHS, const T mulRHS, const T addend) { return mulLHS * mulRHS + addend; }
-   template<float_t T> constexpr T max(const T lhs, const T rhs) { if consteval {return lhs > rhs ? lhs : rhs} else { return std::max(lhs, rhs); } }
+   template<float_t T> constexpr T max(const T lhs, const T rhs) { if consteval {return lhs > rhs ? lhs : rhs; } else { return std::max(lhs, rhs); } }
    template<  int_t T> constexpr T max(const T lhs, const T rhs) { return lhs > rhs ? lhs : rhs; }
-   template<float_t T> constexpr T min(const T lhs, const T rhs) { if consteval {return lhs < rhs ? lhs : rhs} else { return std::min(lhs, rhs); } }
+   template<float_t T> constexpr T min(const T lhs, const T rhs) { if consteval {return lhs < rhs ? lhs : rhs; } else { return std::min(lhs, rhs); } }
    template<  int_t T> constexpr T min(const T lhs, const T rhs) { return lhs < rhs ? lhs : rhs; }
 
 
@@ -103,7 +103,7 @@ template<mcsl::uint_t pow_t, mcsl::int_t base_t> constexpr base_t mcsl::pow(cons
       return base;
    }
 
-   T res = power;
+   base_t res = power;
    while (--power) {
       res *= base;
    }

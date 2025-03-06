@@ -18,7 +18,7 @@ template <typename T, uint _size> class [[clang::trivial_abi]] mcsl::static_arr 
       static constexpr const auto& nameof() { return _nameof; }
 
       constexpr static_arr():_buf{} {}
-      constexpr static_arr(const contig_t auto& other) requires requires{ other.size() >= _size; } { assert(other.size() >= _size, __OVERSIZED_COPY_MSG, ErrCode::SEGFAULT); for (uint i = 0; i < _size; ++i) { _buf[i] = other[i]; }}
+      constexpr static_arr(const contig_t<T> auto& other) requires requires{ other.size() >= _size; } { assert(other.size() >= _size, __OVERSIZED_COPY_MSG, ErrCode::SEGFAULT); for (uint i = 0; i < _size; ++i) { _buf[i] = other[i]; }}
       constexpr static_arr(T (&other)[_size]):_buf{other} {}
       constexpr static_arr(castable_to<T> auto... initList) requires requires { sizeof...(initList) == _size; }:_buf{std::forward<decltype(initList)>(initList)...} {}
 

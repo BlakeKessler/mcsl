@@ -13,6 +13,9 @@
 #include <initializer_list>
 
 template <typename T> class mcsl::dyn_arr : public contig_base<T> {
+   friend class string;
+   friend class cstr;
+
    private:
       uint _capacity;
       uint _size;
@@ -20,15 +23,16 @@ template <typename T> class mcsl::dyn_arr : public contig_base<T> {
 
       // static constexpr const raw_str _nameof = "dyn_arr";
       static constexpr const char _nameof[] = "dyn_arr";
+      dyn_arr(const uint size, const uint capacity);
    public:
       static constexpr const auto& nameof() { return _nameof; }
 
       constexpr dyn_arr();
-      dyn_arr(const uint size);
-      dyn_arr(const uint size, const uint capacity);
+      dyn_arr(const uint capacity);
       dyn_arr(castable_to<T> auto&&... initList);
       dyn_arr(dyn_arr&& other);
       dyn_arr(const dyn_arr& other);
+      template<contig_t<T> Other_t> dyn_arr(const Other_t& other);
       ~dyn_arr() { for (uint i = 0; i < _size; ++i) { std::destroy_at(_buf + i); } self.free(); }
       void free() const { mcsl::free(_buf); const_cast<T*&>(_buf) = nullptr; const_cast<uint&>(_capacity) = 0; const_cast<uint&>(_size) = 0; }
 
@@ -60,26 +64,26 @@ template <typename T> class mcsl::dyn_arr : public contig_base<T> {
 };
 
 #pragma region src
+//!private constructor for implementations
+template<typename T> mcsl::dyn_arr<T>::dyn_arr(const uint size, const uint capacity):
+   _capacity(std::bit_ceil(capacity)), _size(size),
+   _buf(mcsl::calloc<T>(_capacity)) {
+      debug_assert(size <= capacity);
+}
 //!default constructor
 template<typename T> constexpr mcsl::dyn_arr<T>::dyn_arr():
    _capacity(0),_size(0),_buf(nullptr) {
 
 }
-//!constructor from array size
-template<typename T> mcsl::dyn_arr<T>::dyn_arr(const uint size):
-   _capacity(std::bit_ceil(size)), _size(size),
+//!constructor from initial capacity
+template<typename T> mcsl::dyn_arr<T>::dyn_arr(const uint capacity):
+   _capacity(std::bit_ceil(capacity)), _size(0),
    _buf(mcsl::calloc<T>(_capacity)) {
 
 }
-//!constructor from array size and buffer size
-template<typename T> mcsl::dyn_arr<T>::dyn_arr(const uint size, const uint capacity):
-   _capacity(capacity), _size(size), _buf{mcsl::calloc<T>(_capacity)} {
-      safe_mode_assert(_capacity >= _size);
-}
 //!constructor from initializer list
 template<typename T> mcsl::dyn_arr<T>::dyn_arr(castable_to<T> auto&&... initList):
-   _capacity(std::bit_ceil(sizeof...(initList))), _size(sizeof...(initList)),
-   _buf(mcsl::calloc<T>(_capacity)) {
+   dyn_arr(sizeof...(initList), sizeof...(initList)) {
       const T* tmp = std::data(std::initializer_list<T>{initList...});
 
       for (uint i = 0; i < _size; ++i) {
@@ -93,7 +97,13 @@ template<typename T> mcsl::dyn_arr<T>::dyn_arr(dyn_arr&& other):
 }
 //!copy constructor
 template<typename T> mcsl::dyn_arr<T>::dyn_arr(const dyn_arr& other):
-   dyn_arr{other._size, other._capacity} {
+   dyn_arr(other._size, other._capacity) {
+      for (uint i = 0; i < _size; ++i) {
+         self[i] = other[i];
+      }
+}
+template<typename T> template<mcsl::contig_t<T> Other_t> mcsl::dyn_arr<T>::dyn_arr(const Other_t& other):
+   dyn_arr(other.size(), other.size()) {
       for (uint i = 0; i < _size; ++i) {
          self[i] = other[i];
       }

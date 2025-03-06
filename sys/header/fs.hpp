@@ -7,18 +7,22 @@
 #include "arr_span.hpp"
 #include "raw_str_span.hpp"
 #include "string.hpp"
+#include "cstr.hpp"
+#include "type_traits.hpp"
 
 class mcsl::Path : public mcsl::cstr { //base type is implementation-defined
    private:
       static constexpr raw_str _nameof = "Path";
 
    public:
+      static constexpr char DIR_DELIM = '/'; //value is implementation-defined
+      
       using cstr::cstr;
 
-      Path&  appendLoc(const raw_str_span);
-      Path&& withAppendedLoc(const raw_str_span loc) { Path other{self}; other.appendLoc(loc); return std::move(other); }
-      Path&  normalize();
-      Path&& normalized() { Path other{self}; other.normalize(); return std::move(other);}
+      Path& appendLoc(const raw_str_span);
+      Path  withAppendedLoc(const raw_str_span loc) { Path other{self}; other.appendLoc(loc); return other; }
+      Path& normalize();
+      Path  normalized() { Path other{self}; other.normalize(); return other;}
 };
 
 class mcsl::File {
@@ -48,14 +52,14 @@ class mcsl::File {
       File& write(const ubyte c);
       File& write(const arr_span<ubyte> data);
       File& write(const char c) { return write((ubyte)c); }
-      File& write(const raw_str_span str) { return write(arr_span<ubyte>(str)); }
+      File& write(const raw_str_span str) { return write(arr_span<ubyte>((ubyte*)str.begin(), str.size())); }
       File& writeln(const raw_str_span str, const char nl = '\n') { write(str); write(nl); return self; }
 
       char read() { return std::getc(_file); }
       arr_span<ubyte> read(arr_span<ubyte> dest);
-      raw_str_span read(raw_str_span dest) { return {dest.begin(), read((arr_span<ubyte>)dest).size()}; }
+      raw_str_span read(raw_str_span dest) { return {dest.begin(), read(arr_span<ubyte>((ubyte*)dest.begin(), dest.size())).size()}; }
       raw_str_span readln(raw_str_span dest, const char nl = '\n');
-      string&& readln(const char nl = '\n');
+      string readln(const char nl = '\n');
 
       template<typename T> File& write(const T& obj); //serialize object - to be implemented by users for their types
       template<typename T> T read(); //deserialize object - to be implemented by users for their types

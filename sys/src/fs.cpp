@@ -42,6 +42,7 @@ mcsl::File& mcsl::File::write(const ubyte c) {
       flush();
    }
    _buf[_endIndex++] = c;
+   return self;
 }
 
 mcsl::File& mcsl::File::write(const mcsl::arr_span<ubyte> data) {
@@ -93,16 +94,16 @@ mcsl::raw_str_span mcsl::File::readln(raw_str_span dest, const char nl) {
    __throw(ErrCode::SEGFAULT, "buffer overflow in File::readln");
 }
 
-mcsl::string&& mcsl::File::readln(const char nl) {
+mcsl::string mcsl::File::readln(const char nl) {
    string str{};
    while (true) {
       const char ch = read();
       if (ch == nl) {
          str.push_back(ch);
-         return std::move(str);
+         return str;
       }
       if (ch == EOF) {
-         return std::move(str);
+         return str;
       }
       str.push_back(ch);
    }

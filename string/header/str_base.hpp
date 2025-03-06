@@ -7,6 +7,7 @@
 #include "char_type.hpp"
 #include "dyn_arr.hpp"
 #include "algebra.hpp"
+#include "mem.hpp"
 
 #include <cstdio>
 #ifdef MCSL

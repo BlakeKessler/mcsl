@@ -1,6 +1,6 @@
 #pragma once
-#ifndef FMANIP_MCSL
-#define FMANIP_MCSL
+#ifndef MCSL_FPMANIP_HPP
+#define MCSL_FPMANIP_HPP
 
 #include "MCSL.hpp"
 
@@ -11,4 +11,4 @@ namespace mcsl {
    //!TODO: the rest of the cmath floating point manipulation functions
 };
 
-#endif
+#endif //MCSL_FPMANIP_HPP

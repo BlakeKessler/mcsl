@@ -24,12 +24,12 @@ template <typename T> class [[clang::trivial_abi]] mcsl::dyn_arr_span : public c
       constexpr dyn_arr_span(T* const* ptrToBuf, const uint size);
       constexpr dyn_arr_span(T* const* ptrToBuf, const uint beginIndex, const uint size);
       constexpr dyn_arr_span(T* const* ptrToBuf, const mcsl::pair<uint,uint> bounds);
-      constexpr dyn_arr_span(const contig_t auto& other) requires   requires{other.first_index();} ;
-      constexpr dyn_arr_span(const contig_t auto& other) requires (!requires{other.first_index();});
-      constexpr dyn_arr_span(const contig_t auto& other, const uint size) requires   requires{other.first_index();} ;
-      constexpr dyn_arr_span(const contig_t auto& other, const uint size) requires (!requires{other.first_index();});
-      constexpr dyn_arr_span(const contig_t auto& other, const uint begin, const uint size) requires   requires{other.first_index();} ;
-      constexpr dyn_arr_span(const contig_t auto& other, const uint begin, const uint size) requires (!requires{other.first_index();});
+      constexpr dyn_arr_span(const contig_t<T> auto& other) requires   requires{other.first_index();} ;
+      constexpr dyn_arr_span(const contig_t<T> auto& other) requires (!requires{other.first_index();});
+      constexpr dyn_arr_span(const contig_t<T> auto& other, const uint size) requires   requires{other.first_index();} ;
+      constexpr dyn_arr_span(const contig_t<T> auto& other, const uint size) requires (!requires{other.first_index();});
+      constexpr dyn_arr_span(const contig_t<T> auto& other, const uint begin, const uint size) requires   requires{other.first_index();} ;
+      constexpr dyn_arr_span(const contig_t<T> auto& other, const uint begin, const uint size) requires (!requires{other.first_index();});
 
       [[gnu::pure]] constexpr uint size() const { return _size; }
 
@@ -75,34 +75,34 @@ template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(T* const* ptr
 
 }
 
-template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(const contig_t auto& other)
+template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(const contig_t<T> auto& other)
 requires requires{other.first_index();}:
    dyn_arr_span{other.ptr_to_buf(), other.first_index(), other.size()} {
 
 }
-template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(const contig_t auto& other)
+template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(const contig_t<T> auto& other)
 requires (!requires{other.first_index();}):
    dyn_arr_span{other.ptr_to_buf(), other.size()} {
 
 }
 
-template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(const contig_t auto& other, const uint size)
+template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(const contig_t<T> auto& other, const uint size)
 requires requires{other.first_index();}:
    dyn_arr_span{other.ptr_to_buf(), other.first_index(), size} {
       assert(size <= other.size(), __OVERSIZED_SPAN_MSG, ErrCode::SEGFAULT);
 }
-template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(const contig_t auto& other, const uint size)
+template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(const contig_t<T> auto& other, const uint size)
 requires (!requires{other.first_index();}):
    dyn_arr_span{other.ptr_to_buf(), size} {
       assert(size <= other.size(), __OVERSIZED_SPAN_MSG, ErrCode::SEGFAULT);
 }
 
-template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(const contig_t auto& other, const uint begin, const uint size)
+template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(const contig_t<T> auto& other, const uint begin, const uint size)
 requires requires{other.first_index();}:
    dyn_arr_span{other.ptr_to_buf(), other.first_index()+begin, size} {
       assert((begin+size) <= other.size(), __OVERSIZED_SPAN_MSG, ErrCode::SEGFAULT);
 }
-template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(const contig_t auto& other, const uint begin, const uint size)
+template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(const contig_t<T> auto& other, const uint begin, const uint size)
 requires (!requires{other.first_index();}):
    dyn_arr_span{other.ptr_to_buf(), begin, size} {
       assert((begin+size) <= other.size(), __OVERSIZED_SPAN_MSG, ErrCode::SEGFAULT);

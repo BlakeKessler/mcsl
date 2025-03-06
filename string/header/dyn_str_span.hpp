@@ -4,7 +4,6 @@
 
 #include "MCSL.hpp"
 #include "str_base.hpp"
-#include "raw_str.hpp"
 
 //!non-owning potentially-non-null-terminated string
 //!not invalidated if the string is reallocated
@@ -17,7 +16,7 @@ class [[clang::trivial_abi]] mcsl::dyn_str_span : public str_base<char> {
       uint _begin;
       uint _size;
 
-      static constexpr const raw_str _nameof = "dyn_str_span";
+      static constexpr const char _nameof[] = "dyn_str_span";
    public:
       //constructors
       constexpr dyn_str_span():_ptrToBuf(),_begin(),_size() {}
@@ -30,7 +29,7 @@ class [[clang::trivial_abi]] mcsl::dyn_str_span : public str_base<char> {
       [[gnu::pure]] constexpr uint size() const { return _size; }
       [[gnu::pure]] constexpr static const auto& nameof() { return _nameof; }
       
-      constexpr dyn_str_span& set_begin(const uint i) { _size += _begin; _size -= i; _begin = i; return self; }
+      constexpr dyn_str_span& set_begin(const uint i) { _size += _begin - i; _begin = i; return self; }
       constexpr dyn_str_span& inc_begin(const sint i) { _size -= i; _begin += i; return self; }
       constexpr dyn_str_span& set_size(const uint i) { _size = i; return self; }
       constexpr dyn_str_span& inc_end(const sint i) { _size += i; return self; }

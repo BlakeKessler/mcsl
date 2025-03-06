@@ -3,24 +3,26 @@
 
 #include "string.hpp"
 #include "alloc.hpp"
-#include <cstring>
 
 
 //!concatenate other onto the end of this
 mcsl::string& mcsl::string::operator+=(const str_t auto& other) {
    char* addr = end();
-   reserve(size() + other.size());
+   const uint otherSize = other.size();
+   reserve(size() + otherSize);
    //copy other
-   std::memcpy(addr, other.begin(), other.size()*sizeof(char));
+   memcpy(addr, other.begin(), otherSize);
    //return
    return self;
 }
 //!repeat string
 mcsl::string& mcsl::string::operator*=(const uint repeatCount) {
    const uint oldSize = size();
-   reserve_exact(repeatCount * size());
-   for (uint pos = oldSize; pos < size(); pos+=oldSize) {
-      std::memcpy(begin() + pos, begin(), oldSize*sizeof(char));
+   const uint newSize = repeatCount * oldSize;
+   reserve_exact(newSize);
+   _buf._size = newSize;
+   for (uint pos = oldSize; pos < newSize; pos+=oldSize) {
+      memcpy(begin() + pos, begin(), oldSize);
    }
    return self;
 }

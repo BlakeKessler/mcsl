@@ -3,10 +3,9 @@
 #define MCSL_PAIR_HPP
 
 #include "MCSL.hpp"
-#include "raw_str.hpp"
 
 template<typename first_t, typename second_t> struct [[clang::trivial_abi]] mcsl::pair {
-   static constexpr const raw_str _nameof = "pair";
+   static constexpr const char _nameof[] = "pair";
    static constexpr const auto& nameof() { return _nameof; }
 
 
