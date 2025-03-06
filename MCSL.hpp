@@ -33,6 +33,7 @@ namespace mcsl {
    class cstr;
    class dyn_str_span;
    template<uint _size> class raw_str;
+   template<uint _size> class raw_cstr;
    class raw_str_span;
    template<uint _size, typename size_t = ubyte> class raw_buf_str;
 
