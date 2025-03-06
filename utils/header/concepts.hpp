@@ -41,8 +41,8 @@ namespace mcsl {
 
    #pragma region mods
    template<int_t T> using to_sint_t = std::make_signed_t<T>;
-   template<int_t T> using to_uint_t = std::make_signed_t<T>;   
-
+   template<int_t T> using to_uint_t = std::make_unsigned_t<T>;
+   //!TODO: to_float_t
    
    template<typename T> using remove_ptr = std::remove_pointer_t<T>;
    template<typename T> using remove_ref = std::remove_reference_t<T>;
@@ -55,18 +55,19 @@ namespace mcsl {
 
    #pragma region selectors
    template<bool b, typename T1, typename T2> using select = std::conditional_t<b,T1,T2>;
+   //!TODO: `filter`
 
    namespace { //implement smaller_t
       template<typename T1, typename T2> struct __SMALLER;
       template<typename T1> struct __SMALLER<T1, void> { using type = T1; };
       template<typename T2> struct __SMALLER<void, T2> { using type = T2; };
-      template<typename T1, typename T2> struct __SMALLER { using type = select<(sizeof(T1) < sizeof(T2)), T1, T2>; }; 
+      template<typename T1, typename T2> struct __SMALLER { using type = select<(sizeof(T1) < sizeof(T2)), T1, T2>; };
    };
    namespace { //implement larger_t
       template<typename T1, typename T2> struct __LARGER;
       template<typename T1> struct __LARGER<T1, void> { using type = T1; };
       template<typename T2> struct __LARGER<void, T2> { using type = T2; };
-      template<typename T1, typename T2> struct __LARGER { using type = select<(sizeof(T1) > sizeof(T2)), T1, T2>; }; 
+      template<typename T1, typename T2> struct __LARGER { using type = select<(sizeof(T1) > sizeof(T2)), T1, T2>; };
    };
    template<typename T1, typename T2> using smaller_t = __SMALLER<T1,T2>::type;
    template<typename T1, typename T2> using larger_t = __LARGER<T1,T2>::type;
