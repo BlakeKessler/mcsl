@@ -23,21 +23,20 @@ namespace mcsl {
    template<typename T> concept num_t = mcsl::int_t<T> || mcsl::float_t<T>;
    template<typename T> concept ptr_t = std::is_pointer<T>::value;
 
-   template<typename T, typename other_t> concept more_precise_t = (num_t<T> && num_t<other_t>)
-      && (float_t<other_t> || !float_t<T>)
-      && (sizeof(other_t) >= sizeof(T));
 
-   template<typename T, typename ...Ts> concept contains_num_t   =   num_t<T> || contains_num_t<Ts...>;
-   template<typename T, typename ...Ts> concept contains_float_t = float_t<T> || contains_float_t<Ts...>;
-   template<typename T, typename ...Ts> concept contains_int_t   =   int_t<T> || contains_int_t<Ts...>;
-   template<typename T, typename ...Ts> concept contains_uint_t  =  uint_t<T> || contains_uint_t<Ts...>;
-   template<typename T, typename ...Ts> concept contains_sint_t  =  sint_t<T> || contains_sint_t<Ts...>;
+   template<typename ...Ts> concept any_num_t   = (  num_t<Ts> || ...);
+   template<typename ...Ts> concept any_float_t = (float_t<Ts> || ...);
+   template<typename ...Ts> concept any_int_t   = (  int_t<Ts> || ...);
+   template<typename ...Ts> concept any_uint_t  = ( uint_t<Ts> || ...);
+   template<typename ...Ts> concept any_sint_t  = ( sint_t<Ts> || ...);
+   template<typename ...Ts> concept any_ptr_t   = (  ptr_t<Ts> || ...);
 
-   template<typename T, typename ...Ts> concept contains_only_num_t   =   num_t<T> && contains_only_num_t<Ts...>;
-   template<typename T, typename ...Ts> concept contains_only_float_t = float_t<T> && contains_only_float_t<Ts...>;
-   template<typename T, typename ...Ts> concept contains_only_int_t   =   int_t<T> && contains_only_int_t<Ts...>;
-   template<typename T, typename ...Ts> concept contains_only_uint_t  =  uint_t<T> && contains_only_uint_t<Ts...>;
-   template<typename T, typename ...Ts> concept contains_only_sint_t  =  sint_t<T> && contains_only_sint_t<Ts...>;
+   template<typename ...Ts> concept all_num_t   = (  num_t<Ts> && ...);
+   template<typename ...Ts> concept all_float_t = (float_t<Ts> && ...);
+   template<typename ...Ts> concept all_int_t   = (  int_t<Ts> && ...);
+   template<typename ...Ts> concept all_uint_t  = ( uint_t<Ts> && ...);
+   template<typename ...Ts> concept all_sint_t  = ( sint_t<Ts> && ...);
+   template<typename ...Ts> concept all_ptr_t   = (  ptr_t<Ts> && ...);
    #pragma endregion checks
 
    #pragma region mods
@@ -72,82 +71,87 @@ namespace mcsl {
    template<typename T1, typename T2> using smaller_t = __SMALLER<T1,T2>::type;
    template<typename T1, typename T2> using larger_t = __LARGER<T1,T2>::type;
 
-   namespace { //implement largest_num_t
-      template<typename T = void, typename ...Ts> struct __LARGEST_NUM;
-      template<> struct __LARGEST_NUM<void> { using type = void; };
-      template<typename T, typename ...Ts> struct __LARGEST_NUM {
-         using type = select<num_t<T>,
-            select<sizeof...(Ts) != 0, //T is an num
-               larger_t<T, typename __LARGEST_NUM<Ts...>::type>,
-               T>,
-            select<sizeof...(Ts) != 0, //T is not an num
-               typename __LARGEST_NUM<Ts...>::type,
-               void>>;
+   namespace { //implement largest_[a-z]+_t
+      namespace { //num
+         template<typename T = void, typename ...Ts> struct __LARGEST_NUM;
+         template<> struct __LARGEST_NUM<void> { using type = void; };
+         template<typename T, typename ...Ts> struct __LARGEST_NUM {
+            using type = select<num_t<T>,
+               select<sizeof...(Ts) != 0, //T is an num
+                  larger_t<T, typename __LARGEST_NUM<Ts...>::type>,
+                  T>,
+               select<sizeof...(Ts) != 0, //T is not an num
+                  typename __LARGEST_NUM<Ts...>::type,
+                  void>>;
+         };
+      };
+      namespace { //float
+         template<typename T = void, typename ...Ts> struct __LARGEST_FLOAT;
+         template<> struct __LARGEST_FLOAT<void> { using type = void; };
+         template<typename T, typename ...Ts> struct __LARGEST_FLOAT {
+            using type = select<float_t<T>,
+               select<sizeof...(Ts) != 0, //T is a float
+                  larger_t<T, typename __LARGEST_FLOAT<Ts...>::type>,
+                  T>,
+               select<sizeof...(Ts) != 0, //T is not a float
+                  typename __LARGEST_FLOAT<Ts...>::type,
+                  void>>;
+         };
+      };
+      namespace { //int
+         template<typename T = void, typename ...Ts> struct __LARGEST_INT;
+         template<> struct __LARGEST_INT<void> { using type = void; };
+         template<typename T, typename ...Ts> struct __LARGEST_INT {
+            using type = select<int_t<T>,
+               select<sizeof...(Ts) != 0, //T is an int
+                  larger_t<T, typename __LARGEST_INT<Ts...>::type>,
+                  T>,
+               select<sizeof...(Ts) != 0, //T is not an int
+                  typename __LARGEST_INT<Ts...>::type,
+                  void>>;
+         };
+      };
+      namespace { //uint
+         template<typename T = void, typename ...Ts> struct __LARGEST_UINT;
+         template<> struct __LARGEST_UINT<void> { using type = void; };
+         template<typename T, typename ...Ts> struct __LARGEST_UINT {
+            using type = select<uint_t<T>,
+               select<sizeof...(Ts) != 0, //T is an uint
+                  larger_t<T, typename __LARGEST_UINT<Ts...>::type>,
+                  T>,
+               select<sizeof...(Ts) != 0, //T is not an uint
+                  typename __LARGEST_UINT<Ts...>::type,
+                  void>>;
+         };
+      };
+      namespace { //sint
+         template<typename T = void, typename ...Ts> struct __LARGEST_SINT;
+         template<> struct __LARGEST_SINT<void> { using type = void; };
+         template<typename T, typename ...Ts> struct __LARGEST_SINT {
+            using type = select<sint_t<T>,
+               select<sizeof...(Ts) != 0, //T is an sint
+                  larger_t<T, typename __LARGEST_SINT<Ts...>::type>,
+                  T>,
+               select<sizeof...(Ts) != 0, //T is not an sint
+                  typename __LARGEST_SINT<Ts...>::type,
+                  void>>;
+         };
       };
    };
-   namespace { //implement largest_float_t
-      template<typename T = void, typename ...Ts> struct __LARGEST_FLOAT;
-      template<> struct __LARGEST_FLOAT<void> { using type = void; };
-      template<typename T, typename ...Ts> struct __LARGEST_FLOAT {
-         using type = select<float_t<T>,
-            select<sizeof...(Ts) != 0, //T is a float
-               larger_t<T, typename __LARGEST_FLOAT<Ts...>::type>,
-               T>,
-            select<sizeof...(Ts) != 0, //T is not a float
-               typename __LARGEST_FLOAT<Ts...>::type,
-               void>>;
-      };
-   };
-   namespace { //implement largest_int_t
-      template<typename T = void, typename ...Ts> struct __LARGEST_INT;
-      template<> struct __LARGEST_INT<void> { using type = void; };
-      template<typename T, typename ...Ts> struct __LARGEST_INT {
-         using type = select<int_t<T>,
-            select<sizeof...(Ts) != 0, //T is an int
-               larger_t<T, typename __LARGEST_INT<Ts...>::type>,
-               T>,
-            select<sizeof...(Ts) != 0, //T is not an int
-               typename __LARGEST_INT<Ts...>::type,
-               void>>;
-      };
-   };
-   namespace { //implement largest_uint_t
-      template<typename T = void, typename ...Ts> struct __LARGEST_UINT;
-      template<> struct __LARGEST_UINT<void> { using type = void; };
-      template<typename T, typename ...Ts> struct __LARGEST_UINT {
-         using type = select<uint_t<T>,
-            select<sizeof...(Ts) != 0, //T is an uint
-               larger_t<T, typename __LARGEST_UINT<Ts...>::type>,
-               T>,
-            select<sizeof...(Ts) != 0, //T is not an uint
-               typename __LARGEST_UINT<Ts...>::type,
-               void>>;
-      };
-   };
-   namespace { //implement largest_sint_t
-      template<typename T = void, typename ...Ts> struct __LARGEST_SINT;
-      template<> struct __LARGEST_SINT<void> { using type = void; };
-      template<typename T, typename ...Ts> struct __LARGEST_SINT {
-         using type = select<sint_t<T>,
-            select<sizeof...(Ts) != 0, //T is an sint
-               larger_t<T, typename __LARGEST_SINT<Ts...>::type>,
-               T>,
-            select<sizeof...(Ts) != 0, //T is not an sint
-               typename __LARGEST_SINT<Ts...>::type,
-               void>>;
-      };
-   };
+   
    template<typename T, typename ...Ts> using largest_num_t   = __LARGEST_NUM<T, Ts...>::type;
    template<typename T, typename ...Ts> using largest_float_t = __LARGEST_FLOAT<T, Ts...>::type;
    template<typename T, typename ...Ts> using largest_int_t   = __LARGEST_INT<T, Ts...>::type;
    template<typename T, typename ...Ts> using largest_uint_t  = __LARGEST_UINT<T, Ts...>::type;
    template<typename T, typename ...Ts> using largest_sint_t  = __LARGEST_SINT<T, Ts...>::type;
 
-   template<num_t ...Ts> using most_precise_t = select<contains_float_t<Ts...>,
-      largest_float_t<Ts...>,
-      to_sint_t<largest_int_t<Ts...>>>;
+   template<num_t ...Ts> using most_precise_t = select<any_float_t<Ts...>,
+      largest_float_t<Ts...>, //has a floating type -> largest floating type
+      select<any_sint_t<Ts...>,
+         to_sint_t<largest_int_t<Ts...>>, //has a signed type (and no floating type) -> signed version of largest int type
+         largest_uint_t<Ts...>>>; //has no signed or floating types -> largest uint type
    #pragma endregion selectors
-
+   
    #pragma region containers
    template<typename arr_t, typename T> concept contig_container_t = requires(arr_t a) {
       { a.size()  } -> int_t;
