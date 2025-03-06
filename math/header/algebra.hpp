@@ -22,6 +22,18 @@
 #define _STDF(func) _STDF2(func, func)
 
 namespace mcsl {
+   constexpr auto ceil(_I x) -> decltype(x) { return x; }
+   constexpr auto floor(_I x) -> decltype(x) { return x; }
+   constexpr auto trunc(_I x) -> decltype(x) { return x; }
+   constexpr auto round(_I x) -> decltype(x) { return x; }
+   constexpr auto round_fpmode(_I x) -> decltype(x) { return x; }
+
+   _STDF(ceil)
+   _STDF(floor)
+   _STDF(trunc)
+   _STDF(round)
+   _STDF2(round_fpmode, nearbyint)
+
    template<float_t T> constexpr T abs(const T x) { if consteval { return x >= 0 ? x : -x; } else { return std::abs(x); } }
    template< sint_t T> constexpr T abs(const T x) { return x >= 0 ? x : -x; }
    template< uint_t T> constexpr T abs(const T x) { return x; }
@@ -87,21 +99,11 @@ namespace mcsl {
 
    _STDF2(gamma, tgamma)
    inline auto factorial(_F x) -> decltype(x) { return gamma(x+1); } //no _S version because x! is undefined for all negative integers
-   constexpr auto factorial(const _U x) -> decltype(x);
+   constexpr auto factorial(_U x) -> decltype(x);
    _STDF2(ln_gamma, lgamma)
 
 
-   constexpr auto ceil(_I x) -> decltype(x) { return x; }
-   constexpr auto floor(_I x) -> decltype(x) { return x; }
-   constexpr auto trunc(_I x) -> decltype(x) { return x; }
-   constexpr auto round(_I x) -> decltype(x) { return x; }
-   constexpr auto round_fpmode(_I x) -> decltype(x) { return x; }
-
-   _STDF(ceil)
-   _STDF(floor)
-   _STDF(trunc)
-   _STDF(round)
-   _STDF2(round_fpmode, nearbyint)
+   
 };
 
 #pragma region inlinesrc
@@ -127,7 +129,7 @@ constexpr auto mcsl::fma(_N mulLHS, _N mulRHS, _N addend) -> _MPT(mulLHS, mulRHS
       return mulLHS * mulRHS + addend;
    }
    else {
-      if constexpr(any_float_t(_TYPES(mulLHS, mulRHS, addend))) {
+      if constexpr(any_float_t<_TYPES(mulLHS, mulRHS, addend)>) {
          return std::fma(mulLHS, mulRHS, addend);
       } else {
          return mulLHS * mulRHS + addend;
@@ -164,9 +166,10 @@ constexpr auto mcsl::lerp(_N begin, _N end, _F t) -> _MPT(begin, end, t) {
    }
 }
 
-template<mcsl::num_t... Ts> inline auto mcsl::hypot(const Ts... xs) {
-   most_precise_t<Ts...> h = 0;
-   ([&](const decltype(h) val) { h = std::hypot(h, val); }(xs),...);
+template<mcsl::num_t... Ts> inline auto mcsl::hypot(const Ts... xs) -> most_precise_t<Ts...> {
+   most_precise_t<Ts...> h = 0; //!TODO: use to_float_t
+   auto calc = [&](const decltype(h) val) { h = std::hypot(h, val); };
+   (calc(xs) , ...);
    return h;
 }
 template<mcsl::num_t... Ts> constexpr auto mcsl::hypot_sq(const Ts... xs) -> most_precise_t<Ts...> {
@@ -182,16 +185,20 @@ namespace { //factorial implementation helper functions and table
       }
       return n;
    }
-   #include "static_arr.hpp"
-   static constexpr mcsl::static_arr<uword, __FACT_INV_ZERO<uword>()> __FACT_BUF = [](){
-      mcsl::static_arr<uword, __FACT_INV_ZERO<uword>()> tmp;
-      tmp[0] = 1;
-      for (uint i = 1; i < tmp.size(); ++i) {
-         tmp[i] = i * tmp[i-1];
+   struct __BUF { //to avoid depending on anything else (so everything else can depend on this file)
+      uword buf[__FACT_INV_ZERO()];
+      constexpr __BUF() {
+         buf[0] = 1;
+         for (uint i = 1; i < __FACT_INV_ZERO(); ++i) {
+            buf[i] = i * buf[i-1];
+         }
       }
-      return tmp;
-   }();
-   static_assert(__FACT_BUF.back() * __FACT_BUF.size() == 0);
+      static constexpr uword size() { return __FACT_INV_ZERO(); }
+      constexpr uword& operator[](const uword i) { return buf[i]; }
+      constexpr uword operator[](const uword i) const { return buf[i]; }
+   };
+   static constexpr __BUF __FACT_BUF{};
+   static_assert(__FACT_BUF[__FACT_BUF.size()-1] * __FACT_BUF.size() == 0);
 };
 constexpr auto mcsl::factorial(_U x) -> decltype(x) {
    if (x >= __FACT_BUF.size()) {
@@ -205,11 +212,11 @@ constexpr auto mcsl::factorial(_U x) -> decltype(x) {
 #undef _STDF
 #undef _STDF2
 
-#define _S
-#define _U
-#define _I
-#define _F
-#define _N
+#undef _S
+#undef _U
+#undef _I
+#undef _F
+#undef _N
 
 #undef _MPT
 #undef _TYPES
