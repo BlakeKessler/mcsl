@@ -7,6 +7,20 @@
 #include <cmath>
 #include "pair.hpp"
 
+#include "MAP_MACRO.h"
+#define _DECLTYPE(x) decltype(x)
+#define _TYPES(...) MCSL_MAP_LIST(_DECLTYPE, __VA_ARGS__)
+#define _MPT(...) most_precise_t<_TYPES(__VA_ARGS__)>
+
+#define _N const num_t auto
+#define _F const float_t auto
+#define _I const int_t auto
+#define _U const uint_t auto
+#define _S const sint_t auto
+
+#define _STDF2(mcslfunc, stdfunc) inline auto mcslfunc(_N x) /*-> to_float_t<decltype(x)>*/ { return std::stdfunc(x); }
+#define _STDF(func) _STDF2(func, func)
+
 namespace mcsl {
    template<float_t T> constexpr T abs(const T x) { if consteval { return x >= 0 ? x : -x; } else { return std::abs(x); } }
    template< sint_t T> constexpr T abs(const T x) { return x >= 0 ? x : -x; }
@@ -18,80 +32,77 @@ namespace mcsl {
       return {rem, tmp};
    }
    template<num_t T> constexpr pair<T> remquo(const T dividend, const T divisor) {
-      T quo = trunc(dividend / divisor);
+      //!TODO: make `quo` an integer type
+      T quo = mcsl::trunc(dividend / divisor);
       T rem = dividend - (quo * divisor);
       return {rem, quo};
    }
-   template<float_t T> constexpr T fma(const T mulLHS, const T mulRHS, const T addend) { if consteval { return mulLHS * mulRHS + addend; } else { return std::fma(mulLHS, mulRHS, addend); } }
-   template<  int_t T> constexpr T fma(const T mulLHS, const T mulRHS, const T addend) { return mulLHS * mulRHS + addend; }
-   template<float_t T> constexpr T max(const T lhs, const T rhs) { if consteval {return lhs > rhs ? lhs : rhs; } else { return std::max(lhs, rhs); } }
-   template<  int_t T> constexpr T max(const T lhs, const T rhs) { return lhs > rhs ? lhs : rhs; }
-   template<float_t T> constexpr T min(const T lhs, const T rhs) { if consteval {return lhs < rhs ? lhs : rhs; } else { return std::min(lhs, rhs); } }
-   template<  int_t T> constexpr T min(const T lhs, const T rhs) { return lhs < rhs ? lhs : rhs; }
+   constexpr auto fma(_N mulLHS, _N mulRHS, _N addend) -> _MPT(mulLHS, mulRHS, addend);
+   
+   //!TODO: single declarations using _N?
+   constexpr auto max(_F lhs, _F rhs) -> _MPT(lhs, rhs);
+   constexpr auto max(_I lhs, _I rhs) -> _MPT(lhs, rhs);
+   constexpr auto min(_F lhs, _F rhs) -> _MPT(lhs, rhs);
+   constexpr auto min(_I lhs, _I rhs) -> _MPT(lhs, rhs);
 
 
+   constexpr auto lerp(_N begin, _N end, _F t) -> _MPT(begin, end, t);
 
-   template<float_t T> inline T lerp(const T begin, const T end, const T t) { if consteval { return begin + t * (end - begin); } else { return std::lerp(begin, end, t); } }
 
+   _STDF(exp)
+   _STDF2(exp_minus_1, expm1)
+   _STDF(exp2)
 
-   template<num_t T> inline T exp(const T x) { return std::exp(x); }
-   template<num_t T> inline T exp_minus_1(const T x) { return std::expm1(x); }
-   template<num_t T> inline T exp2(const T x) { return std::exp2(x); }
-
-   template<float_t T> inline T ln(const T x) { return std::log(x); }
-   template<float_t T> inline T log2(const T x) { return std::log2(x); }
-   template<float_t T> inline T log10(const T x) { return std::log10(x); }
-   template<float_t T> inline T ln_1_plus(const T x) { return std::log1p(x); }
+   _STDF2(ln, log)
+   _STDF(log2)
+   _STDF(log10)
+   _STDF2(ln_1_plus, log1p)
 
    template<uint_t pow_t, int_t base_t = pow_t> constexpr base_t pow(const base_t base, const pow_t power);
-   template<float_t T> inline T pow(const T base, const T power) { return std::pow(base, power); }
-   template<float_t T> inline T sqrt(const T x) { return std::sqrt(x); }
-   template<float_t T> inline T cbrt(const T x) { return std::cbrt(x); }
-   template<float_t T> inline T hypot(const T x) { return x; }
-   template<float_t T, float_t... Ts> inline auto hypot(const T x, const Ts... xs) { return std::hypot(x, hypot(xs...)); }
-   template<num_t... T> constexpr auto hypot_sq(const T... xs) { return ((xs * xs) + ...); }
+   inline auto pow(_N base, _N power) { return std::pow(base, power); }
+   _STDF(sqrt)
+   _STDF(cbrt)
+   template<num_t... Ts> inline auto hypot(const Ts... xs) -> most_precise_t<Ts...>;
+   template<num_t... Ts> constexpr auto hypot_sq(const Ts... xs) -> most_precise_t<Ts...>;
 
+   _STDF(cos)
+   _STDF(sin)
+   _STDF(tan)
 
-   template<float_t T> inline T cos(const T x) { return std::cos(x); }
-   template<float_t T> inline T sin(const T x) { return std::sin(x); }
-   template<float_t T> inline T tan(const T x) { return std::tan(x); }
+   _STDF(acos)
+   _STDF(asin)
+   _STDF(atan)
+   _STDF(atan2)
 
-   template<float_t T> inline T acos(const T x) { return std::acos(x); }
-   template<float_t T> inline T asin(const T x) { return std::asin(x); }
-   template<float_t T> inline T atan(const T x) { return std::atan(x); }
-   template<float_t T> inline T atan2(const T x) { return std::atan2(x); }
+   _STDF(cosh)
+   _STDF(sinh)
+   _STDF(tanh)
 
-   template<float_t T> inline T cosh(const T x) { return std::cosh(x); }
-   template<float_t T> inline T sinh(const T x) { return std::sinh(x); }
-   template<float_t T> inline T tanh(const T x) { return std::tanh(x); }
-
-   template<float_t T> inline T acosh(const T x) { return std::acosh(x); }
-   template<float_t T> inline T asinh(const T x) { return std::asinh(x); }
-   template<float_t T> inline T atanh(const T x) { return std::atanh(x); }
+   _STDF(acosh)
+   _STDF(asinh)
+   _STDF(atanh)
    
-   template<float_t T> inline T erf(const T x) { return std::erf(x); }
-   template<float_t T> inline T erfc(const T x) { return std::erfc(x); }
+   _STDF(erf)
+   _STDF(erfc)
 
-   template<float_t T> T gamma(const T x) { return std::tgamma(x); }
-   template<float_t T> T factorial(const T x) { return gamma(x+1); }
-   template< uint_t T> constexpr T factorial(const T x);
-   template<float_t T> T ln_gamma(const T x) { return std::lgamma(x); }
+   _STDF2(gamma, tgamma)
+   inline auto factorial(_F x) -> decltype(x) { return gamma(x+1); } //no _S version because x! is undefined for all negative integers
+   constexpr auto factorial(const _U x) -> decltype(x);
+   _STDF2(ln_gamma, lgamma)
 
 
-   template<float_t T> T ceil(const T x) { return std::ceil(x); }
-   template<float_t T> T floor(const T x) { return std::floor(x); }
-   template<float_t T> T trunc(const T x) { return std::trunc(x); }
-   template<float_t T> T round(const T x) { return std::round(x); }
-   template<float_t T> T round_fpmode(const T x) { return std::nearbyint(x); }
+   constexpr auto ceil(_I x) -> decltype(x) { return x; }
+   constexpr auto floor(_I x) -> decltype(x) { return x; }
+   constexpr auto trunc(_I x) -> decltype(x) { return x; }
+   constexpr auto round(_I x) -> decltype(x) { return x; }
+   constexpr auto round_fpmode(_I x) -> decltype(x) { return x; }
 
-   template<int_t T> constexpr T ceil(const T x) { return x; }
-   template<int_t T> constexpr T floor(const T x) { return x; }
-   template<int_t T> constexpr T trunc(const T x) { return x; }
-   template<int_t T> constexpr T round(const T x) { return x; }
-   template<int_t T> constexpr T round_fpmode(const T x) { return x; }
+   _STDF(ceil)
+   _STDF(floor)
+   _STDF(trunc)
+   _STDF(round)
+   _STDF2(round_fpmode, nearbyint)
 };
-
-
 
 #pragma region inlinesrc
 
@@ -103,6 +114,7 @@ template<mcsl::uint_t pow_t, mcsl::int_t base_t> constexpr base_t mcsl::pow(cons
       return base;
    }
 
+   //!TODO: use this if consteval, use std::pow otherwise (numbers large enough to be imprecise would cause overflow)
    base_t res = power;
    while (--power) {
       res *= base;
@@ -110,23 +122,98 @@ template<mcsl::uint_t pow_t, mcsl::int_t base_t> constexpr base_t mcsl::pow(cons
    return res;
 }
 
-#include "dyn_arr.hpp"
-template<mcsl::uint_t T> constexpr T mcsl::factorial(const T x) {
+constexpr auto mcsl::fma(_N mulLHS, _N mulRHS, _N addend) -> _MPT(mulLHS, mulRHS, addend) {
    if consteval {
-      T factX = 1;
-      T i = x;
-      while (i) {
-         factX *= i--;
+      return mulLHS * mulRHS + addend;
+   }
+   else {
+      if constexpr(any_float_t(_TYPES(mulLHS, mulRHS, addend))) {
+         return std::fma(mulLHS, mulRHS, addend);
+      } else {
+         return mulLHS * mulRHS + addend;
       }
-      return factX; 
    }
-   static dyn_arr<T> memoBuf{1};
-   while (memoBuf.size() <= x) {
-      memoBuf.push_back(memoBuf.back() * memoBuf.size());
+}
+
+constexpr auto mcsl::max(_F lhs, _F rhs) -> _MPT(lhs, rhs) {
+   if consteval {
+      return lhs > rhs ? lhs : rhs;
+   } else {
+      return std::max(lhs, rhs);
    }
-   return memoBuf[x];
+}
+constexpr auto mcsl::max(_I lhs, _I rhs) -> _MPT(lhs, rhs) {
+   return lhs > rhs ? lhs : rhs;
+}
+constexpr auto mcsl::min(_F lhs, _F rhs) -> _MPT(lhs, rhs) {
+   if consteval {
+      return lhs < rhs ? lhs : rhs;
+   } else {
+      return std::min(lhs, rhs);
+   }
+}
+constexpr auto mcsl::min(_I lhs, _I rhs) -> _MPT(lhs, rhs) {
+   return lhs < rhs ? lhs : rhs;
+}
+
+constexpr auto mcsl::lerp(_N begin, _N end, _F t) -> _MPT(begin, end, t) {
+   if consteval {
+      return begin + t * (end - begin);
+   } else {
+      return std::lerp(begin, end, t);
+   }
+}
+
+template<mcsl::num_t... Ts> inline auto mcsl::hypot(const Ts... xs) {
+   most_precise_t<Ts...> h = 0;
+   ([&](const decltype(h) val) { h = std::hypot(h, val); }(xs),...);
+   return h;
+}
+template<mcsl::num_t... Ts> constexpr auto mcsl::hypot_sq(const Ts... xs) -> most_precise_t<Ts...> {
+   return ((xs * xs) + ...);
+}
+
+namespace { //factorial implementation helper functions and table
+   template<mcsl::uint_t T = uword> consteval T __FACT_INV_ZERO() {
+      T fact = 1;
+      T n = 1;
+      while (fact) {
+         fact *= ++n;
+      }
+      return n;
+   }
+   #include "static_arr.hpp"
+   static constexpr mcsl::static_arr<uword, __FACT_INV_ZERO<uword>()> __FACT_BUF = [](){
+      mcsl::static_arr<uword, __FACT_INV_ZERO<uword>()> tmp;
+      tmp[0] = 1;
+      for (uint i = 1; i < tmp.size(); ++i) {
+         tmp[i] = i * tmp[i-1];
+      }
+      return tmp;
+   }();
+   static_assert(__FACT_BUF.back() * __FACT_BUF.size() == 0);
+};
+constexpr auto mcsl::factorial(_U x) -> decltype(x) {
+   if (x >= __FACT_BUF.size()) {
+      return 0;
+   }
+   return (decltype(x))__FACT_BUF[x];
 }
 
 #pragma endregion inlinesrc
+
+#undef _STDF
+#undef _STDF2
+
+#define _S
+#define _U
+#define _I
+#define _F
+#define _N
+
+#undef _MPT
+#undef _TYPES
+#undef _DECLTYPE
+#include "MAP_MACRO_UNDEF.h"
 
 #endif //MCSL_ALGEBRA_HPP
