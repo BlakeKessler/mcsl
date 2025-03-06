@@ -42,8 +42,11 @@ namespace mcsl {
    #pragma region mods
    template<int_t T> using to_sint_t = std::make_signed_t<T>;
    template<int_t T> using to_uint_t = std::make_unsigned_t<T>;
+   //!TODO: to_int_t
    //!TODO: to_float_t
-   
+   //!TODO: to_float_precise_t (smallest floating point type precise enough to store any value of the parameter type)
+   //!TODO: to_signed (noop if float, else to_sint_t)
+
    template<typename T> using remove_ptr = std::remove_pointer_t<T>;
    template<typename T> using remove_ref = std::remove_reference_t<T>;
 
@@ -140,11 +143,11 @@ namespace mcsl {
       };
    };
    
-   template<typename T, typename ...Ts> using largest_num_t   = __LARGEST_NUM<T, Ts...>::type;
-   template<typename T, typename ...Ts> using largest_float_t = __LARGEST_FLOAT<T, Ts...>::type;
-   template<typename T, typename ...Ts> using largest_int_t   = __LARGEST_INT<T, Ts...>::type;
-   template<typename T, typename ...Ts> using largest_uint_t  = __LARGEST_UINT<T, Ts...>::type;
-   template<typename T, typename ...Ts> using largest_sint_t  = __LARGEST_SINT<T, Ts...>::type;
+   template<typename ...Ts> using largest_num_t   = __LARGEST_NUM<Ts...>::type;
+   template<typename ...Ts> using largest_float_t = __LARGEST_FLOAT<Ts...>::type;
+   template<typename ...Ts> using largest_int_t   = __LARGEST_INT<Ts...>::type;
+   template<typename ...Ts> using largest_uint_t  = __LARGEST_UINT<Ts...>::type;
+   template<typename ...Ts> using largest_sint_t  = __LARGEST_SINT<Ts...>::type;
 
    template<num_t ...Ts> using most_precise_t = select<any_float_t<Ts...>,
       largest_float_t<Ts...>, //has a floating type -> largest floating type
