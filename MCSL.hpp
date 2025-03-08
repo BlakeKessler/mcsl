@@ -7,6 +7,8 @@
 #include "throw.hpp"
 #include "concepts.hpp"
 
+//!TODO: so-called "pessimizing" moves
+
 namespace mcsl {
    template<uint _capacity> struct uint_n;
 
@@ -47,6 +49,7 @@ namespace mcsl {
    class UnbufferedFile;
    class File;
    class Dir;
+   struct FmtArgs;
 };
 
 

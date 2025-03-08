@@ -34,6 +34,15 @@ class mcsl::Path : public mcsl::cstr { //base type is implementation-defined
       Path  normalized() { Path other{self}; other.normalize(); return std::move(other); }
 };
 
+struct mcsl::FmtArgs {
+   uint radix;
+   uint minWidth;
+   uint precision;
+   bool isLeftJust;
+   bool alwaysPrintSign;
+   bool altMode;
+};
+
 class mcsl::File {
    private:
       FILE* _file;
@@ -78,19 +87,11 @@ class mcsl::File {
       uint printf(const raw_str_span fmt, const auto&... argv);
       uint scanf(const raw_str_span fmt, auto*... argv);
 
-      template<typename T> uint printf(const T& obj, 
-         const char mode,
-         uint radix,
-         const uint minWidth = 0,
-         const uint precision = 0,
-         const bool isLeftJust = false,
-         const bool alwaysPrintSign = false,
-         const bool altMode = false
-      ); //to be implemented by users for their types
-      template<typename T> uint scanf(T* obj,
-         const char mode,
+      template<typename T> uint writef(const T& obj, char mode, FmtArgs fmt = {0, 0, 0, false, false, false}); //used by printf, to be implemented by users for their types
+      template<typename T> uint readf(T* obj,
+         char mode,
          uint maxWidth = mcsl::TYPEMAX<uint>()
-      ); //to be implemented by users for their types
+      ); //used by scanf, to be implemented by users for their types
 
       operator FILE*() { return _file; }
       operator const FILE*() const { return _file; }
@@ -99,8 +100,8 @@ class mcsl::File {
 #include <type_traits>
 #define _fdeclio(T)\
 template<> mcsl::File& mcsl::File::write<T>(std::add_lvalue_reference_t<std::add_const_t<T>>); \
-template<> uint mcsl::File::printf<T>(std::add_lvalue_reference_t<std::add_const_t<T>>, const char, uint, const uint, const uint, const bool, const bool, const bool); \
-template<> uint mcsl::File::scanf<T>(T* obj, const char, uint)
+template<> uint mcsl::File::writef<T>(std::add_lvalue_reference_t<std::add_const_t<T>>, char, FmtArgs); \
+template<> uint mcsl::File::readf<T>(T* obj, char, uint)
 
 _fdeclio(uint8);
 _fdeclio(uint16);

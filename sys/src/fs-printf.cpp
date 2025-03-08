@@ -4,37 +4,31 @@
 #include "fs.hpp"
 
 #include "str_to_num.hpp"
+#include "algebra.hpp"
 
-template<> uint mcsl::File::printf<ulong>(const ulong& obj,
-   const char mode,
-   uint radix,
-   const uint minWidth,
-   const uint precision,
-   const bool isLeftJust,
-   const bool alwaysPrintSign,
-   const bool altMode
-) {
+template<> uint mcsl::File::writef<ulong>(const ulong& obj, char mode, FmtArgs fmt) {
    switch (mode | CASE_BIT) {
       case 'c': case 's':
          __throw(ErrCode::FS_ERR, "invalid format code for type `ulong` (%%%c)", mode);
       default:
          __throw(ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
       case 'e': case 'f': case 'g':
-         return printf<fext>(obj, mode, radix, minWidth, precision, isLeftJust, alwaysPrintSign, altMode);
+         return writef<fext>(obj, mode, fmt);
       case 'i': case 'u': 
-         radix = radix ? radix : DEFAULT_INT_RADIX;
+         fmt.radix = fmt.radix ? fmt.radix : DEFAULT_INT_RADIX;
          break;
       case 'r':
-         radix = radix ? radix : DEFAULT_RAW_RADIX;
+         fmt.radix = fmt.radix ? fmt.radix : DEFAULT_RAW_RADIX;
+         fmt.precision = max(fmt.precision, (uint)(ceil(sizeof(ulong)*log(fmt.radix, TYPEMAX<ubyte>()+1)))); //number of bytes * digits per byte
          break;
    }
    //!TODO: check mode
    uint charsPrinted = 0;
 
    //check radix
-   switch (radix) {
+   switch (fmt.radix) {
       default:
-         __throw(ErrCode::FS_ERR, "unsupported radix for printing unsigned integers: %u", radix);
+         __throw(ErrCode::FS_ERR, "unsupported radix for printing unsigned integers: %u", fmt.radix);
       case 2: case 8: case 10: case 16:
          break;
    }
@@ -46,14 +40,14 @@ template<> uint mcsl::File::printf<ulong>(const ulong& obj,
    uint digitCount = 0;
    uint rest = obj;
    do {
-      const ubyte digit = rest % radix;
-      rest /= radix;
+      const ubyte digit = rest % fmt.radix;
+      rest /= fmt.radix;
       digits[digitCount++] = digit_to_char(digit, isLower);
    } while (rest);
 
    //minWidth with right justification
-   if (!isLeftJust) {
-      sint padChars = minWidth - max(precision, digitCount) - alwaysPrintSign - (2 * altMode) - charsPrinted;
+   if (!fmt.isLeftJust) {
+      sint padChars = fmt.minWidth - max(fmt.precision, digitCount) - fmt.alwaysPrintSign - (2 * fmt.altMode) - charsPrinted;
       if (padChars > 0) {
          charsPrinted += padChars;
          do {
@@ -63,14 +57,14 @@ template<> uint mcsl::File::printf<ulong>(const ulong& obj,
    }
 
    //altMode - print radix specifier
-   if (altMode) {
+   if (fmt.altMode) {
       write('0');
       char ch = isLower ? 0 : CASE_BIT;
-      switch (radix) {
-         case  2: ch |= 'b'; break;
-         case  8: ch |= 'o'; break;
-         case 10: ch |= 'd'; break;
-         case 16: ch |= 'x'; break;
+      switch (fmt.radix) {
+         case  2: ch |= 'B'; break;
+         case  8: ch |= 'O'; break;
+         case 10: ch |= 'D'; break;
+         case 16: ch |= 'X'; break;
          default: UNREACHABLE;
       }
       write(ch);
@@ -78,13 +72,13 @@ template<> uint mcsl::File::printf<ulong>(const ulong& obj,
    }
 
    //print sign
-   if (alwaysPrintSign) {
+   if (fmt.alwaysPrintSign) {
       write('+');
       ++charsPrinted;
    }
    //print extra precision digits
    {
-      sint extraZeros = precision - digitCount;
+      sint extraZeros = fmt.precision - digitCount;
       if (extraZeros > 0) {
          charsPrinted += extraZeros;
          do {
@@ -99,10 +93,10 @@ template<> uint mcsl::File::printf<ulong>(const ulong& obj,
    }
 
    //minWidth with left justification
-   if (isLeftJust) {
-      sint padChars = minWidth - charsPrinted;
+   if (fmt.isLeftJust) {
+      sint padChars = fmt.minWidth - charsPrinted;
       if (padChars > 0) {
-         charsPrinted = minWidth;
+         charsPrinted = fmt.minWidth;
          do {
             write(PAD_CHAR);
          } while (--padChars);
@@ -111,6 +105,43 @@ template<> uint mcsl::File::printf<ulong>(const ulong& obj,
 
    //return number of printed characters
    return charsPrinted;
+}
+
+
+
+template<> uint mcsl::File::writef<char>(const char& obj, char mode, FmtArgs fmt) {
+   switch (mode | CASE_BIT) {
+      case 'u': case 'r':
+         return writef<ubyte>(obj, mode, fmt);
+      case 'i':
+         return writef<sbyte>(obj, mode, fmt);
+      case 'e': case 'f': case 'g':
+         return writef<float>(obj, mode, fmt);
+      default:
+         __throw(ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
+      case 'c': case 's':
+         break;
+   }
+
+   if (!fmt.isLeftJust) { //minWidth with right justification
+      sint padChars = fmt.minWidth;
+      while (--padChars > 0) {
+         write(PAD_CHAR);
+      }
+   }
+
+   //write char
+   write(obj);
+
+   if (fmt.isLeftJust) { //minWidth with left justification
+      sint padChars = fmt.minWidth;
+      while (--padChars > 0) {
+         write(PAD_CHAR);
+      }
+   }
+
+   //return number of chars printed
+   return max(1, fmt.minWidth);
 }
 
 #endif //FS_PRINTF_CPP
