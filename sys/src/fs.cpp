@@ -7,6 +7,14 @@
 #include "cstr.hpp"
 #include <cstdio>
 
+mcsl::File::File(FILE* file):
+   _file{file},
+   _buf{malloc<ubyte>(DEFAULT_BUF_SIZE)},
+   _capacity{DEFAULT_BUF_SIZE},
+   _endIndex{0},
+   _ownsBuf{true} {
+      std::setvbuf(_file, nullptr, _IONBF, 0);
+}
 mcsl::File::File(const Path fileName, const char* mode):
    File{
       fileName,

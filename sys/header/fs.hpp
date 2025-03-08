@@ -8,6 +8,7 @@
 #include "raw_str_span.hpp"
 #include "string.hpp"
 #include "cstr.hpp"
+#include "raw_str.hpp"
 #include "type_traits.hpp"
 
 class mcsl::Path : public mcsl::cstr { //base type is implementation-defined
@@ -15,14 +16,22 @@ class mcsl::Path : public mcsl::cstr { //base type is implementation-defined
       static constexpr raw_str _nameof = "Path";
 
    public:
-      static constexpr char DIR_DELIM = '/'; //value is implementation-defined
+      //values and types are implementation-defined
+      static constexpr char DIR_DELIM = '/';
+      static constexpr char DIR_ID = '.';
+      static constexpr raw_str PARENT_DIR = "..";
       
       using cstr::cstr;
+
+      static Path pwd(); //print working directory
+      static Path usrHome(); //user home directory
+      static Path tmp(); //temporary file directory
+      static Path newTmpDir(); //available path for a new temporary directory
 
       Path& appendLoc(const raw_str_span);
       Path  withAppendedLoc(const raw_str_span loc) { Path other{self}; other.appendLoc(loc); return other; }
       Path& normalize();
-      Path  normalized() { Path other{self}; other.normalize(); return other;}
+      Path  normalized() { Path other{self}; other.normalize(); return std::move(other); }
 };
 
 class mcsl::File {
@@ -37,7 +46,8 @@ class mcsl::File {
       //!TODO: maybe make reference-counted
       //!   (since a file being opened by multiple File objects will cause issues)
       //!   if that is done, allocate _buf in-place to avoid additional indirection (since it will never be resized)
-
+      File(FILE*);
+      File(sint); //only on systems with a Unix-like/Windows-like file descriptor/handle system
    public:
       static constexpr uint DEFAULT_BUF_SIZE = BUFSIZ;
 
@@ -74,9 +84,7 @@ class mcsl::File {
          const uint minWidth = 0,
          const uint precision = 0,
          const bool isLeftJust = false,
-         const char pad = ' ',
          const bool alwaysPrintSign = false,
-         const char posSignChar = '+',
          const bool altMode = false
       ); //to be implemented by users for their types
       template<typename T> uint scanf(T* obj,
@@ -91,7 +99,7 @@ class mcsl::File {
 #include <type_traits>
 #define _fdeclio(T)\
 template<> mcsl::File& mcsl::File::write<T>(std::add_lvalue_reference_t<std::add_const_t<T>>); \
-template<> uint mcsl::File::printf<T>(std::add_lvalue_reference_t<std::add_const_t<T>>, const char, uint, const uint, const uint, const bool, const char, const bool, const char, const bool); \
+template<> uint mcsl::File::printf<T>(std::add_lvalue_reference_t<std::add_const_t<T>>, const char, uint, const uint, const uint, const bool, const bool, const bool); \
 template<> uint mcsl::File::scanf<T>(T* obj, const char, uint)
 
 _fdeclio(uint8);
