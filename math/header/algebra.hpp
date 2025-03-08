@@ -18,7 +18,7 @@
 #define _U const uint_t auto
 #define _S const sint_t auto
 
-#define _STDF2(mcslfunc, stdfunc) inline auto mcslfunc(_N x) /*-> to_float_t<decltype(x)>*/ { return std::stdfunc(x); }
+#define _STDF2(mcslfunc, stdfunc) inline auto mcslfunc(_N x) -> to_float_t<decltype(x)> { return std::stdfunc(x); }
 #define _STDF(func) _STDF2(func, func)
 
 namespace mcsl {
@@ -65,16 +65,17 @@ namespace mcsl {
    _STDF2(exp_minus_1, expm1)
    _STDF(exp2)
 
+   inline auto log(_N base, _N val) -> to_float_t<_MPT(base, val)> { return std::log2(val) / std::log2(base); }
    _STDF2(ln, log)
    _STDF(log2)
    _STDF(log10)
    _STDF2(ln_1_plus, log1p)
 
    template<uint_t pow_t, int_t base_t = pow_t> constexpr base_t pow(const base_t base, const pow_t power);
-   inline auto pow(_N base, _N power) { return std::pow(base, power); }
+   inline auto pow(_N base, _N power) -> to_float_t<_MPT(base, power)> { return std::pow(base, power); }
    _STDF(sqrt)
    _STDF(cbrt)
-   template<num_t... Ts> inline auto hypot(const Ts... xs) -> most_precise_t<Ts...>;
+   template<num_t... Ts> inline auto hypot(const Ts... xs) -> to_float_t<most_precise_t<Ts...>>;
    template<num_t... Ts> constexpr auto hypot_sq(const Ts... xs) -> most_precise_t<Ts...>;
 
    _STDF(cos)
@@ -166,8 +167,8 @@ constexpr auto mcsl::lerp(_N begin, _N end, _F t) -> _MPT(begin, end, t) {
    }
 }
 
-template<mcsl::num_t... Ts> inline auto mcsl::hypot(const Ts... xs) -> most_precise_t<Ts...> {
-   most_precise_t<Ts...> h = 0; //!TODO: use to_float_t
+template<mcsl::num_t... Ts> inline auto mcsl::hypot(const Ts... xs) -> to_float_t<most_precise_t<Ts...>> {
+   to_float_t<most_precise_t<Ts...>> h = 0;
    auto calc = [&](const decltype(h) val) { h = std::hypot(h, val); };
    (calc(xs) , ...);
    return h;

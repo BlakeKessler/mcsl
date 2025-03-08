@@ -39,11 +39,25 @@ namespace mcsl {
    template<typename ...Ts> concept all_ptr_t   = (  ptr_t<Ts> && ...);
    #pragma endregion checks
 
+   #pragma region basic_select
+   template<bool b, typename T1, typename T2> using select = std::conditional_t<b,T1,T2>;
+   //!TODO: `filter`
+   #pragma endregion basic_select
+
    #pragma region mods
    template<int_t T> using to_sint_t = std::make_signed_t<T>;
    template<int_t T> using to_uint_t = std::make_unsigned_t<T>;
    //!TODO: to_int_t
-   //!TODO: to_float_t
+   template<num_t T> using to_float_t = select<float_t<T>, //!TODO: make this more robust
+      T, //T is already a float_t
+      select<(sizeof(T) > sizeof(float32)),
+         select<(sizeof(T) > sizeof(float64)),
+            fext,
+            float64
+         >,
+         float32
+      >
+   >;
    //!TODO: to_float_precise_t (smallest floating point type precise enough to store any value of the parameter type)
    //!TODO: to_signed (noop if float, else to_sint_t)
 
@@ -57,9 +71,6 @@ namespace mcsl {
    #pragma endregion mods
 
    #pragma region selectors
-   template<bool b, typename T1, typename T2> using select = std::conditional_t<b,T1,T2>;
-   //!TODO: `filter`
-
    namespace { //implement smaller_t
       template<typename T1, typename T2> struct __SMALLER;
       template<typename T1> struct __SMALLER<T1, void> { using type = T1; };
