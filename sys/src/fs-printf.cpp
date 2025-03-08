@@ -14,6 +14,20 @@ template<> uint mcsl::File::printf<ulong>(const ulong& obj,
    const bool alwaysPrintSign,
    const bool altMode
 ) {
+   switch (mode | CASE_BIT) {
+      case 'c': case 's':
+         __throw(ErrCode::FS_ERR, "invalid format code for type `ulong` (%%%c)", mode);
+      default:
+         __throw(ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
+      case 'e': case 'f': case 'g':
+         return printf<fext>(obj, mode, radix, minWidth, precision, isLeftJust, alwaysPrintSign, altMode);
+      case 'i': case 'u': 
+         radix = radix ? radix : DEFAULT_INT_RADIX;
+         break;
+      case 'r':
+         radix = radix ? radix : DEFAULT_RAW_RADIX;
+         break;
+   }
    //!TODO: check mode
    uint charsPrinted = 0;
 
@@ -21,13 +35,11 @@ template<> uint mcsl::File::printf<ulong>(const ulong& obj,
    switch (radix) {
       default:
          __throw(ErrCode::FS_ERR, "unsupported radix for printing unsigned integers: %u", radix);
-      case 0:
-         radix = DEFAULT_INT_RADIX;
       case 2: case 8: case 10: case 16:
          break;
    }
 
-   const bool isUpper = mode & CASE_BIT;
+   const bool isLower = mode & CASE_BIT;
    
    //calculate digit string
    char digits[sizeof(ulong) * 8];
@@ -36,7 +48,7 @@ template<> uint mcsl::File::printf<ulong>(const ulong& obj,
    do {
       const ubyte digit = rest % radix;
       rest /= radix;
-      digits[digitCount++] = digit_to_char(digit, isUpper);
+      digits[digitCount++] = digit_to_char(digit, isLower);
    } while (rest);
 
    //minWidth with right justification
@@ -53,7 +65,7 @@ template<> uint mcsl::File::printf<ulong>(const ulong& obj,
    //altMode - print radix specifier
    if (altMode) {
       write('0');
-      char ch = isUpper ? 0 : CASE_BIT;
+      char ch = isLower ? 0 : CASE_BIT;
       switch (radix) {
          case  2: ch |= 'b'; break;
          case  8: ch |= 'o'; break;

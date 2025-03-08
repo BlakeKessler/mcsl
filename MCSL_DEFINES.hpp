@@ -119,6 +119,7 @@ constexpr const uint DEFAULT_ARR_LIST_BUF_SIZE = 16;
 
 //IO parameters
 constexpr uint DEFAULT_INT_RADIX = 10;
+constexpr uint DEFAULT_RAW_RADIX = 16;
 constexpr char PAD_CHAR = ' ';
 
 //bitmask literal
