@@ -21,6 +21,8 @@ namespace mcsl {
    [[gnu::pure ]] constexpr bool is_uint(const char* begin, const char* end, const uint radix = 10) { if (begin < end) { return is_uint(begin, end-begin, radix); } else { return false; }}
 
 
+   [[gnu::pure, gnu::always_inline]] constexpr char digit_to_char(const ubyte digit, const bool isUppercase);
+
    constexpr uint8 CASE_BIT = 'a' ^ 'A';
 }
 

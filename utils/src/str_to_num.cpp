@@ -317,4 +317,14 @@
 }
 
 
+
+[[gnu::pure, gnu::always_inline]] constexpr char mcsl::digit_to_char(const ubyte digit, const bool isUppercase) {
+   safe_mode_assert(digit < 36);
+   char c = '0' | digit | (isUppercase ? 0 : CASE_BIT);
+   if (digit >= 10) {
+      c += 'A' - '0' - 10;
+   }
+   return c;
+}
+
 #endif //MCSL_STR_TO_NUM_CPP
