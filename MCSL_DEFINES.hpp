@@ -88,6 +88,8 @@ namespace mcsl {
       INT_OVERFLOW,
 
       STRTOINT,
+
+      FS_ERR,
    };
    constexpr auto operator+(const ErrCode code) { return std::to_underlying(code); }
 }
@@ -115,7 +117,9 @@ constexpr const uint DEFAULT_BUCKET_SIZE = 4;
 constexpr const uint DEFAULT_ARR_LIST_BUF_SIZE = 16;
 
 
-
+//IO parameters
+constexpr uint DEFAULT_INT_RADIX = 10;
+constexpr char PAD_CHAR = ' ';
 
 //bitmask literal
 constexpr unsigned long long operator"" _m(const unsigned long long x) {

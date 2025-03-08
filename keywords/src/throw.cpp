@@ -13,7 +13,8 @@ const char* mcsl::ERR_MSG_ARR[] {
    "Segmentation fault: ",
    "Allocation failure: ",
    "Integer Overflow: ",
-   "String to Integer Parsing Failure: "
+   "String to Integer Parsing Failure: ",
+   "FileSys Error: "
 };
 
 #endif //MCSL_ERR_CPP
