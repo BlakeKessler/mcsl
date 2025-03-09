@@ -26,12 +26,25 @@ namespace mcsl {
 }
 
 template<mcsl::uint_t T> [[gnu::pure]] constexpr mcsl::raw_buf_str<8*sizeof(T)> mcsl::uint_to_str(T num, const uint radix, const bool isLowercase) {
+   //calculate digit string
    raw_buf_str<8*sizeof(T)> digits;
    do {
       const ubyte digit = num % fmt.radix;
       num /= fmt.radix;
       digits.push_back(mcsl::digit_to_char(digit, isLower));
    } while (num);
+
+   //reverse digit string
+   uint fwd = 0;
+   uint bwd = digits.size() - 1;
+   while (fwd < bwd) {
+      const char tmp = digits[fwd];
+      digits[fwd] = digits[bwd];
+      digits[bwd] = tmp;
+      ++fwd;
+      --bwd;
+   }
+
    return digits;
 }
 

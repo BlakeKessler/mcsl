@@ -3,7 +3,7 @@
 
 #include "fs.hpp"
 
-#include "str_to_num.hpp"
+#include "num_to_str.hpp"
 #include "algebra.hpp"
 
 namespace {
@@ -40,7 +40,7 @@ namespace {
          case 'e': case 'f': case 'g':
             return file.writef<mcsl::to_float_t<T>>(num, mode, fmt);
          case 'i': case 'u': 
-            fmt.radix = fmt.radix ? fmt.radix : DEFAULT_INT_RADIX;
+            fmt.radix = fmt.radix ? fmt.radix : mcsl::DEFAULT_INT_RADIX;
             break;
          case 'r':
             return writefRawImpl(file, {(ubyte*)&num, sizeof(num)}, mode & mcsl::CASE_BIT, fmt);
@@ -62,20 +62,13 @@ namespace {
       const bool isLower = mode & mcsl::CASE_BIT;
       
       //calculate digit string
-      char digits[sizeof(T) * 8];
-      uint digitCount = 0;
-      T rest = num;
-      do {
-         const ubyte digit = rest % fmt.radix;
-         rest /= fmt.radix;
-         digits[digitCount++] = mcsl::digit_to_char(digit, isLower);
-      } while (rest);
+      auto digits = mcsl::uint_to_str(num, fmt.radix, isLower);
 
       //minWidth with right justification
       if (!fmt.isLeftJust) {
-         sint padChars = fmt.minWidth - mcsl::max(fmt.precision, digitCount) - fmt.alwaysPrintSign - (2 * fmt.altMode) - charsPrinted;
+         sint padChars = fmt.minWidth - mcsl::max(fmt.precision, digits.size()) - fmt.alwaysPrintSign - (2 * fmt.altMode) - charsPrinted;
          if (padChars > 0) {
-            file.write(PAD_CHAR, padChars);
+            file.write(mcsl::PAD_CHAR, padChars);
             charsPrinted += padChars;
          }
       }
@@ -101,18 +94,18 @@ namespace {
          ++charsPrinted;
       }
       //print extra precision digits
-      if (fmt.precision > digitCount) {
-         file.write('0', fmt.precision - digitCount);
-         charsPrinted += fmt.precision - digitCount;
+      if (fmt.precision > digits.size()) {
+         file.write('0', fmt.precision - digits.size());
+         charsPrinted += fmt.precision - digits.size();
       }
 
       //print digit string
-      file.write(mcsl::raw_str_span{digits, digitCount});
-      charsPrinted += digitCount;
+      file.write(mcsl::raw_str_span{digits});
+      charsPrinted += digits.size();
 
       //minWidth with left justification
       if (fmt.isLeftJust && fmt.minWidth > charsPrinted) {
-         file.write(PAD_CHAR, fmt.minWidth - charsPrinted);
+         file.write(mcsl::PAD_CHAR, fmt.minWidth - charsPrinted);
          charsPrinted += fmt.minWidth - charsPrinted;
       }
 
@@ -129,7 +122,7 @@ namespace {
          case 'e': case 'f': case 'g':
             return file.writef<mcsl::to_float_t<T>>(num, mode, fmt);
          case 'i': case 'u': 
-            fmt.radix = fmt.radix ? fmt.radix : DEFAULT_INT_RADIX;
+            fmt.radix = fmt.radix ? fmt.radix : mcsl::DEFAULT_INT_RADIX;
             break;
          case 'r':
             return writefRawImpl(file, {(ubyte*)&num, sizeof(num)}, mode & mcsl::CASE_BIT, fmt);
@@ -151,20 +144,13 @@ namespace {
       const bool isLower = mode & mcsl::CASE_BIT;
       
       //calculate digit string
-      char digits[sizeof(T) * 8];
-      uint digitCount = 0;
-      T rest = mcsl::abs(num);
-      do {
-         const ubyte digit = rest % fmt.radix;
-         rest /= fmt.radix;
-         digits[digitCount++] = mcsl::digit_to_char(digit, isLower);
-      } while (rest);
+      auto digits = mcsl::uint_to_str(mcsl::abs(num), fmt.radix, isLower); //!NOTE: inefficiency from some extra copying, but that should be fixable with more agressive copy elision in the language
 
       //minWidth with right justification
       if (!fmt.isLeftJust) {
-         sint padChars = fmt.minWidth - mcsl::max(fmt.precision, digitCount) - (num < 0 || fmt.alwaysPrintSign) - (2 * fmt.altMode) - charsPrinted;
+         sint padChars = fmt.minWidth - mcsl::max(fmt.precision, digits.size()) - (num < 0 || fmt.alwaysPrintSign) - (2 * fmt.altMode) - charsPrinted;
          if (padChars > 0) {
-            file.write(PAD_CHAR, padChars);
+            file.write(mcsl::PAD_CHAR, padChars);
             charsPrinted += padChars;
          }
       }
@@ -193,22 +179,17 @@ namespace {
          ++charsPrinted;
       }
       //print extra precision digits
-      {
-         sint extraZeros = fmt.precision - digitCount;
-         if (extraZeros > 0) {
-            charsPrinted += extraZeros;
-            do {
-               file.write('0');
-            } while (--extraZeros);
-         }
+      if (fmt.precision > digits.size()) {
+         charsPrinted += fmt.precision - digits.size();
+         file.write('0', fmt.precision - digits.size());
       }
       //print digit string
-      charsPrinted += digitCount;
-      file.write(mcsl::raw_str_span{digits, digitCount});
+      charsPrinted += digits.size();
+      file.write(mcsl::raw_str_span{digits});
 
       //minWidth with left justification
       if (fmt.isLeftJust && fmt.minWidth > charsPrinted) {
-         file.write(PAD_CHAR, fmt.minWidth - charsPrinted);
+         file.write(mcsl::PAD_CHAR, fmt.minWidth - charsPrinted);
          charsPrinted = fmt.minWidth;
       }
 
