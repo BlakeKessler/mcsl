@@ -35,12 +35,12 @@ class mcsl::Path : public mcsl::cstr { //base type is implementation-defined
 };
 
 struct mcsl::FmtArgs {
-   uint radix;
-   uint minWidth;
-   uint precision;
-   bool isLeftJust;
-   bool alwaysPrintSign;
-   bool altMode;
+   uint radix = 0;
+   uint minWidth = 0;
+   uint precision = 0;
+   bool isLeftJust = false;
+   bool alwaysPrintSign = false;
+   bool altMode = false;
 };
 
 class mcsl::File {
@@ -62,6 +62,7 @@ class mcsl::File {
 
       File(const Path fileName, const char* mode);
       File(const Path fileName, const char* mode, arr_span<ubyte> buf, bool ownsBuf = false);
+      static File ReopenLibcFile(FILE* file) { return File{file}; }
 
       ~File();
       void close() { File::~File(); }
@@ -69,8 +70,10 @@ class mcsl::File {
       void flush();
 
       File& write(const ubyte c);
+      File& write(const ubyte c, uint repCount);
       File& write(const arr_span<ubyte> data);
       File& write(const char c) { return write((ubyte)c); }
+      File& write(const char c, uint repCount) { return write((ubyte)c, repCount); }
       File& write(const raw_str_span str) { return write(arr_span<ubyte>((ubyte*)str.begin(), str.size())); }
       File& writeln(const raw_str_span str, const char nl = '\n') { write(str); write(nl); return self; }
 
@@ -87,7 +90,7 @@ class mcsl::File {
       uint printf(const raw_str_span fmt, const auto&... argv);
       uint scanf(const raw_str_span fmt, auto*... argv);
 
-      template<typename T> uint writef(const T& obj, char mode, FmtArgs fmt = {0, 0, 0, false, false, false}); //used by printf, to be implemented by users for their types
+      template<typename T> uint writef(const T& obj, char mode, FmtArgs fmt = FmtArgs()); //used by printf, to be implemented by users for their types
       template<typename T> uint readf(T* obj,
          char mode,
          uint maxWidth = mcsl::TYPEMAX<uint>()
@@ -123,6 +126,8 @@ _fdeclio(char);
 _fdeclio(char8);
 _fdeclio(char16);
 _fdeclio(char32);
+
+_fdeclio(mcsl::raw_str_span);
 
 _fdeclio(void*); //!TODO: CTAD for printing all pointers as void pointers
 

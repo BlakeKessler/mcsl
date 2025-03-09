@@ -52,6 +52,29 @@ mcsl::File& mcsl::File::write(const ubyte c) {
    _buf[_endIndex++] = c;
    return self;
 }
+mcsl::File& mcsl::File::write(const ubyte c, uint repCount) {
+   if (!repCount) {
+      return self;
+   }
+
+   if (repCount > (_capacity - _endIndex)) {
+      memset(_buf + _endIndex, c, _capacity - _endIndex);
+      repCount -= _capacity - _endIndex;
+      _endIndex = _capacity;
+      flush();
+   }
+   while (repCount > _capacity) {
+      memset(_buf, c, _capacity);
+      _endIndex = _capacity;
+      flush();
+      repCount -= _capacity;
+   }
+   memset(_buf, c, repCount); //will always be non-zero at this point
+   _endIndex = repCount;
+   flush();
+   return self;
+}
+
 
 mcsl::File& mcsl::File::write(const mcsl::arr_span<ubyte> data) {
    if (data.size() + _endIndex < _capacity) {
