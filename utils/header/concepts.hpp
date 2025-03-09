@@ -16,13 +16,12 @@ namespace mcsl {
    template<typename child_t, typename parent_t> concept is_t = std::derived_from<child_t,parent_t> || same_t<child_t,parent_t>;
    template<typename orig_t, typename target_t> concept castable_to = std::convertible_to<orig_t,target_t>;
 
-   template<typename T> concept int_t = std::integral<T>;
-   template<typename T> concept uint_t = std::unsigned_integral<T>;
-   template<typename T> concept sint_t = std::signed_integral<T>;
+   template<typename T> concept uint_t = std::unsigned_integral<T> || same_t<T, uint128>;
+   template<typename T> concept sint_t = std::signed_integral<T> || same_t<T, sint128>;
+   template<typename T> concept int_t = uint_t<T> || sint_t<T>;
    template<typename T> concept float_t = std::floating_point<T>;
-   template<typename T> concept num_t = mcsl::int_t<T> || mcsl::float_t<T>;
+   template<typename T> concept num_t = int_t<T> || float_t<T>;
    template<typename T> concept ptr_t = std::is_pointer<T>::value;
-
 
    template<typename ...Ts> concept any_num_t   = (  num_t<Ts> || ...);
    template<typename ...Ts> concept any_float_t = (float_t<Ts> || ...);
