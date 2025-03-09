@@ -9,7 +9,7 @@
 namespace {
    //formatted writing of binary data directly into the file
    uint writefBinaryImpl(mcsl::File& file, const mcsl::arr_span<ubyte> data, mcsl::FmtArgs& fmt) {
-      fmt.radix = fmt.radix ? fmt.radix : DEFAULT_RAW_RADIX;
+      fmt.radix = fmt.radix ? fmt.radix : mcsl::DEFAULT_RAW_RADIX;
 
       //right-justified padding
       if (!fmt.isLeftJust && fmt.minWidth > data.size()) {
@@ -218,7 +218,7 @@ namespace {
 
    //formatted human-readable writing of a byte string - as ASCII strings, with spaces between bytes
    uint writefRawImpl(mcsl::File& file, const mcsl::arr_span<ubyte> data, bool isLowercase, mcsl::FmtArgs& fmt) {
-      fmt.radix = fmt.radix ? fmt.radix : DEFAULT_RAW_RADIX;
+      fmt.radix = fmt.radix ? fmt.radix : mcsl::DEFAULT_RAW_RADIX;
 
       const uint charsPerByte = (uint)(mcsl::ceil(mcsl::log(fmt.radix, mcsl::TYPEMAX<ubyte>()+1)));
       uint charsPrinted = data.size() * (charsPerByte + (fmt.altMode ? 3 : 1)) - 1;
@@ -226,7 +226,7 @@ namespace {
 
       //minWidth with right justification
       if (!fmt.isLeftJust && fmt.minWidth > charsPrinted) {
-         file.write(PAD_CHAR, fmt.minWidth - charsPrinted);
+         file.write(mcsl::PAD_CHAR, fmt.minWidth - charsPrinted);
          charsPrinted = fmt.minWidth;
       }
 
@@ -242,7 +242,7 @@ namespace {
          const char mode = isLowercase ? 'u' : 'U';
          writefImpl<ubyte>(file, data[0], mode, byteFmt);
          for (uint i = 1; i < data.size(); ++i) {
-            file.write(PAD_CHAR);
+            file.write(mcsl::PAD_CHAR);
             writefImpl<ubyte>(file, data[i], mode, byteFmt);
          }
       }
@@ -250,7 +250,7 @@ namespace {
       
       //minWidth with right justification
       if (!fmt.isLeftJust && fmt.minWidth > charsPrinted) {
-         file.write(PAD_CHAR, fmt.minWidth - charsPrinted);
+         file.write(mcsl::PAD_CHAR, fmt.minWidth - charsPrinted);
          charsPrinted = fmt.minWidth;
       }
 

@@ -99,28 +99,28 @@ namespace mcsl {
 #define signofdif(a,b) ((a > b) - (a < b))
 #define absdif(a,b) ((a>b)?a-b:b-a)
 
-//numeric constants
-constexpr const float Inf = __builtin_inff();
-constexpr const float NaN = __builtin_nanf("");
-constexpr const float SigNaN = __builtin_nansf("");
+namespace mcsl {
+   //numeric constants
+   constexpr const float Inf = __builtin_inff();
+   constexpr const float NaN = __builtin_nanf("");
+   constexpr const float SigNaN = __builtin_nansf("");
 
-constexpr const uint DEBUG_INT = 0x7ff01954;
-// constexpr const uint DEBUG_INT = 0x7fa00000;
-// constexpr const uint DEBUG_INT = 0xDEADBEEF;
-// constexpr const uint DEBUG_INT = 0xf055f055;
+   constexpr const uint DEBUG_INT = 0x7ff01954;
+   // constexpr const uint DEBUG_INT = 0x7fa00000;
+   // constexpr const uint DEBUG_INT = 0xDEADBEEF;
+   // constexpr const uint DEBUG_INT = 0xf055f055;
 
-// //comparison macros
-// #define cmpfunc(T) bool cmp(const T& a, const T& b)
-
-//container parameters
-constexpr const uint DEFAULT_BUCKET_SIZE = 4;
-constexpr const uint DEFAULT_ARR_LIST_BUF_SIZE = 16;
+   //container parameters
+   constexpr const uint DEFAULT_BUCKET_SIZE = 4;
+   constexpr const uint DEFAULT_ARR_LIST_BUF_SIZE = 16;
 
 
-//IO parameters
-constexpr uint DEFAULT_INT_RADIX = 10;
-constexpr uint DEFAULT_RAW_RADIX = 16;
-constexpr char PAD_CHAR = ' ';
+   //IO parameters
+   constexpr uint DEFAULT_INT_RADIX = 10;
+   constexpr uint DEFAULT_RAW_RADIX = 16;
+   constexpr char PAD_CHAR = ' ';
+   constexpr uint8 CASE_BIT = 'a' ^ 'A';
+};
 
 //bitmask literal
 constexpr unsigned long long operator"" _m(const unsigned long long x) {

@@ -20,7 +20,7 @@ namespace mcsl {
    template<> [[gnu::const]] constexpr double TYPEMIN<double>() { return DBL_MIN; }
    template<> [[gnu::const]] constexpr double TYPEMAX<double>() { return DBL_MAX; }
 
-
+   //!TODO: templates for other cfloat macros
 };
 
 #endif //MCSL_TYPE_TRAITS_HPP
