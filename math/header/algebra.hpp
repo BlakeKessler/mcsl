@@ -4,6 +4,7 @@
 
 #include "MCSL.hpp"
 
+#include <utility>
 #include <cmath>
 #include "pair.hpp"
 
@@ -52,10 +53,8 @@ namespace mcsl {
    constexpr auto fma(_N mulLHS, _N mulRHS, _N addend) -> _MPT(mulLHS, mulRHS, addend);
    
    //!TODO: single declarations using _N?
-   constexpr auto max(_F lhs, _F rhs) -> _MPT(lhs, rhs);
-   constexpr auto max(_I lhs, _I rhs) -> _MPT(lhs, rhs);
-   constexpr auto min(_F lhs, _F rhs) -> _MPT(lhs, rhs);
-   constexpr auto min(_I lhs, _I rhs) -> _MPT(lhs, rhs);
+   constexpr auto max(_N lhs, _N rhs) -> _MPT(lhs, rhs);
+   constexpr auto min(_N lhs, _N rhs) -> _MPT(lhs, rhs);
 
 
    constexpr auto lerp(_N begin, _N end, _F t) -> _MPT(begin, end, t);
@@ -138,25 +137,11 @@ constexpr auto mcsl::fma(_N mulLHS, _N mulRHS, _N addend) -> _MPT(mulLHS, mulRHS
    }
 }
 
-constexpr auto mcsl::max(_F lhs, _F rhs) -> _MPT(lhs, rhs) {
-   if consteval {
-      return lhs > rhs ? lhs : rhs;
-   } else {
-      return std::max(lhs, rhs);
-   }
+constexpr auto mcsl::max(_N lhs, _N rhs) -> _MPT(lhs, rhs) {
+   return std::cmp_greater(lhs, rhs) ? lhs : rhs;
 }
-constexpr auto mcsl::max(_I lhs, _I rhs) -> _MPT(lhs, rhs) {
-   return lhs > rhs ? lhs : rhs;
-}
-constexpr auto mcsl::min(_F lhs, _F rhs) -> _MPT(lhs, rhs) {
-   if consteval {
-      return lhs < rhs ? lhs : rhs;
-   } else {
-      return std::min(lhs, rhs);
-   }
-}
-constexpr auto mcsl::min(_I lhs, _I rhs) -> _MPT(lhs, rhs) {
-   return lhs < rhs ? lhs : rhs;
+constexpr auto mcsl::min(_N lhs, _N rhs) -> _MPT(lhs, rhs) {
+   return std::cmp_less(lhs, rhs) ? lhs : rhs;
 }
 
 constexpr auto mcsl::lerp(_N begin, _N end, _F t) -> _MPT(begin, end, t) {
