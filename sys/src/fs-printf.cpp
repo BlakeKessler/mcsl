@@ -6,108 +6,273 @@
 #include "str_to_num.hpp"
 #include "algebra.hpp"
 
-template<> uint mcsl::File::writef<ulong>(const ulong& obj, char mode, FmtArgs fmt) {
-   switch (mode | CASE_BIT) {
-      case 'c': case 's':
-         __throw(ErrCode::FS_ERR, "invalid format code for type `ulong` (%%%c)", mode);
-      default:
-         __throw(ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
-      case 'e': case 'f': case 'g':
-         return writef<fext>(obj, mode, fmt);
-      case 'i': case 'u': 
-         fmt.radix = fmt.radix ? fmt.radix : DEFAULT_INT_RADIX;
-         break;
-      case 'r':
-         fmt.radix = fmt.radix ? fmt.radix : DEFAULT_RAW_RADIX;
-         fmt.precision = max(fmt.precision, (uint)(ceil(sizeof(ulong)*log(fmt.radix, TYPEMAX<ubyte>()+1)))); //number of bytes * digits per byte
-         break;
-   }
-   //!TODO: check mode
-   uint charsPrinted = 0;
+namespace {
+   //formatted writing of binary data directly into the file
+   uint writefBinaryImpl(mcsl::File& file, const mcsl::arr_span<ubyte> data, mcsl::FmtArgs& fmt) {
+      fmt.radix = fmt.radix ? fmt.radix : DEFAULT_RAW_RADIX;
 
-   //check radix
-   switch (fmt.radix) {
-      default:
-         __throw(ErrCode::FS_ERR, "unsupported radix for printing unsigned integers: %u", fmt.radix);
-      case 2: case 8: case 10: case 16:
-         break;
-   }
+      //right-justified padding
+      if (!fmt.isLeftJust && fmt.minWidth > data.size()) {
+         file.write('\0', fmt.minWidth - data.size());
+      }
 
-   const bool isLower = mode & CASE_BIT;
+      //write binary data to file
+      file.write(data);
+
+      //left-justified padding
+      if (fmt.isLeftJust && fmt.minWidth > data.size()) {
+         file.write('\0', fmt.minWidth - data.size());
+      }
+
+      //return number of chars printed
+      return mcsl::max(data.size(), fmt.minWidth);
+   }
    
-   //calculate digit string
-   char digits[sizeof(ulong) * 8];
-   uint digitCount = 0;
-   uint rest = obj;
-   do {
-      const ubyte digit = rest % fmt.radix;
-      rest /= fmt.radix;
-      digits[digitCount++] = digit_to_char(digit, isLower);
-   } while (rest);
+   uint writefRawImpl(mcsl::File& file, const mcsl::arr_span<ubyte> data, bool isLowercase, mcsl::FmtArgs& fmt); //forward declaration
+   
+   
+   template<mcsl::uint_t T> uint writefImpl(mcsl::File& file, T num, char mode, mcsl::FmtArgs& fmt) {
+      switch (mode | mcsl::CASE_BIT) {
+         case 'c': case 's':
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code for type (%%%c)", mode);
+         default:
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
+         case 'e': case 'f': case 'g':
+            return file.writef<mcsl::to_float_t<T>>(num, mode, fmt);
+         case 'i': case 'u': 
+            fmt.radix = fmt.radix ? fmt.radix : DEFAULT_INT_RADIX;
+            break;
+         case 'r':
+            return writefRawImpl(file, {(ubyte*)&num, sizeof(num)}, mode & mcsl::CASE_BIT, fmt);
+         case 'b':
+            return writefBinaryImpl(file, {(ubyte*)&num, sizeof(num)}, fmt);
 
-   //minWidth with right justification
-   if (!fmt.isLeftJust) {
-      sint padChars = fmt.minWidth - max(fmt.precision, digitCount) - fmt.alwaysPrintSign - (2 * fmt.altMode) - charsPrinted;
-      if (padChars > 0) {
-         charsPrinted += padChars;
-         do {
-            write(PAD_CHAR);
-         } while (--padChars);
       }
-   }
+      //!TODO: check mode
+      uint charsPrinted = 0;
 
-   //altMode - print radix specifier
-   if (fmt.altMode) {
-      write('0');
-      char ch = isLower ? 0 : CASE_BIT;
+      //check radix
       switch (fmt.radix) {
-         case  2: ch |= 'B'; break;
-         case  8: ch |= 'O'; break;
-         case 10: ch |= 'D'; break;
-         case 16: ch |= 'X'; break;
-         default: UNREACHABLE;
+         default:
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, "unsupported radix for printing unsigned integers: %u", fmt.radix);
+         case 2: case 8: case 10: case 16:
+            break;
       }
-      write(ch);
-      charsPrinted += 2;
+
+      const bool isLower = mode & mcsl::CASE_BIT;
+      
+      //calculate digit string
+      char digits[sizeof(T) * 8];
+      uint digitCount = 0;
+      T rest = num;
+      do {
+         const ubyte digit = rest % fmt.radix;
+         rest /= fmt.radix;
+         digits[digitCount++] = mcsl::digit_to_char(digit, isLower);
+      } while (rest);
+
+      //minWidth with right justification
+      if (!fmt.isLeftJust) {
+         sint padChars = fmt.minWidth - mcsl::max(fmt.precision, digitCount) - fmt.alwaysPrintSign - (2 * fmt.altMode) - charsPrinted;
+         if (padChars > 0) {
+            file.write(PAD_CHAR, padChars);
+            charsPrinted += padChars;
+         }
+      }
+
+      //altMode - print radix specifier
+      if (fmt.altMode) {
+         file.write('0');
+         char ch = isLower ? 0 : mcsl::CASE_BIT;
+         switch (fmt.radix) {
+            case  2: ch |= 'B'; break;
+            case  8: ch |= 'O'; break;
+            case 10: ch |= 'D'; break;
+            case 16: ch |= 'X'; break;
+            default: UNREACHABLE;
+         }
+         file.write(ch);
+         charsPrinted += 2;
+      }
+
+      //print sign
+      if (fmt.alwaysPrintSign) {
+         file.write('+');
+         ++charsPrinted;
+      }
+      //print extra precision digits
+      if (fmt.precision > digitCount) {
+         file.write('0', fmt.precision - digitCount);
+         charsPrinted += fmt.precision - digitCount;
+      }
+
+      //print digit string
+      file.write(mcsl::raw_str_span{digits, digitCount});
+      charsPrinted += digitCount;
+
+      //minWidth with left justification
+      if (fmt.isLeftJust && fmt.minWidth > charsPrinted) {
+         file.write(PAD_CHAR, fmt.minWidth - charsPrinted);
+         charsPrinted += fmt.minWidth - charsPrinted;
+      }
+
+      //return number of printed characters
+      return charsPrinted;
    }
 
-   //print sign
-   if (fmt.alwaysPrintSign) {
-      write('+');
-      ++charsPrinted;
-   }
-   //print extra precision digits
-   {
-      sint extraZeros = fmt.precision - digitCount;
-      if (extraZeros > 0) {
-         charsPrinted += extraZeros;
-         do {
-            write('0');
-         } while (--extraZeros);
-      }
-   }
-   //print digit string
-   charsPrinted += digitCount;
-   while (digitCount--) {
-      write(digits[digitCount]);
-   }
+   template<mcsl::sint_t T> uint writefImpl(mcsl::File& file, T num, char mode, mcsl::FmtArgs& fmt) {
+      switch (mode | mcsl::CASE_BIT) {
+         case 'c': case 's':
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code for type (%%%c)", mode);
+         default:
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
+         case 'e': case 'f': case 'g':
+            return file.writef<mcsl::to_float_t<T>>(num, mode, fmt);
+         case 'i': case 'u': 
+            fmt.radix = fmt.radix ? fmt.radix : DEFAULT_INT_RADIX;
+            break;
+         case 'r':
+            return writefRawImpl(file, {(ubyte*)&num, sizeof(num)}, mode & mcsl::CASE_BIT, fmt);
+         case 'b':
+            return writefBinaryImpl(file, {(ubyte*)&num, sizeof(num)}, fmt);
 
-   //minWidth with left justification
-   if (fmt.isLeftJust) {
-      sint padChars = fmt.minWidth - charsPrinted;
-      if (padChars > 0) {
+      }
+      //!TODO: check mode
+      uint charsPrinted = 0;
+
+      //check radix
+      switch (fmt.radix) {
+         default:
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, "unsupported radix for printing unsigned integers: %u", fmt.radix);
+         case 2: case 8: case 10: case 16:
+            break;
+      }
+
+      const bool isLower = mode & mcsl::CASE_BIT;
+      
+      //calculate digit string
+      char digits[sizeof(T) * 8];
+      uint digitCount = 0;
+      T rest = mcsl::abs(num);
+      do {
+         const ubyte digit = rest % fmt.radix;
+         rest /= fmt.radix;
+         digits[digitCount++] = mcsl::digit_to_char(digit, isLower);
+      } while (rest);
+
+      //minWidth with right justification
+      if (!fmt.isLeftJust) {
+         sint padChars = fmt.minWidth - mcsl::max(fmt.precision, digitCount) - (num < 0 || fmt.alwaysPrintSign) - (2 * fmt.altMode) - charsPrinted;
+         if (padChars > 0) {
+            file.write(PAD_CHAR, padChars);
+            charsPrinted += padChars;
+         }
+      }
+
+      //altMode - print radix specifier
+      if (fmt.altMode) {
+         file.write('0');
+         char ch = isLower ? 0 : mcsl::CASE_BIT;
+         switch (fmt.radix) {
+            case  2: ch |= 'B'; break;
+            case  8: ch |= 'O'; break;
+            case 10: ch |= 'D'; break;
+            case 16: ch |= 'X'; break;
+            default: UNREACHABLE;
+         }
+         file.write(ch);
+         charsPrinted += 2;
+      }
+
+      //print sign
+      if (num < 0) {
+         file.write('-');
+         ++charsPrinted;
+      } else if (fmt.alwaysPrintSign) {
+         file.write('+');
+         ++charsPrinted;
+      }
+      //print extra precision digits
+      {
+         sint extraZeros = fmt.precision - digitCount;
+         if (extraZeros > 0) {
+            charsPrinted += extraZeros;
+            do {
+               file.write('0');
+            } while (--extraZeros);
+         }
+      }
+      //print digit string
+      charsPrinted += digitCount;
+      file.write(mcsl::raw_str_span{digits, digitCount});
+
+      //minWidth with left justification
+      if (fmt.isLeftJust && fmt.minWidth > charsPrinted) {
+         file.write(PAD_CHAR, fmt.minWidth - charsPrinted);
          charsPrinted = fmt.minWidth;
-         do {
-            write(PAD_CHAR);
-         } while (--padChars);
       }
+
+      //return number of printed characters
+      return charsPrinted;
    }
 
-   //return number of printed characters
-   return charsPrinted;
+   //formatted human-readable writing of a byte string - as ASCII strings, with spaces between bytes
+   uint writefRawImpl(mcsl::File& file, const mcsl::arr_span<ubyte> data, bool isLowercase, mcsl::FmtArgs& fmt) {
+      fmt.radix = fmt.radix ? fmt.radix : DEFAULT_RAW_RADIX;
+
+      const uint charsPerByte = (uint)(mcsl::ceil(mcsl::log(fmt.radix, mcsl::TYPEMAX<ubyte>()+1)));
+      uint charsPrinted = data.size() * (charsPerByte + (fmt.altMode ? 3 : 1)) - 1;
+
+
+      //minWidth with right justification
+      if (!fmt.isLeftJust && fmt.minWidth > charsPrinted) {
+         file.write(PAD_CHAR, fmt.minWidth - charsPrinted);
+         charsPrinted = fmt.minWidth;
+      }
+
+      //write bytes
+      if (data.size()) {
+         //make format
+         mcsl::FmtArgs byteFmt = fmt;
+         byteFmt.minWidth = 0;
+         byteFmt.precision = charsPerByte;
+         byteFmt.alwaysPrintSign = false;
+
+         //write bytes to the file
+         const char mode = isLowercase ? 'u' : 'U';
+         writefImpl<ubyte>(file, data[0], mode, byteFmt);
+         for (uint i = 1; i < data.size(); ++i) {
+            file.write(PAD_CHAR);
+            writefImpl<ubyte>(file, data[i], mode, byteFmt);
+         }
+      }
+      
+      
+      //minWidth with right justification
+      if (!fmt.isLeftJust && fmt.minWidth > charsPrinted) {
+         file.write(PAD_CHAR, fmt.minWidth - charsPrinted);
+         charsPrinted = fmt.minWidth;
+      }
+
+      //return number of chars printed
+      return charsPrinted;
+   }
+};
+
+#define _writefImpl(T)\
+template<> uint mcsl::File::writef<T>(const T& obj, char mode, FmtArgs fmt) {\
+   return writefImpl<T>(self, obj, mode, fmt);\
 }
+#define _writefImplInts(n) _writefImpl(uint##n) _writefImpl(sint##n)
 
+_writefImplInts(8)
+_writefImplInts(16)
+_writefImplInts(32)
+_writefImplInts(64)
+_writefImplInts(128)
 
+#undef _writefImplInts
+#undef _writefImpl
 
 template<> uint mcsl::File::writef<char>(const char& obj, char mode, FmtArgs fmt) {
    switch (mode | CASE_BIT) {
@@ -123,25 +288,87 @@ template<> uint mcsl::File::writef<char>(const char& obj, char mode, FmtArgs fmt
          break;
    }
 
-   if (!fmt.isLeftJust) { //minWidth with right justification
-      sint padChars = fmt.minWidth;
-      while (--padChars > 0) {
-         write(PAD_CHAR);
-      }
+   //minWidth with right justification
+   if (!fmt.isLeftJust && fmt.minWidth > 1) {
+      write(PAD_CHAR, fmt.minWidth - 1);
    }
 
    //write char
    write(obj);
 
-   if (fmt.isLeftJust) { //minWidth with left justification
-      sint padChars = fmt.minWidth;
-      while (--padChars > 0) {
-         write(PAD_CHAR);
-      }
+   //minWidth with left justification
+   if (fmt.isLeftJust && fmt.minWidth > 1) {
+      write(PAD_CHAR, fmt.minWidth - 1);
    }
 
    //return number of chars printed
    return max(1, fmt.minWidth);
+}
+
+#include "raw_buf_str.hpp"
+#include "raw_str.hpp"
+
+template<> uint mcsl::File::writef<bool>(const bool& obj, char mode, FmtArgs fmt) {
+   raw_buf_str<8> str;
+   const bool isLower = mode & CASE_BIT;
+   switch (mode | CASE_BIT) {
+      case 'u': case 'i': case 'r':
+         return writef<ubyte>(obj, mode, fmt);
+      case 'e': case 'f': case 'g':
+         return writef<to_float_t<bool>>(obj, mode, fmt);
+      case 's':
+         if (fmt.altMode) {
+            if (obj) { str = raw_str{isLower ? "yes" : "YES"}; }
+            else     { str = raw_str{isLower ?  "no" : "NO" }; }
+         } else {
+            if (obj) { str = raw_str{isLower ?  "true" : "TRUE" }; }
+            else     { str = raw_str{isLower ? "false" : "FALSE"}; }
+         }
+         break;
+
+      case 'c':
+         if (fmt.altMode) {
+            if (obj) { str = raw_str{isLower ? "y" : "Y"}; }
+            else     { str = raw_str{isLower ? "n" : "N"}; }
+         } else {
+            if (obj) { str = raw_str{isLower ? "t" : "T"}; }
+            else     { str = raw_str{isLower ? "f" : "F"}; }
+         }
+         break;
+      
+      default:
+         mcsl::__throw(ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
+   }
+
+   //right-justified padding
+   if (!fmt.isLeftJust && fmt.minWidth > str.size()) {
+      write(PAD_CHAR, fmt.minWidth - str.size());
+   }
+
+   //bool string
+   write(raw_str_span{str});
+
+   //left-justified padding
+   if (fmt.isLeftJust && fmt.minWidth > str.size()) {
+      write(PAD_CHAR, fmt.minWidth - str.size());
+   }
+
+   //return number of chars printed
+   return max(str.size(), fmt.minWidth);
+}
+
+template<> uint mcsl::File::writef<mcsl::raw_str_span>(const raw_str_span& obj, char mode, FmtArgs fmt) {
+   if (!fmt.isLeftJust && fmt.minWidth > obj.size()) {
+      write(PAD_CHAR, fmt.minWidth - obj.size());
+   }
+
+   write(obj);
+
+   if (fmt.isLeftJust && fmt.minWidth > obj.size()) {
+      write(PAD_CHAR, fmt.minWidth - obj.size());
+   }
+
+   return max(obj.size(), fmt.minWidth);
 }
 
 #endif //FS_PRINTF_CPP
