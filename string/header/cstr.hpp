@@ -54,4 +54,21 @@ class mcsl::cstr : public str_base<char> {
       operator const char*() const { return _buf.begin(); }
 };
 
+
+#pragma region inlinesrc
+
+//!concatenate other onto the end of this
+mcsl::cstr& mcsl::cstr::operator+=(const str_t auto& other) {
+   const uint len = size();
+   char* addr = begin() + len;
+   const uint otherSize = other.size();
+   reserve(len + otherSize);
+   //copy other
+   memcpy(addr, other.begin(), otherSize);
+   //return
+   return self;
+}
+
+#pragma endregion inlinesrc
+
 #endif //MCSL_CSTR_HPP

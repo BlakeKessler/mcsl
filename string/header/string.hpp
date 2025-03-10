@@ -49,4 +49,20 @@ class mcsl::string : public mcsl::str_base<char> {
       string& operator*=(const uint repeatCount);
 };
 
+
+#pragma region inlinesrc
+
+//!concatenate other onto the end of this
+mcsl::string& mcsl::string::operator+=(const str_t auto& other) {
+   char* addr = end();
+   const uint otherSize = other.size();
+   reserve(size() + otherSize);
+   //copy other
+   memcpy(addr, other.begin(), otherSize);
+   //return
+   return self;
+}
+
+#pragma endregion inlinesrc
+
 #endif //MCSL_STRING_HPP

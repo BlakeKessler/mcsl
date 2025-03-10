@@ -5,16 +5,6 @@
 #include "alloc.hpp"
 
 
-//!concatenate other onto the end of this
-mcsl::string& mcsl::string::operator+=(const str_t auto& other) {
-   char* addr = end();
-   const uint otherSize = other.size();
-   reserve(size() + otherSize);
-   //copy other
-   memcpy(addr, other.begin(), otherSize);
-   //return
-   return self;
-}
 //!repeat string
 mcsl::string& mcsl::string::operator*=(const uint repeatCount) {
    const uint oldSize = size();
