@@ -45,19 +45,19 @@ namespace mcsl {
    #pragma endregion basic_select
 
    #pragma region mods
-   template<int_t T> using to_sint_t = select<
+   template<num_t T> using to_sint_t = select<
       sizeof(T) == sizeof(sint128), sint128, select<
       sizeof(T) == sizeof(sint64), sint64, select<
       sizeof(T) == sizeof(sint32), sint32, select<
       sizeof(T) == sizeof(sint16), sint16, select<
       sizeof(T) == sizeof(sint8), sint8, void>>>>>;
-   template<int_t T> using to_uint_t = select<
+   template<num_t T> using to_uint_t = select<
       sizeof(T) == sizeof(uint128), uint128, select<
       sizeof(T) == sizeof(uint64), uint64, select<
       sizeof(T) == sizeof(uint32), uint32, select<
       sizeof(T) == sizeof(uint16), uint16, select<
       sizeof(T) == sizeof(uint8), uint8, void>>>>>;
-   //!TODO: to_int_t
+   template<num_t T> using to_int_t = select<float_t<T>, to_sint_t<T>, T>;
    template<num_t T> using to_float_t = select<float_t<T>, //!TODO: make this more robust
       T, //T is already a float_t
       select<(sizeof(T) > sizeof(float32)),
@@ -69,7 +69,7 @@ namespace mcsl {
       >
    >;
    //!TODO: to_float_precise_t (smallest floating point type precise enough to store any value of the parameter type)
-   //!TODO: to_signed (noop if float, else to_sint_t)
+   template<num_t T> using to_signed_t = select<float_t<T> || sint_t<T>, T, to_sint_t<T>>;
 
    template<typename T> using remove_ptr = std::remove_pointer_t<T>;
    template<typename T> using remove_ref = std::remove_reference_t<T>;
