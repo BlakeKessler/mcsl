@@ -37,7 +37,7 @@ class [[clang::trivial_abi]] mcsl::raw_buf_str : public str_base<char> {
       [[gnu::pure]] constexpr const char* data() const { return _buf; }
       [[gnu::pure]] constexpr const char* begin() const { return _buf; }
 
-      [[gnu::pure]] constexpr char* push_back(char c);
+      constexpr char* push_back(char c);
 };
 
 template<uint _capacity, typename size_t>
