@@ -45,8 +45,18 @@ namespace mcsl {
    #pragma endregion basic_select
 
    #pragma region mods
-   template<int_t T> using to_sint_t = select<same_t<T, uint128>, sint128, std::make_signed_t<T>>;
-   template<int_t T> using to_uint_t = select<same_t<T, sint128>, uint128, std::make_unsigned_t<T>>;
+   template<int_t T> using to_sint_t = select<
+      sizeof(T) == sizeof(sint128), sint128, select<
+      sizeof(T) == sizeof(sint64), sint64, select<
+      sizeof(T) == sizeof(sint32), sint32, select<
+      sizeof(T) == sizeof(sint16), sint16, select<
+      sizeof(T) == sizeof(sint8), sint8, void>>>>>;
+   template<int_t T> using to_uint_t = select<
+      sizeof(T) == sizeof(uint128), uint128, select<
+      sizeof(T) == sizeof(uint64), uint64, select<
+      sizeof(T) == sizeof(uint32), uint32, select<
+      sizeof(T) == sizeof(uint16), uint16, select<
+      sizeof(T) == sizeof(uint8), uint8, void>>>>>;
    //!TODO: to_int_t
    template<num_t T> using to_float_t = select<float_t<T>, //!TODO: make this more robust
       T, //T is already a float_t
