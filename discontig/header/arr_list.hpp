@@ -7,7 +7,7 @@
 
 #include <bit>
 
-template<typename T, uint _bufCapacity = DEFAULT_ARR_LIST_BUF_SIZE> class mcsl::arr_list {
+template<typename T, uint _bufCapacity = mcsl::DEFAULT_ARR_LIST_BUF_SIZE> class mcsl::arr_list {
    private:
       mcsl::dyn_arr<T*> _buf;
       uint _size;

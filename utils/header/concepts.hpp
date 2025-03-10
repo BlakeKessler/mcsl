@@ -40,12 +40,13 @@ namespace mcsl {
 
    #pragma region basic_select
    template<bool b, typename T1, typename T2> using select = std::conditional_t<b,T1,T2>;
+   //!TODO: `match` if thats possible
    //!TODO: `filter`
    #pragma endregion basic_select
 
    #pragma region mods
-   template<int_t T> using to_sint_t = std::make_signed_t<T>;
-   template<int_t T> using to_uint_t = std::make_unsigned_t<T>;
+   template<int_t T> using to_sint_t = select<same_t<T, uint128>, sint128, std::make_signed_t<T>>;
+   template<int_t T> using to_uint_t = select<same_t<T, sint128>, uint128, std::make_unsigned_t<T>>;
    //!TODO: to_int_t
    template<num_t T> using to_float_t = select<float_t<T>, //!TODO: make this more robust
       T, //T is already a float_t

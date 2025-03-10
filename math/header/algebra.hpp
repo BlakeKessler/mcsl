@@ -36,7 +36,7 @@ namespace mcsl {
    _STDF2(round_fpmode, nearbyint)
 
    template<float_t T> constexpr T abs(const T x) { if consteval { return x >= 0 ? x : -x; } else { return std::abs(x); } }
-   template< sint_t T> constexpr T abs(const T x) { return x >= 0 ? x : -x; }
+   template< sint_t T> constexpr to_uint_t<T> abs(const T x) { return x >= 0 ? x : -x; }
    template< uint_t T> constexpr T abs(const T x) { return x; }
    template<  num_t T> constexpr T mod(const T dividend, const T divisor) { return dividend % divisor; }
    template<float_t T> inline pair<T, sint> cremquo(const T dividend, const T divisor) {

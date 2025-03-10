@@ -49,7 +49,7 @@ constexpr mcsl::raw_buf_str<_capacity,size_t>::raw_buf_str(const char* str, cons
 template<uint _capacity, typename size_t>
 constexpr char* mcsl::raw_buf_str<_capacity,size_t>::push_back(char c) {
    safe_mode_assert(_size < _capacity);
-   char* ptr = _buf + _size++
+   char* ptr = _buf + _size++;
    *ptr = c;
    return ptr;
 }

@@ -29,9 +29,9 @@ template<mcsl::uint_t T> [[gnu::pure]] constexpr mcsl::raw_buf_str<8*sizeof(T)> 
    //calculate digit string
    raw_buf_str<8*sizeof(T)> digits;
    do {
-      const ubyte digit = num % fmt.radix;
-      num /= fmt.radix;
-      digits.push_back(mcsl::digit_to_char(digit, isLower));
+      const ubyte digit = num % radix;
+      num /= radix;
+      digits.push_back(mcsl::digit_to_char(digit, isLowercase));
    } while (num);
 
    //reverse digit string
