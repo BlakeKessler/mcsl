@@ -4,7 +4,7 @@
 #include "fs.hpp"
 
 #include "num_to_str.hpp"
-#include "algebra.hpp"
+#include "math.hpp"
 
 namespace {
    //formatted writing of binary data directly into the file

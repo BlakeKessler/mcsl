@@ -1,6 +1,6 @@
 #pragma once
-#ifndef MCSL_ALGEBRA_HPP
-#define MCSL_ALGEBRA_HPP
+#ifndef MCSL_MATH_HPP
+#define MCSL_MATH_HPP
 
 #include "MCSL.hpp"
 
@@ -209,4 +209,4 @@ constexpr auto mcsl::factorial(_U x) -> decltype(x) {
 #undef _DECLTYPE
 #include "MAP_MACRO_UNDEF.h"
 
-#endif //MCSL_ALGEBRA_HPP
+#endif //MCSL_MATH_HPP

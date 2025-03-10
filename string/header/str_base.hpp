@@ -6,7 +6,7 @@
 #include "contig_base.hpp"
 #include "char_type.hpp"
 #include "dyn_arr.hpp"
-#include "algebra.hpp"
+#include "math.hpp"
 #include "mem.hpp"
 
 #include <cstdio>
