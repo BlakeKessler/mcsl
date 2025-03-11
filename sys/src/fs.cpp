@@ -69,9 +69,9 @@ mcsl::File& mcsl::File::write(const ubyte c, uint repCount) {
       flush();
       repCount -= _capacity;
    }
-   memset(_buf, c, repCount); //will always be non-zero at this point
-   _endIndex = repCount;
-   flush();
+
+   memset(_buf + _endIndex, c, repCount);
+   _endIndex += repCount;
    return self;
 }
 
