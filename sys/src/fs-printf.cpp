@@ -48,7 +48,6 @@ namespace {
             return writefBinaryImpl(file, {(ubyte*)&num, sizeof(num)}, fmt);
 
       }
-      //!TODO: check mode
       uint charsPrinted = 0;
 
       //check radix
@@ -130,7 +129,6 @@ namespace {
             return writefBinaryImpl(file, {(ubyte*)&num, sizeof(num)}, fmt);
 
       }
-      //!TODO: check mode
       uint charsPrinted = 0;
 
       //check radix
@@ -195,6 +193,45 @@ namespace {
 
       //return number of printed characters
       return charsPrinted;
+   }
+
+   template<mcsl::float_t T> uint writefImpl(mcsl::File& file, T num, char mode, mcsl::FmtArgs& fmt) {
+      switch (mode | mcsl::CASE_BIT) {
+         case 'c': case 's': case 'i': case 'u':
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code for type (%%%c)", mode);
+         default:
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
+         case 'e': case 'f': case 'g':
+            fmt.radix = fmt.radix ? fmt.radix : mcsl::DEFAULT_FLOAT_RADIX;
+            break;
+         case 'r':
+            return writefRawImpl(file, {(ubyte*)&num, sizeof(num)}, mode & mcsl::CASE_BIT, fmt);
+         case 'b':
+            return writefBinaryImpl(file, {(ubyte*)&num, sizeof(num)}, fmt);
+
+      }
+      uint charsPrinted = 0;
+
+      //check radix
+      switch (fmt.radix) {
+         default:
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, "unsupported radix for printing unsigned integers: %u", fmt.radix);
+         case 2: case 8: case 10: case 16:
+            break;
+      }
+
+      const bool isLower = mode & mcsl::CASE_BIT;
+
+      T frac = num % 1;
+      T whole = num - frac;
+
+      //calculate digit strings
+      mcsl::raw_buf_str<8*sizeof(T)> wholeDigits;
+      do {
+         const ubyte digit = whole % fmt.radix;
+         whole = (whole / fmt.radix) % 1;
+         digits.push_back(mcsl::digit_to_char(digit, isLower));
+      } while (whole > 0);
    }
 
    //formatted human-readable writing of a byte string - as ASCII strings, with spaces between bytes
