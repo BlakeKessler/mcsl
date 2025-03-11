@@ -38,7 +38,7 @@ namespace mcsl {
    template<float_t T> constexpr T abs(const T x) { if consteval { return x >= 0 ? x : -x; } else { return std::abs(x); } }
    template< sint_t T> constexpr to_uint_t<T> abs(const T x) { return x >= 0 ? x : -x; }
    template< uint_t T> constexpr T abs(const T x) { return x; }
-   template<  num_t T> constexpr T mod(const T dividend, const T divisor) { return dividend % divisor; }
+   constexpr auto mod(const num_t auto dividend, const num_t auto divisor) -> _MPT(dividend, divisor);
    template<float_t T> inline pair<T, sint> cremquo(const T dividend, const T divisor) {
       sint tmp;
       T rem = std::remquo(dividend, divisor, &tmp);
@@ -122,6 +122,18 @@ template<mcsl::uint_t pow_t, mcsl::int_t base_t> constexpr base_t mcsl::pow(cons
       res *= base;
    }
    return res;
+}
+
+constexpr auto mcsl::mod(const num_t auto dividend, const num_t auto divisor) -> _MPT(dividend, divisor) {
+   if constexpr(int_t<_MPT(dividend, divisor)>) {
+      return dividend % divisor;
+   } else {
+      if consteval {
+         return dividend - divisor * trunc(dividend / divisor);
+      } else {
+         return std::fmod(dividend, divisor);
+      }
+   }
 }
 
 constexpr auto mcsl::fma(_N mulLHS, _N mulRHS, _N addend) -> _MPT(mulLHS, mulRHS, addend) {
