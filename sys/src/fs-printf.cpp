@@ -75,7 +75,7 @@ namespace {
       //altMode - print radix specifier
       if (fmt.altMode) {
          file.write('0');
-         char ch = isLower ? 0 : mcsl::CASE_BIT;
+         char ch = isLower ? mcsl::CASE_BIT : 0;
          switch (fmt.radix) {
             case  2: ch |= 'B'; break;
             case  8: ch |= 'O'; break;
@@ -156,7 +156,7 @@ namespace {
       //altMode - print radix specifier
       if (fmt.altMode) {
          file.write('0');
-         char ch = isLower ? 0 : mcsl::CASE_BIT;
+         char ch = isLower ? mcsl::CASE_BIT : 0;
          switch (fmt.radix) {
             case  2: ch |= 'B'; break;
             case  8: ch |= 'O'; break;
