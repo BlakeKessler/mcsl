@@ -5,6 +5,9 @@
 
 #include "num_to_str.hpp"
 #include "math.hpp"
+#include "fpmanip.hpp"
+
+#include "string.hpp"
 
 namespace {
    //formatted writing of binary data directly into the file
@@ -222,16 +225,43 @@ namespace {
 
       const bool isLower = mode & mcsl::CASE_BIT;
 
-      T frac = num % 1;
-      T whole = num - frac;
+      switch (mode | mcsl::CASE_BIT) {
+         case 'g':
+            //!TODO: everything
+         case 'f': case_f: {
+            auto [whole, frac] = mcsl::modf(num);
+            static_assert(mcsl::same_t<decltype(whole), T> && mcsl::same_t<decltype(frac), T>);
 
-      //calculate digit strings
-      mcsl::raw_buf_str<8*sizeof(T)> wholeDigits;
-      do {
-         const ubyte digit = whole % fmt.radix;
-         whole = (whole / fmt.radix) % 1;
-         digits.push_back(mcsl::digit_to_char(digit, isLower));
-      } while (whole > 0);
+            //calculate and print digit string of the whole part
+            mcsl::string wholeDigits;
+            do {
+               const ubyte digit = (ubyte)mcsl::mod(whole, fmt.radix);
+               whole = mcsl::mod((whole / fmt.radix), 1);
+               wholeDigits.push_back(mcsl::digit_to_char(digit, isLower));
+            } while (whole > 0);
+
+            file.write(mcsl::raw_str_span{wholeDigits});
+            charsPrinted += wholeDigits.size();
+            wholeDigits.free();
+            
+            //calculate and print digit string of the fractional part
+            do {
+               frac *= fmt.radix;
+               const ubyte digit = (ubyte)mcsl::mod(frac, fmt.radix);
+               file.write(mcsl::digit_to_char(digit, isLower));
+               ++charsPrinted;
+               frac -= digit;
+            } while (frac != 0);
+
+            //!TODO: all format args besides radix
+         }
+         case 'e': case_e: { //!TODO: everything
+
+         }
+      }
+      
+      //return number of chars printed
+      return charsPrinted;
    }
 
    //formatted human-readable writing of a byte string - as ASCII strings, with spaces between bytes
@@ -290,6 +320,11 @@ _writefImplInts(64)
 _writefImplInts(128)
 
 #undef _writefImplInts
+
+_writefImpl(float)
+_writefImpl(flong)
+_writefImpl(fext)
+
 #undef _writefImpl
 
 template<> uint mcsl::File::writef<char>(const char& obj, char mode, FmtArgs fmt) {
@@ -376,6 +411,10 @@ template<> uint mcsl::File::writef<bool>(const bool& obj, char mode, FmtArgs fmt
 }
 
 template<> uint mcsl::File::writef<mcsl::raw_str_span>(const raw_str_span& obj, char mode, FmtArgs fmt) {
+   if ((mode | CASE_BIT) != 's') {
+      mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code for type (%%%c)", mode);
+   }
+   
    if (!fmt.isLeftJust && fmt.minWidth > obj.size()) {
       write(PAD_CHAR, fmt.minWidth - obj.size());
    }
