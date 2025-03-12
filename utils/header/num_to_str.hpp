@@ -17,7 +17,7 @@ namespace mcsl {
 #pragma region inlinesrc
 
 [[gnu::pure, gnu::always_inline]] constexpr char mcsl::digit_to_char(const ubyte digit, const bool isLowercase) {
-   safe_mode_assert(digit < 36);
+   assume(digit < 36);
    char c = '0' | digit | (isLowercase ? CASE_BIT : 0);
    if (digit >= 0xA) {
       c += 'A' - '0' - 0xA;

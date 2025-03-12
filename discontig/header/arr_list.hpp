@@ -36,16 +36,16 @@ template<typename T, uint _bufCapacity = mcsl::DEFAULT_ARR_LIST_BUF_SIZE> class 
       uint capacity() const { return _buf.size() * _bufCapacity; }
       operator bool() const { return _buf.size() && _buf[0].size(); }
 
-      it operator+(const uint i) { safe_mode_assert(i < size()); return it{_buf, i}; }
-      T& operator[](const uint i) { safe_mode_assert(i < size()); return _buf[i / _bufCapacity][i % _bufCapacity]; }
+      it operator+(const uint i) { assume(i < size()); return it{_buf, i}; }
+      T& operator[](const uint i) { assume(i < size()); return _buf[i / _bufCapacity][i % _bufCapacity]; }
       T& at(const uint i) { if (i >= size()) { __throw(ErrCode::SEGFAULT, "%s of size %u accessed at index %u", nameof(), size(), i); } if (!_buf.data()) { __throw(ErrCode::SEGFAULT, "null %s dereferenced", nameof()); } return self[i]; }
       it begin() { return it{self, 0}; }
       it end() { return it{self, size()}; }
       T& front() { return self[0]; }
       T& back() { return self[size()-1]; }
 
-      const_it operator+(const uint i) const { safe_mode_assert(i < size()); return it{_buf, i}; }
-      const T& operator[](const uint i) const { safe_mode_assert(i < size()); return _buf[i / _bufCapacity][i % _bufCapacity]; }
+      const_it operator+(const uint i) const { assume(i < size()); return it{_buf, i}; }
+      const T& operator[](const uint i) const { assume(i < size()); return _buf[i / _bufCapacity][i % _bufCapacity]; }
       const T& at(const uint i) const { if (i >= size()) { __throw(ErrCode::SEGFAULT, "%s of size %u accessed at index %u", nameof(), size(), i); } if (!_buf.data()) { __throw(ErrCode::SEGFAULT, "null %s dereferenced", nameof()); } return self[i]; }
       const_it begin() const { return it{self, 0}; }
       const_it end() const { return it{self, size()}; }
@@ -105,7 +105,7 @@ template<typename T, uint _bufCapacity> T* mcsl::arr_list<T,_bufCapacity>::push_
 }
 
 template<typename T, uint _bufCapacity> T* mcsl::arr_list<T,_bufCapacity>::emplace(const uint i, auto&&... initList) requires valid_ctor<T, decltype(initList)...> {
-   safe_mode_assert(i < size());
+   assume(i < size());
    return new (_buf[i / _bufCapacity] + (i % _bufCapacity)) T{initList...};
 }
 template<typename T, uint _bufCapacity> T* mcsl::arr_list<T,_bufCapacity>::emplace_back(auto&&... initList) requires valid_ctor<T, decltype(initList)...> {
@@ -162,7 +162,7 @@ template<typename T, uint _bufCapacity> struct mcsl::it<T, mcsl::arr_list<T,_buf
       const T* operator->() const { return (T*)self; }
       const T& operator[](const sint i) const { return _buf[_index + i]; }
 
-      sint operator<=>(const_it& other) const { safe_mode_assert(&_buf == &other._buf); return _index - other._index; }
+      sint operator<=>(const_it& other) const { assume(&_buf == &other._buf); return _index - other._index; }
       operator const_it() const { return const_it{_buf, _index}; }
       operator T*() const { return &_buf[_index]; }
       operator uint () const { return _index; }
@@ -186,18 +186,18 @@ template<typename T, uint _bufCapacity> struct mcsl::span<T, mcsl::arr_list<T,_b
    public:
       span(buf_t& buf): span{buf, buf.size()} {}
       span(buf_t& buf, uint end): span{buf, 0, end} {}
-      span(buf_t& buf, uint begin, uint end):_buf{buf},_begin{begin},_end{end} { safe_mode_assert(_begin >= _end && _end <= _buf.size()); }
+      span(buf_t& buf, uint begin, uint end):_buf{buf},_begin{begin},_end{end} { assume(_begin >= _end && _end <= _buf.size()); }
 
       uint size() const { return _end - _begin; }
 
-      it operator+(const sint i) { safe_mode_assert(_begin + i < _end); return _buf + (_begin + i); }
+      it operator+(const sint i) { assume(_begin + i < _end); return _buf + (_begin + i); }
       T& operator[](const sint i) { return *(self + i); }
       it begin() { return _buf + _begin; }
       it end() { return _buf + _end; }
       T& front() { return _buf[_begin]; }
       T& back() { return _buf[_end - 1]; }
       
-      const_it operator+(const sint i) const { safe_mode_assert(_begin + i < _end); return _buf + (_begin + i); }
+      const_it operator+(const sint i) const { assume(_begin + i < _end); return _buf + (_begin + i); }
       const T& operator[](const sint i) const { return *(self + i); }
       const_it begin() const { return _buf + _begin; }
       const_it end() const { return _buf + _end; }
@@ -220,11 +220,11 @@ template<typename T, uint _bufCapacity> struct mcsl::span<T, const mcsl::arr_lis
    public:
       span(buf_t& buf): span{buf, buf.size()} {}
       span(buf_t& buf, uint end): span{buf, 0, end} {}
-      span(buf_t& buf, uint begin, uint end):_buf{buf},_begin{begin},_end{end} { safe_mode_assert(_begin >= _end && _end <= _buf.size()); }
+      span(buf_t& buf, uint begin, uint end):_buf{buf},_begin{begin},_end{end} { assume(_begin >= _end && _end <= _buf.size()); }
 
       uint size() const { return _end - _begin; }
       
-      const_it operator+(const sint i) const { safe_mode_assert(_begin + i < _end); return _buf + (_begin + i); }
+      const_it operator+(const sint i) const { assume(_begin + i < _end); return _buf + (_begin + i); }
       const T& operator[](const sint i) const { return *(self + i); }
       const_it begin() const { return _buf + _begin; }
       const_it end() const { return _buf + _end; }

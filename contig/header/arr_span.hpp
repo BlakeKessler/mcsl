@@ -19,7 +19,7 @@ template <typename T> class [[clang::trivial_abi]] mcsl::arr_span : public conti
       static constexpr const auto& nameof() { return _nameof; }
 
       constexpr arr_span():_buf{},_size{} {}
-      constexpr arr_span(T* buf, const uint size):_buf{buf},_size{size} { safe_mode_assert(!_size || _buf); }
+      constexpr arr_span(T* buf, const uint size):_buf{buf},_size{size} { assume(!_size || _buf); }
       constexpr arr_span(T* begin, T* end):arr_span{begin, end-begin} { assert(begin <= end, __END_BEFORE_BEGIN_MSG, ErrCode::SEGFAULT); }
       constexpr arr_span(const contig_t<T> auto& other):arr_span{other.begin(), other.size()} {}
       constexpr arr_span(const contig_t<T> auto& other, const uint size):arr_span{other.begin(), size} { assert(size <= other.size(), __OVERSIZED_SPAN_MSG, ErrCode::SEGFAULT); }
@@ -42,7 +42,7 @@ template <typename T> class [[clang::trivial_abi]] mcsl::arr_span : public conti
 #pragma region src
 //!construct in place
 template<typename T> constexpr T* mcsl::arr_span<T>::emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...> {
-   safe_mode_assert(i < _size);
+   assume(i < _size);
    return new (begin() + i) T{args...};
 }
 

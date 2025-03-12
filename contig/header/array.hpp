@@ -58,7 +58,7 @@ template<typename T> mcsl::array<T>::array(const uint size):
 //!copy constructor from raw pointer to buffer and size of buffer (in elements)
 template<typename T> mcsl::array<T>::array(const T* buf, const uint size):
    _buf(mcsl::malloc<T>(size)),_size(size) {
-      safe_mode_assert(buf || !size);
+      assume(buf || !size);
       for (uint i = 0; i < _size; ++i) {
          _buf[i] = buf[i];
       }
@@ -87,7 +87,7 @@ template<typename T> mcsl::array<T>::array(const array& other):
 
 //!construct in place
 template<typename T> constexpr T* mcsl::array<T>::emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...> {
-   safe_mode_assert(i < _size);
+   assume(i < _size);
    return new (begin() + i) T{args...};
 }
 

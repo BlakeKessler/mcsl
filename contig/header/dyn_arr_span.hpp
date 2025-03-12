@@ -35,11 +35,11 @@ template <typename T> class [[clang::trivial_abi]] mcsl::dyn_arr_span : public c
 
       //element access
       [[gnu::pure]] constexpr T* const* ptr_to_buf() { return _ptrToBuf; }
-      [[gnu::pure]] constexpr T* data() { safe_mode_assert(_ptrToBuf); return *_ptrToBuf; }
-      [[gnu::pure]] constexpr T* begin() { safe_mode_assert(_ptrToBuf); return data() + _beginIndex; }
+      [[gnu::pure]] constexpr T* data() { assume(_ptrToBuf); return *_ptrToBuf; }
+      [[gnu::pure]] constexpr T* begin() { assume(_ptrToBuf); return data() + _beginIndex; }
       
       [[gnu::pure]] constexpr const T* const* ptr_to_buf() const { return _ptrToBuf; }
-      [[gnu::pure]] constexpr const T* data() const { safe_mode_assert(_ptrToBuf); return *_ptrToBuf; }
+      [[gnu::pure]] constexpr const T* data() const { assume(_ptrToBuf); return *_ptrToBuf; }
       [[gnu::pure]] constexpr const T* begin() const { return data() + _beginIndex; }
 
       [[gnu::pure]] constexpr uint first_index() const { return _beginIndex; }
@@ -61,13 +61,13 @@ template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(T* const* ptr
    _ptrToBuf{ptrToBuf},
    _beginIndex{0},
    _size{size} {
-      safe_mode_assert(_ptrToBuf || !_size);
+      assume(_ptrToBuf || !_size);
 }
 template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(T* const* ptrToBuf, const uint beginIndex, const uint size):
    _ptrToBuf{ptrToBuf},
    _beginIndex{beginIndex},
    _size{size} {
-      safe_mode_assert(_ptrToBuf || !(_beginIndex || _size));
+      assume(_ptrToBuf || !(_beginIndex || _size));
 }
 
 template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(T* const* ptrToBuf, const mcsl::pair<uint,uint> bounds):
@@ -110,7 +110,7 @@ requires (!requires{other.first_index();}):
 
 //!construct in place
 template<typename T> constexpr T* mcsl::dyn_arr_span<T>::emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...> {
-   safe_mode_assert(i < _size);
+   assume(i < _size);
 
    return new (begin() + i) T{args...};
 }

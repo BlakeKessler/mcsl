@@ -33,9 +33,9 @@ namespace mcsl {
 #endif
 
 #if defined(SAFE_MODE) || !defined(NDEBUG)
-   #define safe_mode_assert(expr) assert(expr, #expr, mcsl::ErrCode::SAFE_ASSERT_FAIL)
+   #define assume(expr) assert(expr, #expr, mcsl::ErrCode::ASSUMPTION_FAIL)
 #else
-   #define safe_mode_assert(expr) void(0)
+   #define assume(expr) void(0)
 #endif
 
 

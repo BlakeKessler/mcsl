@@ -39,7 +39,7 @@ struct mcsl::str_base : public contig_base<char_t> {
    }
 
    //repeat declaration of pointer arithmatic operator because C++ templates are weird
-   [[gnu::pure]] inline constexpr auto operator+(this auto&& obj, const uint i) -> decltype(auto)   { safe_mode_assert(i < obj.size()); return obj.begin() + i; }
+   [[gnu::pure]] inline constexpr auto operator+(this auto&& obj, const uint i) -> decltype(auto)   { assume(i < obj.size()); return obj.begin() + i; }
    
    //operations
    template<str_t strT> strT copy(this const auto& obj);

@@ -81,7 +81,7 @@ namespace mcsl {
       UNSPEC = 0,
       ASSERT_FAIL,
       DEBUG_ASSERT_FAIL,
-      SAFE_ASSERT_FAIL,
+      ASSUMPTION_FAIL,
       UNREACHABLE_REACHED,
       SEGFAULT,
       ALLOC_FAIL,

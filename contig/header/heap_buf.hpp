@@ -70,28 +70,28 @@ template<typename T, uint _capacity> mcsl::heap_buf<T,_capacity>::heap_buf(casta
 }
 
 template<typename T, uint _capacity> T* mcsl::heap_buf<T,_capacity>::push_back(T&& obj) {
-   safe_mode_assert(_size < _capacity);
+   assume(_size < _capacity);
    _buf[_size] = obj;
    return _buf + (_size++);
 }
 template<typename T, uint _capacity> T* mcsl::heap_buf<T,_capacity>::push_back(const T& obj) {
-   safe_mode_assert(_size < _capacity);
+   assume(_size < _capacity);
 
    return new (begin() + (_size++)) T{std::forward<decltype(obj)>(obj)};
 }
 template<typename T, uint _capacity> T mcsl::heap_buf<T,_capacity>::pop_back() {
-   safe_mode_assert(_size);
+   assume(_size);
    T tmp = _buf[--_size];
    std::destroy_at(self.end());
    return tmp;
 }
 template<typename T, uint _capacity> T* mcsl::heap_buf<T,_capacity>::emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...> {
-   safe_mode_assert(i < _size);
+   assume(i < _size);
 
    return new (begin() + i) T{args...};
 }
 template<typename T, uint _capacity> T* mcsl::heap_buf<T,_capacity>::emplace_back(auto&&... args) requires valid_ctor<T, decltype(args)...> {
-   safe_mode_assert(_size < _capacity);
+   assume(_size < _capacity);
    
    return new (begin() + (_size++)) T{args...};
 }

@@ -133,14 +133,14 @@ template<typename T> T* mcsl::dyn_arr<T>::push_back(const T& obj) {
 //!remove last element of array
 //!returns the removed element
 template<typename T> T mcsl::dyn_arr<T>::pop_back() {
-   safe_mode_assert(_size);
+   assume(_size);
    T temp = _buf[--_size];
    std::destroy_at(self.end());
    return temp;
 }
 //!construct in place
 template<typename T> T* mcsl::dyn_arr<T>::emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...> {
-   safe_mode_assert(i < _size);
+   assume(i < _size);
 
    return new (begin() + i) T{args...};
 }

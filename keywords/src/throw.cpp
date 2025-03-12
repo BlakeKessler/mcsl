@@ -8,7 +8,7 @@ const char* mcsl::ERR_MSG_ARR[] {
    "UNSPECIFIED ERROR: ",
    "Assertion failed: ",
    "Debug Assertion failed: ",
-   "Safe Mode Assertion failed: ",
+   "Assumption violated: ",
    "Unreachable statement reached: ",
    "Segmentation fault: ",
    "Allocation failure: ",
