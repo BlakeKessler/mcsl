@@ -35,8 +35,8 @@ template<mcsl::float_t T> constexpr mcsl::pair<T> mcsl::modf(const T x) {
 }
 
 template<mcsl::float_t T> constexpr mcsl::pair<T,sint> mcsl::frexp(const T x) {
-   sint* exp;
-   T fr = std::frexp(x, exp);
+   sint exp;
+   T fr = std::frexp(x, &exp);
    return {fr,exp};
 }
 template<mcsl::float_t T> constexpr mcsl::pair<T,sint> mcsl::sci_notat(const T x, const uint radix) {
