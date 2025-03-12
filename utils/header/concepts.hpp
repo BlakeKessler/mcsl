@@ -19,7 +19,7 @@ namespace mcsl {
    template<typename T> concept uint_t = std::unsigned_integral<T> || same_t<T, uint128>;
    template<typename T> concept sint_t = std::signed_integral<T> || same_t<T, sint128>;
    template<typename T> concept int_t = uint_t<T> || sint_t<T>;
-   template<typename T> concept float_t = std::floating_point<T>;
+   template<typename T> concept float_t = std::floating_point<T> || same_t<T, flext>;
    template<typename T> concept num_t = int_t<T> || float_t<T>;
    template<typename T> concept ptr_t = std::is_pointer<T>::value;
 
