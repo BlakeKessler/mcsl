@@ -221,7 +221,7 @@
 
    //exponent
    sint exp = (radixPt && radixPt < mantProcessEnd) ? radixPt - mantProcessEnd + 1: 0;
-   if (it + 2 < end && it[0] == '~' && it[1] == '^') { //Middle-C style
+   if (it + 2 < end && it[0] == EXP_NOTAT[0] && it[1] == EXP_NOTAT[1]) { //Middle-C style
       exp += str_to_sint(it + 2, end, radix);
    }
    else if (it + 1 < end && ((radix < 0xE && (it[0] | CASE_BIT) == 'e') || (it[0] | CASE_BIT) == 'p')) { //C-style

@@ -119,8 +119,10 @@ namespace mcsl {
    constexpr uint DEFAULT_INT_RADIX = 10;
    constexpr uint DEFAULT_FLOAT_RADIX = 10;
    constexpr uint DEFAULT_RAW_RADIX = 16;
-   constexpr char PAD_CHAR = ' ';
    constexpr uint8 CASE_BIT = 'a' ^ 'A';
+   constexpr char PAD_CHAR = ' ';
+   constexpr char EXP_NOTAT[3] = "~^";
+   // constexpr char EXP_NOTAT[3] = "*^";
 };
 
 //bitmask literal

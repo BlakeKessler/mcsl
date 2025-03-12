@@ -256,7 +256,10 @@ namespace {
             //!TODO: all format args besides radix
          }
          case 'e': case_e: { //!TODO: everything
+            auto [signif, pow] = mcsl::sci_notat<T>(num, fmt.radix);
+            static_assert(mcsl::same_t<T, decltype(signif)> && mcsl::same_t<sint, decltype(pow)>);
 
+            //!TODO: finish this
          }
       }
       

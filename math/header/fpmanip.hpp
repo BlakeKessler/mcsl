@@ -14,6 +14,8 @@ namespace mcsl {
 
 
    template<float_t T> constexpr pair<T> modf(const T x);
+   template<float_t T> constexpr pair<T, sint> frexp(const T x); //frexp
+   template<float_t T> constexpr pair<T, sint> sci_notat(const T x, const uint radix); //M*r^E = (M*b^((E*log[b](r))%1))*(b^(floor(E*log[b](r))))    (I think, might have made a mistake)
    //!TODO: the rest of the cmath floating point manipulation functions
 };
 
