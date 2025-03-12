@@ -114,7 +114,7 @@ _fdeclio(uint128);
 
 _fdeclio(float);
 _fdeclio(flong);
-_fdeclio(fext);
+_fdeclio(flext);
 // _fdeclio(float8);
 // _fdeclio(float16);
 // _fdeclio(float32);

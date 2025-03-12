@@ -326,7 +326,7 @@ _writefImplInts(128)
 
 _writefImpl(float)
 _writefImpl(flong)
-_writefImpl(fext)
+_writefImpl(flext)
 
 #undef _writefImpl
 

@@ -61,8 +61,8 @@ using single = float32;
 // using fshort = float16;
 // using float  = float32;
 using flong  = float64;
-using fext   = long double;
-// using fext   = float80;
+using flext   = long double;
+// using flext   = float80;
 
 //!FIXED-WIDTH CHAR TYPES
 

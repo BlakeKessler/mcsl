@@ -17,8 +17,8 @@ namespace mcsl {
    template <float_t T> [[gnu::const]] constexpr T TYPEMAX();
    template<> [[gnu::const]] constexpr float TYPEMIN<float>() { return FLT_MIN; }
    template<> [[gnu::const]] constexpr float TYPEMAX<float>() { return FLT_MAX; }
-   template<> [[gnu::const]] constexpr double TYPEMIN<double>() { return DBL_MIN; }
-   template<> [[gnu::const]] constexpr double TYPEMAX<double>() { return DBL_MAX; }
+   template<> [[gnu::const]] constexpr flong TYPEMIN<flong>() { return DBL_MIN; }
+   template<> [[gnu::const]] constexpr flong TYPEMAX<flong>() { return DBL_MAX; }
 
    //!TODO: templates for other cfloat macros
 };

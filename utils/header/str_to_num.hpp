@@ -7,13 +7,13 @@
 namespace mcsl {
    [[gnu::pure ]] constexpr  ulong str_to_uint(const char* str, const uint strlen, uint radix = 0);
    [[gnu::pure ]] constexpr  slong str_to_sint(const char* str, const uint strlen, uint radix = 0);
-   [[gnu::pure ]] constexpr double str_to_real(const char* str, const uint strlen, uint radix = 0);
-   [[gnu::pure ]] constexpr double c_float_lit_str_to_real(const char* str, const uint strlen, uint radix = 0);
+   [[gnu::pure ]] constexpr flong str_to_real(const char* str, const uint strlen, uint radix = 0);
+   [[gnu::pure ]] constexpr flong c_float_lit_str_to_real(const char* str, const uint strlen, uint radix = 0);
 
    [[gnu::pure ]] constexpr  ulong str_to_uint(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_uint(begin, end-begin, radix); } else { return 0; }} }
    [[gnu::pure ]] constexpr  slong str_to_sint(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_sint(begin, end-begin, radix); } else { return 0; }} }
-   [[gnu::pure ]] constexpr double str_to_real(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_real(begin, end-begin, radix); } else { return NaN; }} }
-   [[gnu::pure ]] constexpr double c_float_lit_str_to_real(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_real(begin, end-begin, radix); } else { return NaN; }} }
+   [[gnu::pure ]] constexpr flong str_to_real(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_real(begin, end-begin, radix); } else { return NaN; }} }
+   [[gnu::pure ]] constexpr flong c_float_lit_str_to_real(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_real(begin, end-begin, radix); } else { return NaN; }} }
 
    [[gnu::const, gnu::always_inline]] constexpr sint8 digit_to_uint(const char ch);
    [[gnu::const]] constexpr inline bool is_digit(const char ch, const uint radix = 10) { return (uint8)digit_to_uint(ch) < radix;}

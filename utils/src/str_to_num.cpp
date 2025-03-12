@@ -143,7 +143,7 @@
 //!convert string to floating point number
 //!legal radices: {0, 2, 8, 10, 16}
 //!when radix is 0, base is deduced from contents of string
-[[gnu::pure]] constexpr double mcsl::str_to_real(const char* str, const uint strlen, uint radix) {
+[[gnu::pure]] constexpr flong mcsl::str_to_real(const char* str, const uint strlen, uint radix) {
    assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    //deduce sign, radix, and starting index
@@ -202,7 +202,7 @@
    }
 
    //mantissa
-   long double val;
+   flext val;
    {
       ulong tmp = 0;
       const char* mantIt = mantStart;
@@ -227,10 +227,10 @@
    else if (it + 1 < end && ((radix < 0xE && (it[0] | CASE_BIT) == 'e') || (it[0] | CASE_BIT) == 'p')) { //C-style
       exp += str_to_sint(it + 1, end, radix);
    }
-   val *= std::pow((long double)radix, exp);
+   val *= std::pow((flext)radix, exp);
 
    //return
-   return (double)val;
+   return (flong)val;
 }
 
 
@@ -240,7 +240,7 @@
 //!NOTE: slightly imprecise
 //!TODO: fix inf, nan, signan
 //!TODO: apostrophes?
-[[gnu::pure]] constexpr double mcsl::c_float_lit_str_to_real(const char* str, const uint strlen, uint radix) {
+[[gnu::pure]] constexpr flong mcsl::c_float_lit_str_to_real(const char* str, const uint strlen, uint radix) {
    //https://dl.acm.org/doi/pdf/10.1145/93548.93559?download=false
    //https://dl.acm.org/doi/pdf/10.1145/93548.93557?download=false
    //https://www.netlib.org/fp/
@@ -270,7 +270,7 @@
    } else if (radix == 0) { radix = 10; }
 
    const uint maxMantDigits = radix == 10 ? 18 : 15;
-   debug_assert(sizeof(long double) >= 10);
+   debug_assert(sizeof(flext) >= 10);
    
 	//calculate bounds of fields
    const char* end = str + strlen;
@@ -292,7 +292,7 @@
    }
 
    //calculate value
-   long double val = str_to_uint(mantStart, maxMantDigits, radix);
+   flext val = str_to_uint(mantStart, maxMantDigits, radix);
    if (mantStart + maxMantDigits < (radixPt ? radixPt : mantEnd)) {
       val *= std::pow(radix, (radixPt ? radixPt : mantEnd) - mantStart - maxMantDigits);
    }

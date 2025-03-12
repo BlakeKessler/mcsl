@@ -62,7 +62,7 @@ namespace mcsl {
       T, //T is already a float_t
       select<(sizeof(T) > sizeof(float32)),
          select<(sizeof(T) > sizeof(float64)),
-            fext,
+            flext,
             float64
          >,
          float32
