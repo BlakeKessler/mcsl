@@ -11,6 +11,7 @@
 
 namespace mcsl {
    template<uint _capacity> struct uint_n;
+   template<float_t T> struct Float;
 
    template<typename first_t, typename second_t = first_t> struct pair;
 

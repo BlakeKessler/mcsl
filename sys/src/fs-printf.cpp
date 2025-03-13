@@ -234,6 +234,7 @@ namespace {
 
             //calculate and print digit string of the whole part
             mcsl::string wholeDigits;
+            wholeDigits.reserve_exact((uint)mcsl::ceil(mcsl::log(fmt.radix, whole)));
             do {
                const ubyte digit = (ubyte)mcsl::mod(whole, fmt.radix);
                whole = mcsl::mod((whole / fmt.radix), 1);
@@ -243,6 +244,9 @@ namespace {
             file.write(mcsl::raw_str_span{wholeDigits});
             charsPrinted += wholeDigits.size();
             wholeDigits.free();
+
+            //radix point
+            file.write('.');
             
             //calculate and print digit string of the fractional part
             do {
