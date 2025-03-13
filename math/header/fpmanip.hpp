@@ -14,7 +14,16 @@ namespace mcsl {
 
 
    template<float_t T> constexpr pair<T> modf(const T x);
+   
    template<float_t T> constexpr pair<T, sint> frexp(const T x); //frexp
+   
+   template<float_t T> constexpr T logb(const T x) { return std::logb(x); }
+   template<float_t T> constexpr sint ilogb(const T x) { return std::ilogb(x); }
+   
+   template<float_t T> constexpr pair<T> fextract(const T x);
+   template<float_t T> constexpr pair<T, sint> fextracti(const T x);
+
+   template<float_t T> constexpr T noexp(const T x);
    template<float_t T> constexpr pair<T, sint> sci_notat(const T x, const uint radix); //M*r^E = (M*b^((E*log[b](r))%1))*(b^(floor(E*log[b](r))))    (I think, might have made a mistake)
    //!TODO: the rest of the cmath floating point manipulation functions
 };
@@ -39,13 +48,29 @@ template<mcsl::float_t T> constexpr mcsl::pair<T,sint> mcsl::frexp(const T x) {
    T fr = std::frexp(x, &exp);
    return {fr,exp};
 }
+
+template<mcsl::float_t T> constexpr mcsl::pair<T> mcsl::fextract(const T x) {
+   T exp = std::logb(x);
+   T signif = std::scalbn(x, exp);
+   return {signif, exp};
+}
+template<mcsl::float_t T> constexpr mcsl::pair<T, sint> mcsl::fextracti(const T x) {
+   sint exp = std::ilogb(x);
+   T signif = std::scalbn(x, exp);
+   return {signif, exp};
+}
+
+template<mcsl::float_t T> constexpr T mcsl::noexp(const T x) {
+   //!TODO: implement
+}
+
 template<mcsl::float_t T> constexpr mcsl::pair<T,sint> mcsl::sci_notat(const T x, const uint radix) {
    assume(radix > 1);
    if (radix == 2) {
-      return mcsl::frexp(x);
+      return mcsl::fextracti(x);
    }
 
-   auto [frac, exp2] = mcsl::frexp(x);
+   auto [frac, exp2] = mcsl::fextracti(x);
    const auto [outExp, expRFrac] = mcsl::modf(exp2 * mcsl::log(radix, 2));
    frac *= mcsl::pow(radix, expRFrac);
 

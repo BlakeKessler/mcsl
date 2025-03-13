@@ -123,6 +123,7 @@ namespace mcsl {
    constexpr char PAD_CHAR = ' ';
    constexpr char EXP_NOTAT[] = "~^";
    // constexpr char EXP_NOTAT[] = "*^";
+   constexpr char FMT_INTRO = '%';
 };
 
 //bitmask literal
@@ -135,6 +136,11 @@ constexpr unsigned long long operator"" _m(const unsigned long long x) {
 //variadic macro argument count
 #include <tuple>
 #define __VA_ARG_COUNT__(...) std::tuple_size_v<decltype(std::forward_as_tuple(__VA_ARGS__))>
+
+//select first element of paramater pack
+namespace mcsl {
+   template<typename T, typename... Ts> T& pack_first(T& first, Ts&... rest) { return first; }
+};
 
 
 //RNG parameters

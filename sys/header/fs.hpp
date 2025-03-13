@@ -5,7 +5,7 @@
 #include "MCSL.hpp"
 
 #include "arr_span.hpp"
-#include "raw_str_span.hpp"
+#include "str_slice.hpp"
 #include "string.hpp"
 #include "cstr.hpp"
 #include "raw_str.hpp"
@@ -28,8 +28,8 @@ class mcsl::Path : public mcsl::cstr { //base type is implementation-defined
       static Path tmp(); //temporary file directory
       static Path newTmpDir(); //available path for a new temporary directory
 
-      Path& appendLoc(const raw_str_span);
-      Path  withAppendedLoc(const raw_str_span loc) { Path other{self}; other.appendLoc(loc); return other; }
+      Path& appendLoc(const str_slice);
+      Path  withAppendedLoc(const str_slice loc) { Path other{self}; other.appendLoc(loc); return other; }
       Path& normalize();
       Path  normalized() { Path other{self}; other.normalize(); return std::move(other); }
 };
@@ -40,6 +40,8 @@ struct mcsl::FmtArgs {
    uint precision = 0;
    bool isLeftJust = false;
    bool alwaysPrintSign = false;
+   bool padForPosSign = false;
+   bool padWithZero = false;
    bool altMode = false;
 };
 
@@ -74,21 +76,21 @@ class mcsl::File {
       File& write(const arr_span<ubyte> data);
       File& write(const char c) { return write((ubyte)c); }
       File& write(const char c, uint repCount) { return write((ubyte)c, repCount); }
-      File& write(const raw_str_span str) { return write(arr_span<ubyte>((ubyte*)str.begin(), str.size())); }
-      File& writeln(const raw_str_span str, const char nl = '\n') { write(str); write(nl); return self; }
+      File& write(const str_slice str) { return write(arr_span<ubyte>((ubyte*)str.begin(), str.size())); }
+      File& writeln(const str_slice str, const char nl = '\n') { write(str); write(nl); return self; }
 
       char read() { return std::getc(_file); }
       arr_span<ubyte> read(arr_span<ubyte> dest);
-      raw_str_span read(raw_str_span dest) { return {dest.begin(), read(arr_span<ubyte>((ubyte*)dest.begin(), dest.size())).size()}; }
-      raw_str_span readln(raw_str_span dest, const char nl = '\n');
+      str_slice read(str_slice dest) { return {dest.begin(), read(arr_span<ubyte>((ubyte*)dest.begin(), dest.size())).size()}; }
+      str_slice readln(str_slice dest, const char nl = '\n');
       string readln(const char nl = '\n');
 
       template<typename T> File& write(const T& obj); //serialize object - to be implemented by users for their types
       template<typename T> T read(); //deserialize object - to be implemented by users for their types
       template<typename T, typename Buffer_t> T read(Buffer_t buf); //deserialize object - to be implemented by users for their types
 
-      uint printf(const raw_str_span fmt, const auto&... argv);
-      uint scanf(const raw_str_span fmt, auto*... argv);
+      uint printf(const str_slice fmt, const auto&... argv);
+      uint scanf(const str_slice fmt, auto*... argv);
 
       template<typename T> uint writef(const T& obj, char mode, FmtArgs fmt = FmtArgs()); //used by printf, to be implemented by users for their types
       template<typename T> uint readf(T* obj,
@@ -127,7 +129,7 @@ _fdeclio(char8);
 _fdeclio(char16);
 _fdeclio(char32);
 
-_fdeclio(mcsl::raw_str_span);
+_fdeclio(mcsl::str_slice);
 
 _fdeclio(void*); //!TODO: CTAD for printing all pointers as void pointers
 

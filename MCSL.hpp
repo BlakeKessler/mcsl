@@ -14,6 +14,7 @@ namespace mcsl {
    template<float_t T> struct Float;
 
    template<typename first_t, typename second_t = first_t> struct pair;
+   template<typename... Ts> struct tuple;
 
    template<typename T> struct container_base;
 
@@ -37,7 +38,7 @@ namespace mcsl {
    class dyn_str_span;
    template<uint _size> class raw_str;
    template<uint _size> class raw_cstr;
-   class raw_str_span;
+   class str_slice;
    template<uint _size, typename size_t = ubyte> class raw_buf_str;
 
    struct str_hash_func;

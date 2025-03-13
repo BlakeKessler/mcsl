@@ -4,9 +4,9 @@
 #include "fs.hpp"
 
 #include "dyn_str_span.hpp"
-#include "raw_str_span.hpp"
+#include "str_slice.hpp"
 
-mcsl::Path& mcsl::Path::appendLoc(const raw_str_span loc) {
+mcsl::Path& mcsl::Path::appendLoc(const str_slice loc) {
    //directory delimiter
    if (size() > 0 && back() != DIR_DELIM) {
       self.push_back(DIR_DELIM);

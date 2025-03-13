@@ -68,10 +68,24 @@ namespace {
 
       //minWidth with right justification
       if (!fmt.isLeftJust) {
-         sint padChars = fmt.minWidth - mcsl::max(fmt.precision, digits.size()) - fmt.alwaysPrintSign - (2 * fmt.altMode) - charsPrinted;
-         if (padChars > 0) {
-            file.write(mcsl::PAD_CHAR, padChars);
+         sint padChars = fmt.minWidth - mcsl::max(fmt.precision, digits.size()) - (fmt.alwaysPrintSign || fmt.padForPosSign) - (2 * fmt.altMode) - charsPrinted;
+         if (padChars > 0) { //!TODO: if(fmt.padWithZero) write this padding after the radix specifier
+            file.write(fmt.padWithZero ? '0' : mcsl::PAD_CHAR, padChars);
             charsPrinted += padChars;
+         }
+      }
+
+      //print sign
+      bool printSignZero = false;
+      if (fmt.alwaysPrintSign) {
+         file.write('+');
+         ++charsPrinted;
+      } else if (fmt.padForPosSign) {
+         if (fmt.padWithZero) {
+            printSignZero = true;
+         } else {
+            file.write(mcsl::PAD_CHAR);
+            ++charsPrinted;
          }
       }
 
@@ -89,10 +103,9 @@ namespace {
          file.write(ch);
          charsPrinted += 2;
       }
-
-      //print sign
-      if (fmt.alwaysPrintSign) {
-         file.write('+');
+      //print sign zero
+      if (printSignZero) {
+         file.write('0');
          ++charsPrinted;
       }
       //print extra precision digits
@@ -102,7 +115,7 @@ namespace {
       }
 
       //print digit string
-      file.write(mcsl::raw_str_span{digits});
+      file.write(mcsl::str_slice{digits});
       charsPrinted += digits.size();
 
       //minWidth with left justification
@@ -149,10 +162,27 @@ namespace {
 
       //minWidth with right justification
       if (!fmt.isLeftJust) {
-         sint padChars = fmt.minWidth - mcsl::max(fmt.precision, digits.size()) - (num < 0 || fmt.alwaysPrintSign) - (2 * fmt.altMode) - charsPrinted;
-         if (padChars > 0) {
-            file.write(mcsl::PAD_CHAR, padChars);
+         sint padChars = fmt.minWidth - mcsl::max(fmt.precision, digits.size()) - (num < 0 || fmt.alwaysPrintSign || fmt.padForPosSign) - (2 * fmt.altMode) - charsPrinted;
+         if (padChars > 0) { //!TODO: if(fmt.padWithZero) write this padding after the radix specifier
+            file.write(fmt.padWithZero ? '0' : mcsl::PAD_CHAR, padChars);
             charsPrinted += padChars;
+         }
+      }
+
+      //print sign
+      bool printSignZero = false;
+      if (num < 0) {
+         file.write('-');
+         ++charsPrinted;
+      } else if (fmt.alwaysPrintSign) {
+         file.write('+');
+         ++charsPrinted;
+      } else if (fmt.padForPosSign) {
+         if (fmt.padWithZero) {
+            printSignZero = true;
+         } else {
+            file.write(mcsl::PAD_CHAR);
+            ++charsPrinted;
          }
       }
 
@@ -171,14 +201,12 @@ namespace {
          charsPrinted += 2;
       }
 
-      //print sign
-      if (num < 0) {
-         file.write('-');
-         ++charsPrinted;
-      } else if (fmt.alwaysPrintSign) {
-         file.write('+');
+      //print sign zero
+      if (printSignZero) {
+         file.write('0');
          ++charsPrinted;
       }
+
       //print extra precision digits
       if (fmt.precision > digits.size()) {
          charsPrinted += fmt.precision - digits.size();
@@ -186,7 +214,7 @@ namespace {
       }
       //print digit string
       charsPrinted += digits.size();
-      file.write(mcsl::raw_str_span{digits});
+      file.write(mcsl::str_slice{digits});
 
       //minWidth with left justification
       if (fmt.isLeftJust && fmt.minWidth > charsPrinted) {
@@ -241,7 +269,7 @@ namespace {
                wholeDigits.push_back(mcsl::digit_to_char(digit, isLower));
             } while (whole > 0);
 
-            file.write(mcsl::raw_str_span{wholeDigits});
+            file.write(mcsl::str_slice{wholeDigits});
             charsPrinted += wholeDigits.size();
             wholeDigits.free();
 
@@ -279,7 +307,7 @@ namespace {
       fmt.radix = fmt.radix ? fmt.radix : mcsl::DEFAULT_RAW_RADIX;
 
       const uint charsPerByte = (uint)(mcsl::ceil(mcsl::log(fmt.radix, mcsl::TYPEMAX<ubyte>()+1)));
-      uint charsPrinted = data.size() * (charsPerByte + (fmt.altMode ? 3 : 1)) - 1;
+      uint charsPrinted = data.size() * (charsPerByte + (fmt.altMode ? 3 : fmt.padForPosSign)) - 1;
 
 
       //minWidth with right justification
@@ -295,12 +323,14 @@ namespace {
          byteFmt.minWidth = 0;
          byteFmt.precision = charsPerByte;
          byteFmt.alwaysPrintSign = false;
+         byteFmt.padForPosSign = false;
+         byteFmt.padWithZero = true;
 
          //write bytes to the file
          const char mode = isLowercase ? 'u' : 'U';
          writefImpl<ubyte>(file, data[0], mode, byteFmt);
+         byteFmt.padForPosSign = fmt.padForPosSign || fmt.altMode; //add spacing between bytes if necessary
          for (uint i = 1; i < data.size(); ++i) {
-            file.write(mcsl::PAD_CHAR);
             writefImpl<ubyte>(file, data[i], mode, byteFmt);
          }
       }
@@ -409,7 +439,7 @@ template<> uint mcsl::File::writef<bool>(const bool& obj, char mode, FmtArgs fmt
    }
 
    //bool string
-   write(raw_str_span{str});
+   write(str_slice{str});
 
    //left-justified padding
    if (fmt.isLeftJust && fmt.minWidth > str.size()) {
@@ -420,7 +450,7 @@ template<> uint mcsl::File::writef<bool>(const bool& obj, char mode, FmtArgs fmt
    return max(str.size(), fmt.minWidth);
 }
 
-template<> uint mcsl::File::writef<mcsl::raw_str_span>(const raw_str_span& obj, char mode, FmtArgs fmt) {
+template<> uint mcsl::File::writef<mcsl::str_slice>(const str_slice& obj, char mode, FmtArgs fmt) {
    if ((mode | CASE_BIT) != 's') {
       mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code for type (%%%c)", mode);
    }

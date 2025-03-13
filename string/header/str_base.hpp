@@ -72,10 +72,10 @@ struct mcsl::str_base : public contig_base<char_t> {
    template<str_t strT> inline constexpr sint operator<=>(this const auto& s, const strT& other) { return s.strcmp(other); }
 
 
-   template<uint len> inline constexpr bool operator==(this const auto& s, const char_t other[len+1]) { return s == raw_str_span(other); }
-   template<uint len> inline constexpr bool operator!=(this const auto& s, const char_t other[len+1]) { return s != raw_str_span(other); }
+   template<uint len> inline constexpr bool operator==(this const auto& s, const char_t other[len+1]) { return s == str_slice(other); }
+   template<uint len> inline constexpr bool operator!=(this const auto& s, const char_t other[len+1]) { return s != str_slice(other); }
 
-   template<uint len> inline constexpr sint operator<=>(this const auto& s, const char_t other[len+1]) { return s <=> raw_str_span(other); }
+   template<uint len> inline constexpr sint operator<=>(this const auto& s, const char_t other[len+1]) { return s <=> str_slice(other); }
 
 
    inline constexpr bool operator==(this const auto& s, const char c) { return s.size() == 1 && s[0] == c; }

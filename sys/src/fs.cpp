@@ -109,7 +109,7 @@ mcsl::arr_span<ubyte> mcsl::File::read(arr_span<ubyte> dest) {
    return {dest.begin(), i};
 }
 
-mcsl::raw_str_span mcsl::File::readln(raw_str_span dest, const char nl) {
+mcsl::str_slice mcsl::File::readln(str_slice dest, const char nl) {
    uint i = 0;
    while (i < dest.size()) {
       const char ch = read();
