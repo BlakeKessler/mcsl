@@ -1,5 +1,5 @@
-#ifndef FS_PRINTF_CPP
-#define FS_PRINTF_CPP
+#ifndef FS_WRITEF_CPP
+#define FS_WRITEF_CPP
 
 #include "fs.hpp"
 
@@ -225,7 +225,7 @@ namespace {
 
       const bool isLower = mode & mcsl::CASE_BIT;
 
-      switch (mode | mcsl::CASE_BIT) {
+      switch (mode | mcsl::CASE_BIT) { //!TODO: handle NaN and Inf
          case 'g':
             //!TODO: everything
          case 'f': case_f: {
@@ -262,6 +262,9 @@ namespace {
          case 'e': case_e: { //!TODO: everything
             auto [signif, pow] = mcsl::sci_notat<T>(num, fmt.radix);
             static_assert(mcsl::same_t<T, decltype(signif)> && mcsl::same_t<sint, decltype(pow)>);
+
+            auto [signifWhole, signifFrac] = mcsl::modf(signif);
+
 
             //!TODO: finish this
          }
@@ -435,4 +438,4 @@ template<> uint mcsl::File::writef<mcsl::raw_str_span>(const raw_str_span& obj, 
    return max(obj.size(), fmt.minWidth);
 }
 
-#endif //FS_PRINTF_CPP
+#endif //FS_WRITEF_CPP
