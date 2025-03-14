@@ -7,10 +7,20 @@
 #include "str_to_num.hpp"
 
 namespace {
-   mcsl::tuple<char, mcsl::FmtArgs, uint> __parseFmtCode(const mcsl::str_slice str) {
+   enum FmtVarFields : ubyte {
+      NONE = 0,
+      MIN_WIDTH = 1_m,
+      PRECISION = 2_m,
+      RADIX = 3_m
+   };
+   FmtVarFields operator|=(FmtVarFields& lhs, FmtVarFields rhs) {
+      lhs = (FmtVarFields)((ubyte)(lhs) | (ubyte)(rhs));
+   }
+   mcsl::tuple<char, mcsl::FmtArgs, uint, FmtVarFields> __parseFmtCode(const mcsl::str_slice str) {
       char mode = 0;
       mcsl::FmtArgs args{};
       uint i = 0;
+      FmtVarFields flags = NONE;
       do {
          if (i >= str.size()) {
             mcsl::__throw(mcsl::ErrCode::FS_ERR, "un-terminated format code");
@@ -54,25 +64,43 @@ namespace {
       //minWidth, precision, radix
       if (mode == -1) { //!TODO: *
          //minWidth
-         while (i < str.size() && mcsl::is_digit(str[i], 10)) {
-            args.minWidth *= 10;
-            args.minWidth += mcsl::digit_to_uint(str[i]);
-            ++i;
+         if (i < str.size()) {
+            if (str[i] == mcsl::FMT_VAR_FIELD) {
+               flags |= MIN_WIDTH;
+               ++i;
+            } else {
+               while (i < str.size() && mcsl::is_digit(str[i], 10)) {
+                  args.minWidth *= 10;
+                  args.minWidth += mcsl::digit_to_uint(str[i]);
+                  ++i;
+               }
+            }
          }
-
+         
          //precision
          if (i < str.size() && str[i] == mcsl::FMT_PREC_INTRO) {
-            while (++i < str.size() && mcsl::is_digit(str[i], 10)) {
-               args.precision *= 10;
-               args.precision += mcsl::digit_to_uint(str[i]);
+            ++i;
+            if (i < str.size() && str[i] == mcsl::FMT_VAR_FIELD) {
+               flags |= PRECISION;
+            } else {
+               while (i < str.size() && mcsl::is_digit(str[i], 10)) {
+                  args.precision *= 10;
+                  args.precision += mcsl::digit_to_uint(str[i]);
+                  ++i;
+               }
             }
          }
 
          //radix
          if (i < str.size() && str[i] == mcsl::FMT_RADIX_INTRO) {
-            while (++i < str.size() && mcsl::is_digit(str[i], 10)) {
+            ++i;
+            if (i < str.size() && str[i] == mcsl::FMT_VAR_FIELD) {
+               flags |= RADIX;
+            }
+            while (i < str.size() && mcsl::is_digit(str[i], 10)) {
                args.radix *= 10;
                args.radix += mcsl::digit_to_uint(str[i]);
+               ++i;
             }
          }
 
@@ -97,7 +125,7 @@ namespace {
          }
       }
 
-      return {mode, args, i};
+      return {mode, args, i, flags};
    }
 
    uint __printfImpl(mcsl::File& file, const mcsl::str_slice str, uint charsPrinted);
@@ -109,7 +137,7 @@ namespace {
             file.write(mcsl::str_slice::make(str, i));
             charsPrinted += i;
             assert(str.size() > (i+1), "%% not followed by format code", mcsl::ErrCode::FS_ERR);
-            auto [mode, fmtArgs, codeLen] = __parseFmtCode(mcsl::str_slice::make(str, i+1, str.size()-(i+1)));
+            auto [mode, fmtArgs, codeLen, flags] = __parseFmtCode(mcsl::str_slice::make(str, i+1, str.size()-(i+1)));
             if (mode == mcsl::FMT_INTRO) { //%%
                file.write(mcsl::FMT_INTRO);
                ++charsPrinted;

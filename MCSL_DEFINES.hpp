@@ -126,6 +126,7 @@ namespace mcsl {
    constexpr char FMT_INTRO = '%';
    constexpr char FMT_PREC_INTRO = '.';
    constexpr char FMT_RADIX_INTRO = ',';
+   constexpr char FMT_VAR_FIELD = '*';
 };
 
 //bitmask literal
