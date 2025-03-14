@@ -124,6 +124,8 @@ namespace mcsl {
    constexpr char EXP_NOTAT[] = "~^";
    // constexpr char EXP_NOTAT[] = "*^";
    constexpr char FMT_INTRO = '%';
+   constexpr char FMT_PREC_INTRO = '.';
+   constexpr char FMT_RADIX_INTRO = ',';
 };
 
 //bitmask literal

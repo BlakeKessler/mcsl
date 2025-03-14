@@ -4,6 +4,7 @@
 #include "fs.hpp"
 
 #include "tuple.hpp"
+#include "str_to_num.hpp"
 
 namespace {
    mcsl::tuple<char, mcsl::FmtArgs, uint> __parseFmtCode(const mcsl::str_slice str) {
@@ -27,29 +28,75 @@ namespace {
             case 'c': case 'C':
             case 's': case 'S':
                mode = str[i];
+               ++i;
                break;
 
 
-            case '-': args.isLeftJust = true; break;
-            case '+': args.alwaysPrintSign = true; break;
-            case mcsl::PAD_CHAR: args.padForPosSign = true; break;
-            case '#': args.altMode = true; break;
-            case '0': args.padWithZero = true; break;
+            case '-': args.isLeftJust = true; ++i; break;
+            case '+': args.alwaysPrintSign = true; ++i; break;
+            case mcsl::PAD_CHAR: args.padForPosSign = true; ++i; break;
+            case '#': args.altMode = true; ++i; break;
+            case '0': args.padWithZero = true; ++i; break;
 
-            //!TODO: everything in this switch statement below this comment
+            //handled after this
             case '.':
             case ',':
             case '*':
-
-
             case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+               mode = -1;
+               break;
+            
+            default:
+               mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code");
          }
-      } while (++i, !mode);
+      } while (!mode);
 
-      if (mode == mcsl::FMT_INTRO) {
-         assert(i == 1, "invalid format code (%% may not have arguments)", mcsl::ErrCode::FS_ERR);
-         return {mcsl::FMT_INTRO, {}, 1};
+      //minWidth, precision, radix
+      if (mode == -1) { //!TODO: *
+         //minWidth
+         while (i < str.size() && mcsl::is_digit(str[i], 10)) {
+            args.minWidth *= 10;
+            args.minWidth += mcsl::digit_to_uint(str[i]);
+            ++i;
+         }
+
+         //precision
+         if (i < str.size() && str[i] == mcsl::FMT_PREC_INTRO) {
+            while (++i < str.size() && mcsl::is_digit(str[i], 10)) {
+               args.precision *= 10;
+               args.precision += mcsl::digit_to_uint(str[i]);
+            }
+         }
+
+         //radix
+         if (i < str.size() && str[i] == mcsl::FMT_RADIX_INTRO) {
+            while (++i < str.size() && mcsl::is_digit(str[i], 10)) {
+               args.radix *= 10;
+               args.radix += mcsl::digit_to_uint(str[i]);
+            }
+         }
+
+         switch (str[i]) {
+            case 'r': case 'R':
+            case 'b': case 'B':
+            case 'u': case 'U':
+            case 'i': case 'I':
+            case 'f': case 'F':
+            case 'g': case 'G':
+            case 'e': case 'E':
+            case 'c': case 'C':
+            case 's': case 'S':
+               mode = str[i];
+               ++i;
+               break;
+
+            case mcsl::FMT_INTRO: 
+               mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code (%% may not have arguments)");
+            default:
+               mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code");
+         }
       }
+
       return {mode, args, i};
    }
 
