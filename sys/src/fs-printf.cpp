@@ -60,7 +60,7 @@ namespace {
                break;
             
             default:
-               mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code");
+               mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format");
          }
       } while (!mode);
 
@@ -122,9 +122,9 @@ namespace {
                break;
 
             case mcsl::FMT_INTRO: 
-               mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code (%% may not have arguments)");
+               mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format (%% may not have arguments)");
             default:
-               mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code");
+               mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format");
          }
       }
 
