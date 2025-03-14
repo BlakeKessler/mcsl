@@ -135,4 +135,12 @@ _fdeclio(void*); //!TODO: CTAD for printing all pointers as void pointers
 
 #undef _fdeclio
 
+
+
+#pragma region inlinesrc
+
+#include "../src/fs-printf.cpp"
+
+#pragma endregion inlinesrc
+
 #endif //MCSL_FS_HPP

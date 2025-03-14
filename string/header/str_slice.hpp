@@ -24,11 +24,12 @@ class [[clang::trivial_abi]] mcsl::str_slice : public str_base<char> {
       constexpr str_slice(str_t auto& other, const uint size): str_slice(other.begin(),size) { assert(other.size() >= size, __OVERSIZED_SPAN_MSG); }
       constexpr str_slice(str_t auto& other, const uint begin, const uint size): str_slice(other.begin() + begin, size) { assert(other.size() >= (begin + size), __OVERSIZED_SPAN_MSG); }
 
-      static const str_slice make(const char* str, const uint size);
-      static const str_slice make(const char* begin, const char* end);
-      static const str_slice make(const str_t auto& other);
-      static const str_slice make(const str_t auto& other, const uint size);
-      static const str_slice make(const str_t auto& other, const uint begin, const uint size);
+      static constexpr const str_slice make(const char* str, const uint size);
+      static constexpr const str_slice make(const char* begin, const char* end);
+      static constexpr const str_slice make(const str_t auto& other);
+      static constexpr const str_slice make(const str_t auto& other, const uint size);
+      static constexpr const str_slice make(const str_t auto& other, const uint begin, const uint size);
+      static constexpr const str_slice make_from_cstr(const char*);
 
       //properties
       [[gnu::pure]] constexpr uint size() const { return _size; }
@@ -51,22 +52,25 @@ class [[clang::trivial_abi]] mcsl::str_slice : public str_base<char> {
 
 #pragma region inlinesrc
 
-const mcsl::str_slice mcsl::str_slice::make(const char* str, const uint size) {
+constexpr const mcsl::str_slice mcsl::str_slice::make(const char* str, const uint size) {
    return str_slice{const_cast<char*>(str), size};
 }
-const mcsl::str_slice mcsl::str_slice::make(const char* begin, const char* end) {
+constexpr const mcsl::str_slice mcsl::str_slice::make(const char* begin, const char* end) {
    return str_slice{const_cast<char*>(begin), const_cast<char*>(end)};
 }
-const mcsl::str_slice mcsl::str_slice::make(const str_t auto& other) {
+constexpr const mcsl::str_slice mcsl::str_slice::make(const str_t auto& other) {
    return make(other.begin(), other.size());
 }
-const mcsl::str_slice mcsl::str_slice::make(const str_t auto& other, const uint size) {
+constexpr const mcsl::str_slice mcsl::str_slice::make(const str_t auto& other, const uint size) {
    assert(other.size() >= size, __OVERSIZED_SPAN_MSG);
    return make(other.begin(), size);
 }
-const mcsl::str_slice mcsl::str_slice::make(const str_t auto& other, const uint begin, const uint size) {
+constexpr const mcsl::str_slice mcsl::str_slice::make(const str_t auto& other, const uint begin, const uint size) {
    assert(other.size() >= (begin + size), __OVERSIZED_SPAN_MSG);
    return make(other.begin() + begin, size);
+}
+constexpr const mcsl::str_slice mcsl::str_slice::make_from_cstr(const char* buf) {
+   return make(buf, std::strlen(buf));
 }
 
 #pragma endregion inlinesrc

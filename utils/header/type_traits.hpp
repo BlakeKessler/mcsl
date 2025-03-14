@@ -7,6 +7,7 @@
 #include "concepts.hpp"
 #include "math.hpp"
 #include <cfloat>
+#include "unreachable.hpp"
 
 namespace mcsl {
    //max and min values for numeric types
@@ -65,7 +66,7 @@ namespace mcsl {
          return SIGNIF_BITS<T>() / 4;
          static_assert(SIGNIF_BITS<T>() == 2);
       } else if constexpr (radix == 8) {
-         return (uint)floor(SIGNIF_BITS<T>() / 3.0)
+         return (uint)floor(SIGNIF_BITS<T>() / 3.0);
       }
 
       return (uint)floor(SIGNIF_BITS<T>() * log(radix, SIGNIF_BITS<T>())); //!TODO: just use this once there is a constexpr log function

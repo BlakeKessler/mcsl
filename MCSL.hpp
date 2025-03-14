@@ -14,7 +14,7 @@ namespace mcsl {
    template<float_t T> struct Float;
 
    template<typename first_t, typename second_t = first_t> struct pair;
-   template<typename... Ts> struct tuple;
+   // template<typename... Ts> struct tuple;
 
    template<typename T> struct container_base;
 

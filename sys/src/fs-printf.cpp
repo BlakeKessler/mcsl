@@ -47,25 +47,29 @@ namespace {
       } while (++i, !mode);
 
       if (mode == mcsl::FMT_INTRO) {
-         assert(i == 1, "invalid format code (%%%% may not have arguments)", mcsl::ErrCode::FS_ERR);
+         assert(i == 1, "invalid format code (%% may not have arguments)", mcsl::ErrCode::FS_ERR);
          return {mcsl::FMT_INTRO, {}, 1};
       }
       return {mode, args, i};
    }
+
+   uint __printfImpl(mcsl::File& file, const mcsl::str_slice str, uint charsPrinted);
+   uint __printfImpl(mcsl::File& file, const mcsl::str_slice str, uint charsPrinted, const auto& arg0, const auto&... argv);
+
    uint __printfImpl(mcsl::File& file, const mcsl::str_slice str, uint charsPrinted, const auto& arg0, const auto&... argv) {
       for (uint i = 0; i < str.size(); ++i) {
          if (str[i] == mcsl::FMT_INTRO) { //found format code
             file.write(mcsl::str_slice::make(str, i));
             charsPrinted += i;
-            assert(str.size() > (str.size()+1), "%% not followed by format code", mcsl::ErrCode::FS_ERR);
+            assert(str.size() > (i+1), "%% not followed by format code", mcsl::ErrCode::FS_ERR);
             auto [mode, fmtArgs, codeLen] = __parseFmtCode(mcsl::str_slice::make(str, i+1, str.size()-(i+1)));
-            if (str[i + codeLen] == mcsl::FMT_INTRO) { //%%
+            if (mode == mcsl::FMT_INTRO) { //%%
                file.write(mcsl::FMT_INTRO);
                ++charsPrinted;
             } else { //other format code
                charsPrinted += file.writef(arg0, str[i + codeLen], fmtArgs);
             }
-            if (i + codeLen > str.size()) { //more to print
+            if (i + codeLen < str.size()) { //more to print
                return __printfImpl(file, mcsl::str_slice::make(str, i + codeLen + 1, str.size() - (i + codeLen + 1)), charsPrinted, argv...); //tail recursion
             } else { //end of format string
                [[unlikely]];
@@ -84,14 +88,14 @@ namespace {
             [[unlikely]];
             file.write(mcsl::str_slice::make(str, i));
             charsPrinted += i;
-            assert(str.size() > (str.size()+1), "%% not followed by format code", mcsl::ErrCode::FS_ERR);
+            assert(str.size() > (i+1), "%% not followed by format code", mcsl::ErrCode::FS_ERR);
             if (str[i + 1] == mcsl::FMT_INTRO) { //%%
                file.write(mcsl::FMT_INTRO);
                ++charsPrinted;
             } else { //other format code
                mcsl::__throw(mcsl::ErrCode::FS_ERR, "printf: more consuming format codes than arguments");
             }
-            if (i + 2 > str.size()) { //more to print
+            if (i+2 < str.size()) { //more to print
                return __printfImpl(file, mcsl::str_slice::make(str, i + 2, str.size() - (i + 2)), charsPrinted);
             } else { //end of format string
                return charsPrinted;
