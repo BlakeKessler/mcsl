@@ -326,7 +326,7 @@ namespace {
          byteFmt.precision = charsPerByte;
          byteFmt.alwaysPrintSign = false;
          byteFmt.padForPosSign = false;
-         byteFmt.padWithZero = true;
+         byteFmt.padWithZero = false;
 
          //write bytes to the file
          const char mode = isLowercase ? 'u' : 'U';
