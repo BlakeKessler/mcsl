@@ -18,9 +18,9 @@ namespace mcsl {
 
 [[gnu::pure, gnu::always_inline]] constexpr char mcsl::digit_to_char(const ubyte digit, const bool isLowercase) {
    assume(digit < 36);
-   char c = '0' | digit | (isLowercase ? CASE_BIT : 0);
+   char c = '0' | digit;
    if (digit >= 0xA) {
-      c += 'A' - '0' - 0xA;
+      c += isLowercase ? ('a' - '0' - 0xA) : ('A' - '0' - 0xA);
    }
    return c;
 }
