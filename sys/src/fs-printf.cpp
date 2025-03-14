@@ -16,6 +16,9 @@ namespace {
    FmtVarFields operator|=(FmtVarFields& lhs, FmtVarFields rhs) {
       lhs = (FmtVarFields)((ubyte)(lhs) | (ubyte)(rhs));
    }
+   bool operator&(FmtVarFields lhs, FmtVarFields rhs) {
+      return (ubyte)(lhs) & (ubyte)(rhs);
+   }
    mcsl::tuple<char, mcsl::FmtArgs, uint, FmtVarFields> __parseFmtCode(const mcsl::str_slice str) {
       char mode = 0;
       mcsl::FmtArgs args{};
@@ -125,6 +128,10 @@ namespace {
          }
       }
 
+      if (flags & flags) { //warn the user that variable fields are not yet supported
+         mcsl::__throw(mcsl::ErrCode::FS_ERR, "WARNING: mcsl::printf does not yet support variable format fields - if are printing variable-length strings, use an mcsl::str_slice");
+      }
+
       return {mode, args, i, flags};
    }
 
@@ -138,6 +145,11 @@ namespace {
             charsPrinted += i;
             assert(str.size() > (i+1), "%% not followed by format code", mcsl::ErrCode::FS_ERR);
             auto [mode, fmtArgs, codeLen, flags] = __parseFmtCode(mcsl::str_slice::make(str, i+1, str.size()-(i+1)));
+
+            // if (flags & MIN_WIDTH) {} //!TODO: figure out a good way to do this
+            // if (flags & PRECISION) {} //!TODO: figure out a good way to do this
+            // if (flags & RADIX) {} //!TODO: figure out a good way to do this
+
             if (mode == mcsl::FMT_INTRO) { //%%
                file.write(mcsl::FMT_INTRO);
                ++charsPrinted;
