@@ -9,9 +9,8 @@
 
 #include "string.hpp"
 
-#include <stdbit.h>
-
 namespace {
+   
    //formatted writing of binary data directly into the file
    uint writefBinaryImpl(mcsl::File& file, const mcsl::arr_span<ubyte> data, mcsl::FmtArgs& fmt) {
       fmt.radix = fmt.radix ? fmt.radix : mcsl::DEFAULT_RAW_RADIX;
@@ -22,7 +21,14 @@ namespace {
       }
 
       //write binary data to file
-      file.write(data); //!TODO: ENDIANNESS
+      if (fmt.endianness_b() == mcsl::sys_endian::SYS) {
+         file.write(data);
+      } else { //ANTI_SYS
+         for (uint i = data.size(); i--;) {
+            file.write(data[i]);
+         }
+      }
+      
 
       //left-justified padding
       if (fmt.isLeftJust && fmt.minWidth > data.size()) {
@@ -330,15 +336,7 @@ namespace {
 
          //write bytes to the file
          const char mode = isLowercase ? 'u' : 'U';
-         #if __STDC_ENDIAN_NATIVE__ == __STDC_ENDIAN_BIG__
-            writefImpl<ubyte>(file, data[0], mode, byteFmt);
-            if (data.size() > 1) {
-               byteFmt.padForPosSign = fmt.padForPosSign || fmt.altMode; //add spacing between bytes if necessary
-               for (uint i = 1; i < data.size(); ++i) {
-                  writefImpl<ubyte>(file, data[i], mode, byteFmt);
-               }
-            }
-         #else
+         if (fmt.endianness_r() == mcsl::sys_endian::SYS) {
             writefImpl<ubyte>(file, data.back(), mode, byteFmt);
             if (data.size() > 1) {
                byteFmt.padForPosSign = fmt.padForPosSign || fmt.altMode; //add spacing between bytes if necessary
@@ -346,7 +344,15 @@ namespace {
                   writefImpl<ubyte>(file, data[i], mode, byteFmt);
                }
             }
-         #endif
+         } else { //ANTI_SYS
+            writefImpl<ubyte>(file, data[0], mode, byteFmt);
+            if (data.size() > 1) {
+               byteFmt.padForPosSign = fmt.padForPosSign || fmt.altMode; //add spacing between bytes if necessary
+               for (uint i = 1; i < data.size(); ++i) {
+                  writefImpl<ubyte>(file, data[i], mode, byteFmt);
+               }
+            }
+         }
       }
       
       

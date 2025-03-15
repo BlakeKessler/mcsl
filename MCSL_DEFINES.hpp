@@ -142,7 +142,10 @@ constexpr unsigned long long operator"" _m(const unsigned long long x) {
 
 //select first element of paramater pack
 namespace mcsl {
+   #pragma GCC diagnostic push
+   #pragma GCC diagnostic ignored "-Wunused-parameter"
    template<typename T, typename... Ts> T& pack_first(T& first, Ts&... rest) { return first; }
+   #pragma GCC diagnostic pop
 };
 
 

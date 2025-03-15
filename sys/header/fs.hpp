@@ -11,6 +11,8 @@
 #include "raw_str.hpp"
 #include "type_traits.hpp"
 
+#include "hw.hpp"
+
 class mcsl::Path : public mcsl::cstr { //base type is implementation-defined
    private:
       static constexpr raw_str _nameof = "Path";
@@ -43,6 +45,9 @@ struct mcsl::FmtArgs {
    bool padForPosSign = false;
    bool padWithZero = false;
    bool altMode = false;
+
+   sys_endian endianness_b() const;
+   sys_endian endianness_r() const;
 };
 
 class mcsl::File {

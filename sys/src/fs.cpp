@@ -140,4 +140,27 @@ mcsl::string mcsl::File::readln(const char nl) {
    }
 }
 
+
+mcsl::sys_endian mcsl::FmtArgs::endianness_b() const {
+   if (alwaysPrintSign) {
+      return sys_endian::BIG;
+   } else if (padWithZero) {
+      return sys_endian::LITTLE;
+   } else if (altMode) {
+      return sys_endian::ANTI_SYS;
+   } else {
+      return sys_endian::SYS;
+   }
+}
+mcsl::sys_endian mcsl::FmtArgs::endianness_r() const {
+   if (alwaysPrintSign) {
+      return sys_endian::BIG;
+   } else if (padWithZero) {
+      return sys_endian::LITTLE;
+   }else {
+      return sys_endian::SYS;
+   }
+}
+
+
 #endif //MCSL_FS_CPP

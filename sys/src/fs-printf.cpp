@@ -13,12 +13,15 @@ namespace {
       PRECISION = 2_m,
       RADIX = 3_m
    };
-   FmtVarFields operator|=(FmtVarFields& lhs, FmtVarFields rhs) {
+   FmtVarFields& operator|=(FmtVarFields& lhs, FmtVarFields rhs) {
       lhs = (FmtVarFields)((ubyte)(lhs) | (ubyte)(rhs));
+      return lhs;
    }
    bool operator&(FmtVarFields lhs, FmtVarFields rhs) {
       return (ubyte)(lhs) & (ubyte)(rhs);
    }
+   #pragma GCC diagnostic push
+   #pragma GCC diagnostic ignored "-Wunneeded-internal-declaration"
    mcsl::tuple<char, mcsl::FmtArgs, uint, FmtVarFields> __parseFmtCode(const mcsl::str_slice str) {
       char mode = 0;
       mcsl::FmtArgs args{};
@@ -65,7 +68,7 @@ namespace {
       } while (!mode);
 
       //minWidth, precision, radix
-      if (mode == -1) { //!TODO: *
+      if (mode == -1) {
          //minWidth
          if (i < str.size()) {
             if (str[i] == mcsl::FMT_VAR_FIELD) {
@@ -127,6 +130,7 @@ namespace {
                mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format");
          }
       }
+      #pragma GCC diagnostic pop
 
       if (flags & flags) { //warn the user that variable fields are not yet supported
          mcsl::__throw(mcsl::ErrCode::FS_ERR, "WARNING: mcsl::printf does not yet support variable format fields - if are printing variable-length strings, use an mcsl::str_slice");
@@ -169,6 +173,8 @@ namespace {
       file.write(str);
       return str.size();
    }
+   #pragma GCC diagnostic push
+   #pragma GCC diagnostic ignored "-Wunneeded-internal-declaration"
    uint __printfImpl(mcsl::File& file, const mcsl::str_slice str, uint charsPrinted) {
       for (uint i = 0; i < str.size(); ++i) {
          if (str[i] == mcsl::FMT_INTRO) { //found format code
@@ -194,6 +200,7 @@ namespace {
       file.write(str);
       return str.size();
    }
+   #pragma GCC diagnostic pop
 };
 
 uint mcsl::File::printf(const mcsl::str_slice fmt, const auto&... argv) {
