@@ -266,31 +266,41 @@ namespace {
 
       const bool isLower = mode & mcsl::CASE_BIT;
 
-      //special cases
-      if (mcsl::isInf(num)) {
-         return file.writef(__INF_STR, isLower ? 's' : 'S', fmt);
-      } else if (mcsl::isNaN(num)) {
+      if (mcsl::isNaN(num)) { //NaN
          return file.writef(__NAN_STR, isLower ? 's' : 'S', fmt);
       }
 
-      switch (mode | mcsl::CASE_BIT) { //!TODO: minWidth
-         case 'g':
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, "the %%g format code is not yet supported");
-            //!TODO: everything
+      //sign
+      if (num < 0) {
+         file.write('-');
+         ++charsPrinted;
+      } else if (fmt.alwaysPrintSign) {
+         file.write('+');
+         ++charsPrinted;
+      }
 
-            break;
+      if (mcsl::isInf(num)) { //Inf, -Inf
+         return file.writef(__INF_STR, isLower ? 's' : 'S', fmt);
+      }
+
+      switch (mode | mcsl::CASE_BIT) { //!TODO: minWidth, check that the precision and radix can fit in a ulong
+         case 'g': {
+            const sint pow = mcsl::sci_notat<T>(num, fmt.radix).second;
+            if (!fmt.precision) {
+               fmt.precision = 1;
+            }
+
+            if (pow >= -4 && pow < (slong)fmt.precision) {
+               fmt.precision = fmt.precision - pow - 1;
+               goto case_f;
+            } else {
+               fmt.precision = fmt.precision - 1;
+               goto case_e;
+            }
+         }
          case 'f': case_f: {
             num = mcsl::round(num, fmt.precision, fmt.radix);
             auto [whole, frac] = mcsl::modf(num);
-
-            //sign
-            if (whole < 0) {
-               file.write('-');
-               ++charsPrinted;
-            } else if (fmt.alwaysPrintSign) {
-               file.write('+');
-               ++charsPrinted;
-            }
 
             //calculate and print digit string of the whole part
             whole = mcsl::abs(whole);
@@ -328,15 +338,6 @@ namespace {
             signif = mcsl::round(signif, fmt.precision, fmt.radix);
             auto [signifWhole, signifFrac] = mcsl::modf(mcsl::abs(signif));
 
-            //sign
-            if (signif < 0) {
-               file.write('-');
-               ++charsPrinted;
-            } else if (fmt.alwaysPrintSign) {
-               file.write('+');
-               ++charsPrinted;
-            }
-
             //whole part
             file.write(mcsl::digit_to_char((ubyte)signifWhole, isLower));
             ++charsPrinted;
@@ -357,7 +358,7 @@ namespace {
             file.write(__EXP_NOTAT);
             charsPrinted += __EXP_NOTAT.size();
 
-            //exponent
+            //exponent //!TODO: when handling padWithZero, don't forget about this
             if ((ubyte)signifWhole == 0 && fracInt == 0) { //0.0
                file.write('+');
                file.write('0');
