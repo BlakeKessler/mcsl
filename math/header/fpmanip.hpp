@@ -74,7 +74,7 @@ template<mcsl::float_t T> constexpr mcsl::pair<T,sint> mcsl::sci_notat(const T x
    }
 
    const sint exp = (sint)mcsl::floor(mcsl::log(radix, mcsl::abs(x)));
-   const T signif = x * mcsl::pow(radix, -exp);
+   const T signif = x * mcsl::pow((T)radix, -exp);
    return {signif, exp};
 }
 
