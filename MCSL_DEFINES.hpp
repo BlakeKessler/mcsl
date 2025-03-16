@@ -123,6 +123,8 @@ namespace mcsl {
    constexpr char PAD_CHAR = ' ';
    constexpr char EXP_NOTAT[] = "~^";
    // constexpr char EXP_NOTAT[] = "*^";
+   constexpr char NAN_STR[] = "NaN";
+   constexpr char INF_STR[] = "Inf";
    constexpr char FMT_INTRO = '%';
    constexpr char FMT_PREC_INTRO = '.';
    constexpr char FMT_RADIX_INTRO = ',';

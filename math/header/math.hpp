@@ -103,7 +103,8 @@ namespace mcsl {
    _STDF2(ln_gamma, lgamma)
 
 
-   
+   constexpr bool isNaN(_F x) { return std::isnan(x); }
+   constexpr bool isInf(_F x) { return std::isinf(x); }
 };
 
 #pragma region inlinesrc

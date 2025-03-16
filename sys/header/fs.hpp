@@ -10,7 +10,6 @@
 #include "cstr.hpp"
 #include "raw_str.hpp"
 #include "type_traits.hpp"
-
 #include "hw.hpp"
 
 class mcsl::Path : public mcsl::cstr { //base type is implementation-defined

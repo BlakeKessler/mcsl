@@ -10,6 +10,7 @@
 namespace mcsl {
    [[gnu::pure, gnu::always_inline]] constexpr char digit_to_char(const ubyte digit, const bool isLowercase);
    template<uint_t T> [[gnu::pure]] constexpr raw_buf_str<8*sizeof(T)> uint_to_str(T num, const uint radix, const bool isLowercase);
+   template<sint_t T> [[gnu::pure]] constexpr raw_buf_str<8*sizeof(T)+1> sint_to_str(T num, const uint radix, const bool isLowercase, const bool alwaysPrintSign);
 };
 
 
@@ -33,6 +34,38 @@ template<mcsl::uint_t T> [[gnu::pure]] constexpr mcsl::raw_buf_str<8*sizeof(T)> 
       num /= radix;
       digits.push_back(mcsl::digit_to_char(digit, isLowercase));
    } while (num);
+
+   //reverse digit string
+   uint fwd = 0;
+   uint bwd = digits.size() - 1;
+   while (fwd < bwd) {
+      const char tmp = digits[fwd];
+      digits[fwd] = digits[bwd];
+      digits[bwd] = tmp;
+      ++fwd;
+      --bwd;
+   }
+
+   return digits;
+}
+
+template<mcsl::sint_t T> [[gnu::pure]] constexpr mcsl::raw_buf_str<8*sizeof(T)+1> mcsl::sint_to_str(T num, const uint radix, const bool isLowercase, const bool alwaysPrintSign) {
+   //calculate digit string
+   raw_buf_str<8*sizeof(T)+1> digits;
+   to_uint_t<T> absNum = mcsl::abs(num);
+   const bool isNeg = num < 0;
+   
+   do {
+      const ubyte digit = absNum % radix;
+      absNum /= radix;
+      digits.push_back(mcsl::digit_to_char(digit, isLowercase));
+   } while (absNum);
+
+   if (isNeg) {
+      digits.push_back('-');
+   } else if (alwaysPrintSign) {
+      digits.push_back('+');
+   }
 
    //reverse digit string
    uint fwd = 0;

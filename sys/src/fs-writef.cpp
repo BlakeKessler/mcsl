@@ -8,8 +8,13 @@
 #include "fpmanip.hpp"
 
 #include "string.hpp"
+#include "raw_buf_str.hpp"
+#include "raw_str.hpp"
 
 namespace {
+   constexpr mcsl::str_slice __EXP_NOTAT = mcsl::str_slice::make(mcsl::EXP_NOTAT, sizeof(mcsl::EXP_NOTAT) - !mcsl::EXP_NOTAT[sizeof(mcsl::EXP_NOTAT)-1]);
+   constexpr mcsl::str_slice __NAN_STR = mcsl::str_slice::make(mcsl::NAN_STR, sizeof(mcsl::NAN_STR) - !mcsl::NAN_STR[sizeof(mcsl::NAN_STR)-1]);
+   constexpr mcsl::str_slice __INF_STR = mcsl::str_slice::make(mcsl::INF_STR, sizeof(mcsl::INF_STR) - !mcsl::INF_STR[sizeof(mcsl::INF_STR)-1]);
    
    //formatted writing of binary data directly into the file
    uint writefBinaryImpl(mcsl::File& file, const mcsl::arr_span<ubyte> data, mcsl::FmtArgs& fmt) {
@@ -261,8 +266,15 @@ namespace {
 
       const bool isLower = mode & mcsl::CASE_BIT;
 
-      switch (mode | mcsl::CASE_BIT) { //!TODO: handle NaN and Inf
+      if (mcsl::isInf(num)) {
+         return file.writef(__INF_STR, isLower ? 's' : 'S', fmt);
+      } else if (mcsl::isNaN(num)) {
+         return file.writef(__NAN_STR, isLower ? 's' : 'S', fmt);
+      } 
+
+      switch (mode | mcsl::CASE_BIT) { //!TODO: minWidth
          case 'g':
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, "the %%g format code is not yet supported");
             //!TODO: everything
          case 'f': case_f: {
             auto [whole, frac] = mcsl::modf(num);
@@ -285,7 +297,7 @@ namespace {
             file.write('.');
             
             //calculate and print digit string of the fractional part
-            do {
+            do { //!TODO: precision
                frac *= fmt.radix;
                const ubyte digit = (ubyte)mcsl::mod(frac, fmt.radix);
                file.write(mcsl::digit_to_char(digit, isLower));
@@ -301,8 +313,25 @@ namespace {
 
             auto [signifWhole, signifFrac] = mcsl::modf(signif);
 
+            file.write(mcsl::digit_to_char((ubyte)signifWhole, isLower));
+            ++charsPrinted;
+            if (fmt.precision > 0) {
+               file.write('.');
+               for (uint i = 0; i < fmt.precision; ++i) {
+                  signifFrac *= fmt.radix;
+                  const ubyte digit = (ubyte)mcsl::mod(signifFrac, fmt.radix);
+                  file.write(mcsl::digit_to_char(digit, isLower));
+                  signifFrac -= digit;
+               }
+               charsPrinted += fmt.precision + 1;
+            }
+            
+            file.write(__EXP_NOTAT);
+            charsPrinted += __EXP_NOTAT.size();
 
-            //!TODO: finish this
+            auto expDigits = mcsl::sint_to_str(pow, fmt.radix, isLower, true);
+            file.write(mcsl::str_slice::make(expDigits));
+            charsPrinted += expDigits.size();
          }
       }
       
@@ -417,9 +446,6 @@ template<> uint mcsl::File::writef<char>(const char& obj, char mode, FmtArgs fmt
    //return number of chars printed
    return max(1, fmt.minWidth);
 }
-
-#include "raw_buf_str.hpp"
-#include "raw_str.hpp"
 
 template<> uint mcsl::File::writef<bool>(const bool& obj, char mode, FmtArgs fmt) {
    raw_buf_str<8> str;
