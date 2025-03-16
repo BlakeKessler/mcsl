@@ -604,18 +604,20 @@ template<> uint mcsl::File::writef<mcsl::str_slice>(const str_slice& obj, char m
    if ((mode | CASE_BIT) != 's') {
       mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code for type (%%%c)", mode);
    }
+
+   const str_slice str = str_slice::make(obj.begin(), min(obj.size(), fmt.precision));
    
-   if (!fmt.isLeftJust && fmt.minWidth > obj.size()) {
-      write(PAD_CHAR, fmt.minWidth - obj.size());
+   if (!fmt.isLeftJust && fmt.minWidth > str.size()) {
+      write(PAD_CHAR, fmt.minWidth - str.size());
    }
 
-   write(obj);
+   write(str);
 
-   if (fmt.isLeftJust && fmt.minWidth > obj.size()) {
-      write(PAD_CHAR, fmt.minWidth - obj.size());
+   if (fmt.isLeftJust && fmt.minWidth > str.size()) {
+      write(PAD_CHAR, fmt.minWidth - str.size());
    }
 
-   return max(obj.size(), fmt.minWidth);
+   return max(str.size(), fmt.minWidth);
 }
 
 #endif //FS_WRITEF_CPP
