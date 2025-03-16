@@ -277,16 +277,27 @@ namespace {
          case 'g':
             mcsl::__throw(mcsl::ErrCode::FS_ERR, "the %%g format code is not yet supported");
             //!TODO: everything
+
+            break;
          case 'f': case_f: {
             auto [whole, frac] = mcsl::modf(num);
-            static_assert(mcsl::same_t<decltype(whole), T> && mcsl::same_t<decltype(frac), T>);
+
+            //sign
+            if (whole < 0) {
+               file.write('-');
+               ++charsPrinted;
+            } else if (fmt.alwaysPrintSign) {
+               file.write('+');
+               ++charsPrinted;
+            }
 
             //calculate and print digit string of the whole part
+            whole = mcsl::abs(whole);
             mcsl::string wholeDigits;
             wholeDigits.reserve_exact((uint)mcsl::ceil(mcsl::log(fmt.radix, whole)));
             do {
                const ubyte digit = (ubyte)mcsl::mod(whole, fmt.radix);
-               whole = mcsl::mod((whole / fmt.radix), 1);
+               whole = mcsl::modf(whole / fmt.radix).first;
                wholeDigits.push_back(mcsl::digit_to_char(digit, isLower));
             } while (whole > 0);
 
@@ -294,17 +305,17 @@ namespace {
             charsPrinted += wholeDigits.size();
             wholeDigits.free();
 
-            //radix point
-            file.write('.');
-            
-            //calculate and print digit string of the fractional part
-            do { //!TODO: precision
-               frac *= fmt.radix;
-               const ubyte digit = (ubyte)mcsl::mod(frac, fmt.radix);
-               file.write(mcsl::digit_to_char(digit, isLower));
-               ++charsPrinted;
-               frac -= digit;
-            } while (frac != 0);
+            if (fmt.precision > 0) { //fractional part
+               file.write('.');
+               ulong fracInt = frac * mcsl::pow(fmt.radix, fmt.precision);
+               auto fracDigits = mcsl::uint_to_str(fracInt, fmt.radix, isLower);
+               if (fmt.precision > fracDigits.size()) {
+                  file.write('0', fmt.precision - fracDigits.size());
+               }
+               file.write(mcsl::str_slice::make(fracDigits));
+               
+               charsPrinted += fmt.precision + 1;
+            }
 
             //!TODO: all format args besides radix
 
@@ -327,7 +338,7 @@ namespace {
             //whole part
             file.write(mcsl::digit_to_char((ubyte)signifWhole, isLower));
             ++charsPrinted;
-            mcsl::to_uint_t<T> fracInt = 0;
+            ulong fracInt = 0;
             if (fmt.precision > 0) { //fractional part
                file.write('.');
                fracInt = signifFrac * mcsl::pow(fmt.radix, fmt.precision);
