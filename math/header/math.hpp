@@ -34,6 +34,8 @@ namespace mcsl {
    _STDF(trunc)
    _STDF(round)
    _STDF2(round_fpmode, nearbyint)
+   
+   inline auto round(_F x, sint prec, uint radix = 10) -> decltype(x);
 
    template<float_t T> constexpr T abs(const T x) { if consteval { return x >= 0 ? x : -x; } else { return std::abs(x); } }
    template< sint_t T> constexpr to_uint_t<T> abs(const T x) { return x >= 0 ? x : -x; }
@@ -124,6 +126,12 @@ namespace mcsl {
 //    }
 //    return res;
 // }
+
+inline auto mcsl::round(_F x, sint prec, uint radix) -> decltype(x) {
+   // assume(radix > 1);
+   const auto factor = mcsl::pow((decltype(x))radix, prec);
+   return std::round(x * factor) / factor;
+}
 
 constexpr auto mcsl::mod(const num_t auto dividend, const num_t auto divisor) -> _MPT(dividend, divisor) {
    if constexpr(int_t<_MPT(dividend, divisor)>) {

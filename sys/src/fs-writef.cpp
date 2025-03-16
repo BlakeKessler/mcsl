@@ -271,7 +271,7 @@ namespace {
          return file.writef(__INF_STR, isLower ? 's' : 'S', fmt);
       } else if (mcsl::isNaN(num)) {
          return file.writef(__NAN_STR, isLower ? 's' : 'S', fmt);
-      } 
+      }
 
       switch (mode | mcsl::CASE_BIT) { //!TODO: minWidth
          case 'g':
@@ -280,6 +280,7 @@ namespace {
 
             break;
          case 'f': case_f: {
+            num = mcsl::round(num, fmt.precision, fmt.radix);
             auto [whole, frac] = mcsl::modf(num);
 
             //sign
@@ -324,6 +325,7 @@ namespace {
          case 'e': case_e: {
             //get fields
             auto [signif, pow] = mcsl::sci_notat<T>(num, fmt.radix);
+            signif = mcsl::round(signif, fmt.precision, fmt.radix);
             auto [signifWhole, signifFrac] = mcsl::modf(mcsl::abs(signif));
 
             //sign
@@ -349,8 +351,6 @@ namespace {
                file.write(mcsl::str_slice::make(fracDigits));
                
                charsPrinted += fmt.precision + 1;
-
-               // debug_assert(fracDigits.size() == fmt.precision);
             }
             
             //scientific notation operator
