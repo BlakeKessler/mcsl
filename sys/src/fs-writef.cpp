@@ -277,6 +277,24 @@ namespace {
       } else if (fmt.alwaysPrintSign) {
          file.write('+');
          ++charsPrinted;
+      } else if (fmt.padForPosSign) {
+         file.write(mcsl::PAD_CHAR);
+         ++charsPrinted;
+      }
+
+      //altMode - print radix specifier
+      if (fmt.altMode) {
+         file.write('0');
+         char ch = isLower ? mcsl::CASE_BIT : 0;
+         switch (fmt.radix) {
+            case  2: ch |= 'B'; break;
+            case  8: ch |= 'O'; break;
+            case 10: ch |= 'D'; break;
+            case 16: ch |= 'X'; break;
+            default: UNREACHABLE;
+         }
+         file.write(ch);
+         charsPrinted += 2;
       }
 
       if (mcsl::isInf(num)) { //Inf, -Inf
