@@ -51,12 +51,12 @@ template<mcsl::float_t T> constexpr mcsl::pair<T,sint> mcsl::frexp(const T x) {
 
 template<mcsl::float_t T> constexpr mcsl::pair<T> mcsl::fextract(const T x) {
    T exp = std::logb(x);
-   T signif = std::scalbn(x, exp);
+   T signif = std::scalbn(x, -exp);
    return {signif, exp};
 }
 template<mcsl::float_t T> constexpr mcsl::pair<T, sint> mcsl::fextracti(const T x) {
    sint exp = std::ilogb(x);
-   T signif = std::scalbn(x, exp);
+   T signif = std::scalbn(x, -exp);
    return {signif, exp};
 }
 
