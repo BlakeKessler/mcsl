@@ -11,10 +11,27 @@
 #include "raw_buf_str.hpp"
 #include "raw_str.hpp"
 
+#define __ALT_MODE \
+if (fmt.altMode) {\
+   file.write('0');\
+   char ch = isLower ? mcsl::CASE_BIT : 0;\
+   switch (fmt.radix) {\
+      case  2: ch |= 'B'; break;\
+      case  8: ch |= 'O'; break;\
+      case 10: ch |= 'D'; break;\
+      case 16: ch |= 'X'; break;\
+      default: UNREACHABLE;\
+   }\
+   file.write(ch);\
+   charsPrinted += 2;\
+}
+
 namespace {
    constexpr mcsl::str_slice __EXP_NOTAT = mcsl::str_slice::make(mcsl::EXP_NOTAT, sizeof(mcsl::EXP_NOTAT) - !mcsl::EXP_NOTAT[sizeof(mcsl::EXP_NOTAT)-1]);
    constexpr mcsl::str_slice __NAN_STR = mcsl::str_slice::make(mcsl::NAN_STR, sizeof(mcsl::NAN_STR) - !mcsl::NAN_STR[sizeof(mcsl::NAN_STR)-1]);
    constexpr mcsl::str_slice __INF_STR = mcsl::str_slice::make(mcsl::INF_STR, sizeof(mcsl::INF_STR) - !mcsl::INF_STR[sizeof(mcsl::INF_STR)-1]);
+   constexpr mcsl::str_slice __NEG_INF_STR = mcsl::str_slice::make(mcsl::NEG_INF_STR, sizeof(mcsl::NEG_INF_STR) - !mcsl::NEG_INF_STR[sizeof(mcsl::NEG_INF_STR)-1]);
+   constexpr mcsl::str_slice __POS_INF_STR = mcsl::str_slice::make(mcsl::POS_INF_STR, sizeof(mcsl::POS_INF_STR) - !mcsl::POS_INF_STR[sizeof(mcsl::POS_INF_STR)-1]);
    
    //formatted writing of binary data directly into the file
    uint writefBinaryImpl(mcsl::File& file, const mcsl::arr_span<ubyte> data, mcsl::FmtArgs& fmt) {
@@ -103,19 +120,8 @@ namespace {
       }
 
       //altMode - print radix specifier
-      if (fmt.altMode) {
-         file.write('0');
-         char ch = isLower ? mcsl::CASE_BIT : 0;
-         switch (fmt.radix) {
-            case  2: ch |= 'B'; break;
-            case  8: ch |= 'O'; break;
-            case 10: ch |= 'D'; break;
-            case 16: ch |= 'X'; break;
-            default: UNREACHABLE;
-         }
-         file.write(ch);
-         charsPrinted += 2;
-      }
+      __ALT_MODE;
+
       //print sign zero
       if (printSignZero) {
          file.write('0');
@@ -200,19 +206,7 @@ namespace {
       }
 
       //altMode - print radix specifier
-      if (fmt.altMode) {
-         file.write('0');
-         char ch = isLower ? mcsl::CASE_BIT : 0;
-         switch (fmt.radix) {
-            case  2: ch |= 'B'; break;
-            case  8: ch |= 'O'; break;
-            case 10: ch |= 'D'; break;
-            case 16: ch |= 'X'; break;
-            default: UNREACHABLE;
-         }
-         file.write(ch);
-         charsPrinted += 2;
-      }
+      __ALT_MODE;
 
       //print sign zero
       if (printSignZero) {
@@ -255,22 +249,26 @@ namespace {
 
       }
       uint charsPrinted = 0;
+      const bool isLower = mode & mcsl::CASE_BIT;
 
       //check radix
       switch (fmt.radix) {
          default:
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, "unsupported radix for printing unsigned integers: %u", fmt.radix);
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, "unsupported radix for printing floating-point numbers: %u", fmt.radix);
          case 2: case 8: case 10: case 16:
             break;
       }
 
-      const bool isLower = mode & mcsl::CASE_BIT;
-
+      //special cases
       if (mcsl::isNaN(num)) { //NaN
          return file.writef(__NAN_STR, isLower ? 's' : 'S', fmt);
       }
+      if (mcsl::isInf(num)) { //Inf, -Inf
+         return file.writef(num > 0 ? (fmt.alwaysPrintSign ? __POS_INF_STR : __INF_STR) : __NEG_INF_STR, isLower ? 's' : 'S', fmt);
+      }
 
       //sign
+      bool extraZero = false;
       if (num < 0) {
          file.write('-');
          ++charsPrinted;
@@ -278,27 +276,20 @@ namespace {
          file.write('+');
          ++charsPrinted;
       } else if (fmt.padForPosSign) {
-         file.write(mcsl::PAD_CHAR);
-         ++charsPrinted;
+         if (fmt.padWithZero) {
+            extraZero = true;
+         } else {
+            file.write(mcsl::PAD_CHAR);
+            ++charsPrinted;
+         }
       }
 
       //altMode - print radix specifier
-      if (fmt.altMode) {
-         file.write('0');
-         char ch = isLower ? mcsl::CASE_BIT : 0;
-         switch (fmt.radix) {
-            case  2: ch |= 'B'; break;
-            case  8: ch |= 'O'; break;
-            case 10: ch |= 'D'; break;
-            case 16: ch |= 'X'; break;
-            default: UNREACHABLE;
-         }
-         file.write(ch);
-         charsPrinted += 2;
-      }
+      __ALT_MODE;
 
-      if (mcsl::isInf(num)) { //Inf, -Inf
-         return file.writef(__INF_STR, isLower ? 's' : 'S', fmt);
+      if (extraZero) {
+         file.write('0');
+         ++charsPrinted;
       }
 
       switch (mode | mcsl::CASE_BIT) { //!TODO: minWidth, check that the precision and radix can fit in a ulong
@@ -316,7 +307,7 @@ namespace {
                goto case_e;
             }
          }
-         case 'f': case_f: {
+         case 'f': case_f: { // ceil(log(10, num)) + precision + (bool)precision
             num = mcsl::round(num, fmt.precision, fmt.radix);
             auto [whole, frac] = mcsl::modf(num);
 
@@ -350,7 +341,7 @@ namespace {
 
             break;
          }
-         case 'e': case_e: {
+         case 'e': case_e: { //4 + precision + (bool)precision + ceil(log(10,pow))
             //get fields
             auto [signif, pow] = mcsl::sci_notat<T>(num, fmt.radix);
             signif = mcsl::round(signif, fmt.precision, fmt.radix);
