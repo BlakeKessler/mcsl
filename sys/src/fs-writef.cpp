@@ -262,9 +262,59 @@ namespace {
       //special cases
       if (mcsl::isNaN(num)) { //NaN
          return file.writef(__NAN_STR, isLower ? 's' : 'S', fmt);
-      }
-      if (mcsl::isInf(num)) { //Inf, -Inf
+      } else if (mcsl::isInf(num)) { //Inf, -Inf
          return file.writef(num > 0 ? (fmt.alwaysPrintSign ? __POS_INF_STR : __INF_STR) : __NEG_INF_STR, isLower ? 's' : 'S', fmt);
+      }
+
+      //decide between %e and %f if using %g, and calculate expected width (for use in padding)
+      T signif;
+      sint pow;
+      uint expectedCharCount;
+      switch (mode | mcsl::CASE_BIT) {
+         case 'g':
+            {
+               auto [tmpSig, tmpPow] = mcsl::sci_notat<T>(num, fmt.radix);
+               signif = tmpSig;
+               pow = tmpPow; 
+            }
+
+            if (!fmt.precision) {
+               fmt.precision = 1;
+            }
+
+            if ((slong)pow >= -4 && pow < (slong)fmt.precision) {
+               fmt.precision = fmt.precision - pow - 1;
+               mode = isLower ? 'f' : 'F';
+               goto case_f;
+            } else {
+               fmt.precision = fmt.precision - 1;
+               mode = isLower ? 'e' : 'E';
+               goto case_e;
+            }
+
+         case 'e': //4 + precision + (bool)precision + ceil(log(10,pow))
+            {
+               auto [tmpSig, tmpPow] = mcsl::sci_notat<T>(num, fmt.radix);
+               signif = tmpSig;
+               pow = tmpPow; 
+            }
+            case_e:
+            expectedCharCount = 5 + fmt.precision + (bool)fmt.precision + (uint)mcsl::floor(mcsl::log(fmt.radix, mcsl::abs(pow)));
+            break;
+         case 'f': case_f:
+            expectedCharCount = 1 + (uint)mcsl::floor(mcsl::log(fmt.radix, mcsl::round(mcsl::abs(num)))) + fmt.precision + (bool)fmt.precision;
+            break;
+      }
+      expectedCharCount += (num < 0 || fmt.alwaysPrintSign); //sign
+      expectedCharCount += fmt.altMode ? 2 : 0; //radix specifier
+
+      //padding (right-justified)
+      if (!fmt.isLeftJust && !fmt.padWithZero) {
+         sint padChars = fmt.minWidth - expectedCharCount;
+         if (padChars > 0) {
+            file.write(mcsl::PAD_CHAR);
+            charsPrinted += padChars;
+         }
       }
 
       //sign
@@ -291,23 +341,17 @@ namespace {
          file.write('0');
          ++charsPrinted;
       }
+      //padding (right-justified, padWithZero)
+      if (!fmt.isLeftJust && fmt.padWithZero) {
+         sint padChars = fmt.minWidth - expectedCharCount;
+         if (padChars > 0) {
+            file.write('0');
+            charsPrinted += padChars;
+         }
+      }
 
       switch (mode | mcsl::CASE_BIT) { //!TODO: minWidth, check that the precision and radix can fit in a ulong
-         case 'g': {
-            const sint pow = mcsl::sci_notat<T>(num, fmt.radix).second;
-            if (!fmt.precision) {
-               fmt.precision = 1;
-            }
-
-            if (pow >= -4 && pow < (slong)fmt.precision) {
-               fmt.precision = fmt.precision - pow - 1;
-               goto case_f;
-            } else {
-               fmt.precision = fmt.precision - 1;
-               goto case_e;
-            }
-         }
-         case 'f': case_f: { // ceil(log(10, num)) + precision + (bool)precision
+         case 'f': {
             num = mcsl::round(num, fmt.precision, fmt.radix);
             auto [whole, frac] = mcsl::modf(num);
 
@@ -321,7 +365,11 @@ namespace {
                wholeDigits.push_back(mcsl::digit_to_char(digit, isLower));
             } while (whole > 0);
 
-            file.write(mcsl::str_slice{wholeDigits});
+            for (uint i = wholeDigits.size(); i--;) {
+               file.write(wholeDigits[i]);
+            }
+
+            // file.write(mcsl::str_slice{wholeDigits});
             charsPrinted += wholeDigits.size();
             wholeDigits.free();
 
@@ -341,9 +389,9 @@ namespace {
 
             break;
          }
-         case 'e': case_e: { //4 + precision + (bool)precision + ceil(log(10,pow))
+         case 'e': {
             //get fields
-            auto [signif, pow] = mcsl::sci_notat<T>(num, fmt.radix);
+            // auto [signif, pow] = mcsl::sci_notat<T>(num, fmt.radix);
             signif = mcsl::round(signif, fmt.precision, fmt.radix);
             auto [signifWhole, signifFrac] = mcsl::modf(mcsl::abs(signif));
 
@@ -380,6 +428,15 @@ namespace {
          }
          
          break;
+      }
+
+      //padding (left-justified)
+      if (fmt.isLeftJust) {
+         sint padChars = fmt.minWidth - expectedCharCount;
+         if (padChars > 0) {
+            file.write(mcsl::PAD_CHAR, padChars);
+            charsPrinted += padChars;
+         }
       }
       
       //return number of chars printed
