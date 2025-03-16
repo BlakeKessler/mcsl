@@ -27,18 +27,21 @@ namespace {
       mcsl::FmtArgs args{};
       uint i = 0;
       FmtVarFields flags = NONE;
+      bool usedDefaultPrec = true;
       do {
          if (i >= str.size()) {
             mcsl::__throw(mcsl::ErrCode::FS_ERR, "un-terminated format code");
          }
          switch (str[i]) {
+            case 'f': case 'F':
+               args.precision = mcsl::DEFAULT_FLT_PREC;
+
             case mcsl::FMT_INTRO: [[fallthrough]];
 
             case 'r': case 'R':
             case 'b': case 'B':
             case 'u': case 'U':
             case 'i': case 'I':
-            case 'f': case 'F':
             case 'g': case 'G':
             case 'e': case 'E':
             case 'c': case 'C':
@@ -85,6 +88,7 @@ namespace {
          
          //precision
          if (i < str.size() && str[i] == mcsl::FMT_PREC_INTRO) {
+            usedDefaultPrec = false;
             ++i;
             if (i < str.size() && str[i] == mcsl::FMT_VAR_FIELD) {
                flags |= PRECISION;
@@ -111,11 +115,14 @@ namespace {
          }
 
          switch (str[i]) {
+            case 'f': case 'F':
+               if (usedDefaultPrec) {
+                  args.precision = mcsl::DEFAULT_FLT_PREC;
+               }
             case 'r': case 'R':
             case 'b': case 'B':
             case 'u': case 'U':
             case 'i': case 'I':
-            case 'f': case 'F':
             case 'g': case 'G':
             case 'e': case 'E':
             case 'c': case 'C':
