@@ -72,7 +72,8 @@ namespace {
             mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
          case 'e': case 'f': case 'g':
             return file.writef<mcsl::to_float_t<T>>(num, mode, fmt);
-         case 'i': case 'u': 
+         case 'i': return file.writef((mcsl::to_sint_t<T>)num, mode, fmt);
+         case 'u': 
             fmt.radix = fmt.radix ? fmt.radix : mcsl::DEFAULT_INT_RADIX;
             break;
          case 'r':
@@ -155,9 +156,10 @@ namespace {
             mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
          case 'e': case 'f': case 'g':
             return file.writef<mcsl::to_float_t<T>>(num, mode, fmt);
-         case 'i': case 'u': 
+         case 'i': 
             fmt.radix = fmt.radix ? fmt.radix : mcsl::DEFAULT_INT_RADIX;
             break;
+         case 'u': return file.writef((mcsl::to_uint_t<T>)num, mode, fmt);
          case 'r':
             return writefRawImpl(file, {(ubyte*)&num, sizeof(num)}, mode & mcsl::CASE_BIT, fmt);
          case 'b':
