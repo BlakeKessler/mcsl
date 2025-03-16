@@ -266,6 +266,7 @@ namespace {
 
       const bool isLower = mode & mcsl::CASE_BIT;
 
+      //special cases
       if (mcsl::isInf(num)) {
          return file.writef(__INF_STR, isLower ? 's' : 'S', fmt);
       } else if (mcsl::isNaN(num)) {
@@ -306,33 +307,58 @@ namespace {
             } while (frac != 0);
 
             //!TODO: all format args besides radix
+
+            break;
          }
-         case 'e': case_e: { //!TODO: everything
+         case 'e': case_e: {
+            //get fields
             auto [signif, pow] = mcsl::sci_notat<T>(num, fmt.radix);
-            static_assert(mcsl::same_t<T, decltype(signif)> && mcsl::same_t<sint, decltype(pow)>);
+            auto [signifWhole, signifFrac] = mcsl::modf(mcsl::abs(signif));
 
-            auto [signifWhole, signifFrac] = mcsl::modf(signif);
+            //sign
+            if (signif < 0) {
+               file.write('-');
+               ++charsPrinted;
+            } else if (fmt.alwaysPrintSign) {
+               file.write('+');
+               ++charsPrinted;
+            }
 
+            //whole part
             file.write(mcsl::digit_to_char((ubyte)signifWhole, isLower));
             ++charsPrinted;
-            if (fmt.precision > 0) {
+            mcsl::to_uint_t<T> fracInt = 0;
+            if (fmt.precision > 0) { //fractional part
                file.write('.');
-               for (uint i = 0; i < fmt.precision; ++i) {
-                  signifFrac *= fmt.radix;
-                  const ubyte digit = (ubyte)mcsl::mod(signifFrac, fmt.radix);
-                  file.write(mcsl::digit_to_char(digit, isLower));
-                  signifFrac -= digit;
+               fracInt = signifFrac * mcsl::pow(fmt.radix, fmt.precision);
+               auto fracDigits = mcsl::uint_to_str(fracInt, fmt.radix, isLower);
+               if (fmt.precision > fracDigits.size()) {
+                  file.write('0', fmt.precision - fracDigits.size());
                }
+               file.write(mcsl::str_slice::make(fracDigits));
+               
                charsPrinted += fmt.precision + 1;
+
+               // debug_assert(fracDigits.size() == fmt.precision);
             }
             
+            //scientific notation operator
             file.write(__EXP_NOTAT);
             charsPrinted += __EXP_NOTAT.size();
 
-            auto expDigits = mcsl::sint_to_str(pow, fmt.radix, isLower, true);
-            file.write(mcsl::str_slice::make(expDigits));
-            charsPrinted += expDigits.size();
+            //exponent
+            if ((ubyte)signifWhole == 0 && fracInt == 0) { //0.0
+               file.write('+');
+               file.write('0');
+               charsPrinted += 2;
+            } else { //anything else
+               auto expDigits = mcsl::sint_to_str(pow, fmt.radix, isLower, true);
+               file.write(mcsl::str_slice::make(expDigits));
+               charsPrinted += expDigits.size();
+            }
          }
+         
+         break;
       }
       
       //return number of chars printed

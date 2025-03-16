@@ -70,8 +70,8 @@ namespace mcsl {
    _STDF(log10)
    _STDF2(ln_1_plus, log1p)
 
-   template<uint_t pow_t, int_t base_t = pow_t> constexpr base_t pow(const base_t base, const pow_t power);
-   inline auto pow(_N base, _N power) -> to_float_t<_MPT(base, power)> { return std::pow(base, power); }
+   // template<uint_t pow_t, int_t base_t = pow_t> constexpr base_t pow(const base_t base, const pow_t power);
+   inline auto pow(_N base, _N power) -> _MPT(base, power) { return (_MPT(base, power))std::pow(base, power); }
    _STDF(sqrt)
    _STDF(cbrt)
    template<num_t... Ts> inline auto hypot(const Ts... xs) -> to_float_t<most_precise_t<Ts...>>;
@@ -109,21 +109,21 @@ namespace mcsl {
 
 #pragma region inlinesrc
 
-template<mcsl::uint_t pow_t, mcsl::int_t base_t> constexpr base_t mcsl::pow(const base_t base, const pow_t power) {
-   if (base == 1 || power == 0) { //pow(0,0) == 1
-      return 1;
-   }
-   if (base == 0 || power == 1) {
-      return base;
-   }
+// template<mcsl::uint_t pow_t, mcsl::int_t base_t> constexpr base_t mcsl::pow(const base_t base, const pow_t power) {
+//    if (base == 1 || power == 0) { //pow(0,0) == 1
+//       return 1;
+//    }
+//    if (base == 0 || power == 1) {
+//       return base;
+//    }
 
-   //!TODO: use this if consteval, use std::pow otherwise (numbers large enough to be imprecise would cause overflow)
-   base_t res = power;
-   while (--power) {
-      res *= base;
-   }
-   return res;
-}
+//    //!TODO: use this if consteval, use std::pow otherwise (numbers large enough to be imprecise would cause overflow)
+//    base_t res = power;
+//    while (--power) {
+//       res *= base;
+//    }
+//    return res;
+// }
 
 constexpr auto mcsl::mod(const num_t auto dividend, const num_t auto divisor) -> _MPT(dividend, divisor) {
    if constexpr(int_t<_MPT(dividend, divisor)>) {
