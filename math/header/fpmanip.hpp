@@ -66,17 +66,16 @@ template<mcsl::float_t T> constexpr T mcsl::noexp(const T x) {
 
 template<mcsl::float_t T> constexpr mcsl::pair<T,sint> mcsl::sci_notat(const T x, const uint radix) {
    assume(radix > 1);
+   if (x == 0) {
+      return {0,0};
+   }
    if (radix == 2) {
       return mcsl::fextracti(x);
    }
 
-   auto [frac, exp2] = mcsl::fextracti(x);
-   const auto [outExp, expRFrac] = mcsl::modf(exp2 * mcsl::log(radix, 2));
-   frac *= mcsl::pow(radix, expRFrac);
-
-   debug_assert(mcsl::abs(frac) < radix);
-
-   return {frac, (sint)outExp};
+   const sint exp = (sint)mcsl::floor(mcsl::log(radix, mcsl::abs(x)));
+   const T signif = x * mcsl::pow(radix, -exp);
+   return {signif, exp};
 }
 
 #pragma endregion inlinesrc
