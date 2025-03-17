@@ -25,6 +25,8 @@ template <typename T> class [[clang::trivial_abi]] mcsl::arr_span : public conti
       constexpr arr_span(const contig_t<T> auto& other, const uint size):arr_span{other.begin(), size} { assert(size <= other.size(), __OVERSIZED_SPAN_MSG, ErrCode::SEGFAULT); }
       constexpr arr_span(const contig_t<T> auto& other, const uint begin, const uint size):arr_span{other.begin()+begin, size} { assert((begin+size) <= other.size(), __OVERSIZED_SPAN_MSG, ErrCode::SEGFAULT); }
 
+      //!TODO: make() methods
+
       [[gnu::pure]] constexpr uint size() const { return _size; }
 
       //member access
