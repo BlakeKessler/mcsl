@@ -36,4 +36,4 @@
 //Applies the function macro `f` to each of the remaining parameters and inserts commas between the results
 #define MCSL_MAP_LIST(f, ...) __MCSL_EVAL(__MCSL_MAP_LIST1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
 
-#endif //MCSL_MAP_H_INCLUDE
+#endif //MCSL_MAP_H

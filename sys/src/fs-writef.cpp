@@ -502,25 +502,16 @@ namespace {
    }
 };
 
+#include "MAP_MACRO.h"
 #define _writefImpl(T)\
 uint mcsl::writef(File& file, const T obj, char mode, FmtArgs fmt) {\
    return writefImpl<T>(file, obj, mode, fmt);\
 }
-#define _writefImplInts(n) _writefImpl(uint##n) _writefImpl(sint##n)
 
-_writefImplInts(8)
-_writefImplInts(16)
-_writefImplInts(32)
-_writefImplInts(64)
-_writefImplInts(128)
-
-#undef _writefImplInts
-
-_writefImpl(float)
-_writefImpl(flong)
-_writefImpl(flext)
+MCSL_MAP(_writefImpl, MCSL_ALL_NUM_T)
 
 #undef _writefImpl
+#include "MAP_MACRO_UNDEF.h"
 
 uint mcsl::writef(File& file, const char ch, char mode, FmtArgs fmt) {
    switch (mode | CASE_BIT) {

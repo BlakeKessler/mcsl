@@ -3,30 +3,25 @@
 
 #include "fs.hpp"
 
+#include "MAP_MACRO.h"
 #define __write(T, code, fmt) \
 inline mcsl::File& mcsl::write(File& file, const T x) { \
    mcsl::writef(file, x, code, mcsl::FmtArgs fmt);\
    return file;\
 }
+#define __writeU(T) __write(T, 'u', ())
+#define __writeS(T) __write(T, 's', ())
+#define __writeF(T) __write(T, 'f', {.precision=mcsl::DEFAULT_FLT_PREC})
 
-#define __writeInts(size) \
-__write(uint##size, 'u', ()) __write(sint##size, 's', ())
+MCSL_MAP(__writeU, MCSL_ALL_UINT_T)
+MCSL_MAP(__writeS, MCSL_ALL_SINT_T)
+MCSL_MAP(__writeF, MCSL_ALL_FLOAT_T)
 
-__writeInts(8)
-__writeInts(16)
-__writeInts(32)
-__writeInts(64)
-__writeInts(128)
-
-#undef __writeInts
-
-__write(float, 'f', {.precision=mcsl::DEFAULT_FLT_PREC})
-__write(flong, 'f', {.precision=mcsl::DEFAULT_FLT_PREC})
-__write(flext, 'f', {.precision=mcsl::DEFAULT_FLT_PREC})
-
-__write(bool, 's', ())
-
+#undef __writeF
+#undef __writeS
+#undef __writeU
 #undef __write
+#include "MAP_MACRO_UNDEF.h"
 
 inline mcsl::File& mcsl::write(File& file, const void* ptr) {
    mcsl::writef(file, (uptr)ptr, 'u', mcsl::FmtArgs{.radix=mcsl::DEFAULT_RAW_RADIX});

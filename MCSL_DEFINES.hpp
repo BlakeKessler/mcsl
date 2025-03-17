@@ -75,6 +75,15 @@ using char32 = char32_t; //UTF-32
 
 using wchar = wchar_t;
 
+//!TYPE LISTS
+
+#define MCSL_ALL_UINT_T   uint8, uint16, uint32, uint64, uint128
+#define MCSL_ALL_SINT_T   sint8, sint16, sint32, sint64, sint128
+#define MCSL_ALL_INT_T    MCSL_ALL_UINT_T, MCSL_ALL_SINT_T
+#define MCSL_ALL_FLOAT_T  float, flong, flext
+#define MCSL_ALL_NUM_T    MCSL_ALL_INT_T, MCSL_ALL_FLOAT_T
+#define MCSL_ALL_CHAR_T   char, wchar, char8, char16, char32
+
 //enums
 namespace mcsl {
    enum class ErrCode {

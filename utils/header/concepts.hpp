@@ -7,8 +7,9 @@
 #include <concepts>
 
 
-//!NOTE: FIX CONTAINER CONCEPTS
-
+#include "MAP_MACRO.h"
+#define __TO_T(testT) select<(sizeof(T) <= sizeof(testT)), testT,
+#define __CLOSE_SPEC(_) >
 
 namespace mcsl {
    #pragma region checks
@@ -45,28 +46,16 @@ namespace mcsl {
    #pragma endregion basic_select
 
    #pragma region mods
-   template<num_t T> using to_sint_t = select<
-      sizeof(T) == sizeof(sint128), sint128, select<
-      sizeof(T) == sizeof(sint64), sint64, select<
-      sizeof(T) == sizeof(sint32), sint32, select<
-      sizeof(T) == sizeof(sint16), sint16, select<
-      sizeof(T) == sizeof(sint8), sint8, void>>>>>;
-   template<num_t T> using to_uint_t = select<
-      sizeof(T) == sizeof(uint128), uint128, select<
-      sizeof(T) == sizeof(uint64), uint64, select<
-      sizeof(T) == sizeof(uint32), uint32, select<
-      sizeof(T) == sizeof(uint16), uint16, select<
-      sizeof(T) == sizeof(uint8), uint8, void>>>>>;
+   template<num_t T> using to_sint_t = 
+      MCSL_MAP(__TO_T, MCSL_ALL_SINT_T) void
+      MCSL_MAP(__CLOSE_SPEC, MCSL_ALL_SINT_T);
+   template<num_t T> using to_uint_t = 
+      MCSL_MAP(__TO_T, MCSL_ALL_UINT_T) void
+      MCSL_MAP(__CLOSE_SPEC, MCSL_ALL_UINT_T);
    template<num_t T> using to_int_t = select<float_t<T>, to_sint_t<T>, T>;
-   template<num_t T> using to_float_t = select<float_t<T>, //!TODO: make this more robust
-      T, //T is already a float_t
-      select<(sizeof(T) > sizeof(float32)),
-         select<(sizeof(T) > sizeof(float64)),
-            flext,
-            float64
-         >,
-         float32
-      >
+   template<num_t T> using to_float_t = select<float_t<T>, T,
+      MCSL_MAP(__TO_T, MCSL_ALL_FLOAT_T) void
+      MCSL_MAP(__CLOSE_SPEC, MCSL_ALL_FLOAT_T)
    >;
    //!TODO: to_float_precise_t (smallest floating point type precise enough to store any value of the parameter type)
    template<num_t T> using to_signed_t = select<float_t<T> || sint_t<T>, T, to_sint_t<T>>;
@@ -216,5 +205,9 @@ namespace mcsl {
    
    #pragma endregion utils
 };
+
+#undef __TO_T
+#undef __CLOSE_SPEC
+#include "MAP_MACRO_UNDEF.h"
 
 #endif //MCSL_CONCEPTS

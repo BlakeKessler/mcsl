@@ -96,42 +96,19 @@ class mcsl::File {
       operator const FILE*() const { return _file; }
 };
 
+#include "MAP_MACRO.h"
 #define _fdeclio(T)\
 inline File& write(File&, const T); \
 uint writef(File&, const T, char, FmtArgs); \
 File& read(File&, T*); \
-uint readf(File&, T* obj, char, uint)
+uint readf(File&, T* obj, char, uint);
 
 namespace mcsl {
-   _fdeclio(uint8);
-   _fdeclio(uint16);
-   _fdeclio(uint32);
-   _fdeclio(uint64);
-   _fdeclio(uint128);
-
-   _fdeclio(sint8);
-   _fdeclio(sint16);
-   _fdeclio(sint32);
-   _fdeclio(sint64);
-   _fdeclio(sint128);
-
-   _fdeclio(float);
-   _fdeclio(flong);
-   _fdeclio(flext);
-   // _fdeclio(float8);
-   // _fdeclio(float16);
-   // _fdeclio(float32);
-   // _fdeclio(float64);
-   // _fdeclio(float128);
+   MCSL_MAP(_fdeclio, MCSL_ALL_NUM_T)
+   MCSL_MAP(_fdeclio, MCSL_ALL_CHAR_T)
 
    _fdeclio(bool);
-   _fdeclio(char);
-   _fdeclio(char8);
-   _fdeclio(char16);
-   _fdeclio(char32);
-
    _fdeclio(mcsl::str_slice);
-
    _fdeclio(void*);
 
    template<typename T> File& write(File& file, const arr_span<T> buf) {
@@ -144,6 +121,7 @@ namespace mcsl {
 };
 
 #undef _fdeclio
+#include "MAP_MACRO_UNDEF.h"
 
 
 
