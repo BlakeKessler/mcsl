@@ -153,11 +153,11 @@ namespace {
       for (uint i = 0; i < str.size(); ++i) {
          if (str[i] == mcsl::FMT_INTRO) { //found format code
             if (i) {
-               mcsl::write(file, mcsl::str_slice::make(str, i));
+               mcsl::write(file, str.slice(i));
                charsPrinted += i;
             }
             assert(str.size() > (i+1), "%% not followed by format code", mcsl::ErrCode::FS_ERR);
-            auto [mode, fmtArgs, codeLen, flags] = __parseFmtCode(mcsl::str_slice::make(str, i+1, str.size()-(i+1)));
+            auto [mode, fmtArgs, codeLen, flags] = __parseFmtCode(str.slice(i+1, str.size()-(i+1)));
 
             // if (flags & MIN_WIDTH) {} //!TODO: figure out a good way to do this
             // if (flags & PRECISION) {} //!TODO: figure out a good way to do this
@@ -170,7 +170,7 @@ namespace {
                charsPrinted += mcsl::writef(file, arg0, str[i + codeLen], fmtArgs);
             }
             if (i + codeLen < str.size()) { //more to print
-               return __printfImpl(file, mcsl::str_slice::make(str, i + codeLen + 1, str.size() - (i + codeLen + 1)), charsPrinted, argv...); //tail recursion
+               return __printfImpl(file, str.slice(i + codeLen + 1, str.size() - (i + codeLen + 1)), charsPrinted, argv...); //tail recursion
             } else { //end of format string
                [[unlikely]];
                return charsPrinted;
@@ -188,7 +188,7 @@ namespace {
       for (uint i = 0; i < str.size(); ++i) {
          if (str[i] == mcsl::FMT_INTRO) { //found format code
             [[unlikely]];
-            mcsl::write(file, mcsl::str_slice::make(str, i));
+            mcsl::write(file, str.slice(i));
             charsPrinted += i;
             assert(str.size() > (i+1), "%% not followed by format code", mcsl::ErrCode::FS_ERR);
             if (str[i + 1] == mcsl::FMT_INTRO) { //%%
@@ -198,7 +198,7 @@ namespace {
                mcsl::__throw(mcsl::ErrCode::FS_ERR, "printf: more consuming format codes than arguments");
             }
             if (i+2 < str.size()) { //more to print
-               return __printfImpl(file, mcsl::str_slice::make(str, i + 2, str.size() - (i + 2)), charsPrinted);
+               return __printfImpl(file, str.slice(i + 2, str.size() - (i + 2)), charsPrinted);
             } else { //end of format string
                return charsPrinted;
             }

@@ -382,7 +382,7 @@ namespace {
                if (fmt.precision > fracDigits.size()) {
                   file.write('0', fmt.precision - fracDigits.size());
                }
-               file.write(mcsl::str_slice::make(fracDigits));
+               file.write(fracDigits.slice());
                
                charsPrinted += fmt.precision + 1;
             }
@@ -408,7 +408,7 @@ namespace {
                if (fmt.precision > fracDigits.size()) {
                   file.write('0', fmt.precision - fracDigits.size());
                }
-               file.write(mcsl::str_slice::make(fracDigits));
+               file.write(fracDigits.slice());
                
                charsPrinted += fmt.precision + 1;
             }
@@ -424,7 +424,7 @@ namespace {
                charsPrinted += 2;
             } else { //anything else
                auto expDigits = mcsl::sint_to_str(pow, fmt.radix, isLower, true);
-               file.write(mcsl::str_slice::make(expDigits));
+               file.write(expDigits.slice());
                charsPrinted += expDigits.size();
             }
          }
@@ -607,7 +607,7 @@ uint mcsl::writef(File& file, const str_slice obj, char mode, FmtArgs fmt) {
       mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code for type (%%%c)", mode);
    }
 
-   const str_slice str = str_slice::make(obj.begin(), fmt.precision ? min(obj.size(), fmt.precision) : obj.size());
+   const str_slice str = obj.slice(fmt.precision ? min(obj.size(), fmt.precision) : obj.size());
 
    if (!fmt.isLeftJust && fmt.minWidth > str.size()) {
       file.write(PAD_CHAR, fmt.minWidth - str.size());
