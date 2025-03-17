@@ -89,53 +89,59 @@ class mcsl::File {
       str_slice readln(str_slice dest, const char nl = '\n');
       string readln(const char nl = '\n');
 
-      template<typename T> File& write(const T& obj); //serialize object - to be implemented by users for their types
-      template<typename T> T read(); //deserialize object - to be implemented by users for their types
-      template<typename T, typename Buffer_t> T read(Buffer_t buf); //deserialize object - to be implemented by users for their types
-
       uint printf(const str_slice fmt, const auto&... argv);
       uint scanf(const str_slice fmt, auto*... argv);
-
-      template<typename T> uint writef(const T& obj, char mode, FmtArgs fmt = FmtArgs()); //used by printf, to be implemented by users for their types
-      template<typename T> uint readf(T* obj,
-         char mode,
-         uint maxWidth = mcsl::TYPEMAX<uint>()
-      ); //used by scanf, to be implemented by users for their types
 
       operator FILE*() { return _file; }
       operator const FILE*() const { return _file; }
 };
 
-#include <type_traits>
 #define _fdeclio(T)\
-template<> mcsl::File& mcsl::File::write<T>(std::add_lvalue_reference_t<std::add_const_t<T>>); \
-template<> uint mcsl::File::writef<T>(std::add_lvalue_reference_t<std::add_const_t<T>>, char, FmtArgs); \
-template<> uint mcsl::File::readf<T>(T* obj, char, uint)
+inline File& write(File&, const T); \
+uint writef(File&, const T, char, FmtArgs); \
+File& read(File&, T*); \
+uint readf(File&, T* obj, char, uint)
 
-_fdeclio(uint8);
-_fdeclio(uint16);
-_fdeclio(uint32);
-_fdeclio(uint64);
-_fdeclio(uint128);
+namespace mcsl {
+   _fdeclio(uint8);
+   _fdeclio(uint16);
+   _fdeclio(uint32);
+   _fdeclio(uint64);
+   _fdeclio(uint128);
 
-_fdeclio(float);
-_fdeclio(flong);
-_fdeclio(flext);
-// _fdeclio(float8);
-// _fdeclio(float16);
-// _fdeclio(float32);
-// _fdeclio(float64);
-// _fdeclio(float128);
+   _fdeclio(sint8);
+   _fdeclio(sint16);
+   _fdeclio(sint32);
+   _fdeclio(sint64);
+   _fdeclio(sint128);
 
-_fdeclio(bool);
-_fdeclio(char);
-_fdeclio(char8);
-_fdeclio(char16);
-_fdeclio(char32);
+   _fdeclio(float);
+   _fdeclio(flong);
+   _fdeclio(flext);
+   // _fdeclio(float8);
+   // _fdeclio(float16);
+   // _fdeclio(float32);
+   // _fdeclio(float64);
+   // _fdeclio(float128);
 
-_fdeclio(mcsl::str_slice);
+   _fdeclio(bool);
+   _fdeclio(char);
+   _fdeclio(char8);
+   _fdeclio(char16);
+   _fdeclio(char32);
 
-_fdeclio(void*); //!TODO: CTAD for printing all pointers as void pointers
+   _fdeclio(mcsl::str_slice);
+
+   _fdeclio(void*);
+
+   template<typename T> File& write(File& file, const arr_span<T> buf) {
+      file.write(buf.size());
+      for (uint i = 0; i < buf.size(); ++i) {
+         write(file, i);
+      }
+      return file;
+   }
+};
 
 #undef _fdeclio
 
@@ -144,6 +150,7 @@ _fdeclio(void*); //!TODO: CTAD for printing all pointers as void pointers
 #pragma region inlinesrc
 
 #include "../src/fs-printf.cpp"
+#include "../src/fs-write.cpp"
 
 #pragma endregion inlinesrc
 

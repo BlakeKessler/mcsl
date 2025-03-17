@@ -270,7 +270,7 @@
    } else if (radix == 0) { radix = 10; }
 
    const uint maxMantDigits = radix == 10 ? 18 : 15;
-   debug_assert(sizeof(flext) >= 10);
+   static_assert(sizeof(flext) >= 10);
    
 	//calculate bounds of fields
    const char* end = str + strlen;

@@ -71,8 +71,8 @@ namespace {
          default:
             mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
          case 'e': case 'f': case 'g':
-            return file.writef<mcsl::to_float_t<T>>(num, mode, fmt);
-         case 'i': return file.writef((mcsl::to_sint_t<T>)num, mode, fmt);
+            return mcsl::writef(file, (mcsl::to_float_t<T>)num, mode, fmt);
+         case 'i': return mcsl::writef(file, (mcsl::to_sint_t<T>)num, mode, fmt);
          case 'u': 
             fmt.radix = fmt.radix ? fmt.radix : mcsl::DEFAULT_INT_RADIX;
             break;
@@ -155,11 +155,11 @@ namespace {
          default:
             mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
          case 'e': case 'f': case 'g':
-            return file.writef<mcsl::to_float_t<T>>(num, mode, fmt);
+            return mcsl::writef(file, (mcsl::to_float_t<T>)num, mode, fmt);
          case 'i': 
             fmt.radix = fmt.radix ? fmt.radix : mcsl::DEFAULT_INT_RADIX;
             break;
-         case 'u': return file.writef((mcsl::to_uint_t<T>)num, mode, fmt);
+         case 'u': return mcsl::writef(file, (mcsl::to_uint_t<T>)num, mode, fmt);
          case 'r':
             return writefRawImpl(file, {(ubyte*)&num, sizeof(num)}, mode & mcsl::CASE_BIT, fmt);
          case 'b':
@@ -263,9 +263,9 @@ namespace {
 
       //special cases
       if (mcsl::isNaN(num)) { //NaN
-         return file.writef(__NAN_STR, isLower ? 's' : 'S', fmt);
+         return mcsl::writef(file, __NAN_STR, isLower ? 's' : 'S', fmt);
       } else if (mcsl::isInf(num)) { //Inf, -Inf
-         return file.writef(num > 0 ? (fmt.alwaysPrintSign ? __POS_INF_STR : __INF_STR) : __NEG_INF_STR, isLower ? 's' : 'S', fmt);
+         return mcsl::writef(file, num > 0 ? (fmt.alwaysPrintSign ? __POS_INF_STR : __INF_STR) : __NEG_INF_STR, isLower ? 's' : 'S', fmt);
       }
 
       //decide between %e and %f if using %g, and calculate expected width (for use in padding)
@@ -314,7 +314,7 @@ namespace {
       if (!fmt.isLeftJust && !fmt.padWithZero) {
          sint padChars = fmt.minWidth - expectedCharCount;
          if (padChars > 0) {
-            file.write(mcsl::PAD_CHAR);
+            file.write(mcsl::PAD_CHAR, padChars);
             charsPrinted += padChars;
          }
       }
@@ -347,7 +347,7 @@ namespace {
       if (!fmt.isLeftJust && fmt.padWithZero) {
          sint padChars = fmt.minWidth - expectedCharCount;
          if (padChars > 0) {
-            file.write('0');
+            file.write('0', padChars);
             charsPrinted += padChars;
          }
       }
@@ -503,8 +503,8 @@ namespace {
 };
 
 #define _writefImpl(T)\
-template<> uint mcsl::File::writef<T>(const T& obj, char mode, FmtArgs fmt) {\
-   return writefImpl<T>(self, obj, mode, fmt);\
+uint mcsl::writef(File& file, const T obj, char mode, FmtArgs fmt) {\
+   return writefImpl<T>(file, obj, mode, fmt);\
 }
 #define _writefImplInts(n) _writefImpl(uint##n) _writefImpl(sint##n)
 
@@ -522,14 +522,14 @@ _writefImpl(flext)
 
 #undef _writefImpl
 
-template<> uint mcsl::File::writef<char>(const char& obj, char mode, FmtArgs fmt) {
+uint mcsl::writef(File& file, const char ch, char mode, FmtArgs fmt) {
    switch (mode | CASE_BIT) {
       case 'u': case 'r':
-         return writef<ubyte>(obj, mode, fmt);
+         return writef(file, (ubyte)ch, mode, fmt);
       case 'i':
-         return writef<sbyte>(obj, mode, fmt);
+         return writef(file, (sbyte)ch, mode, fmt);
       case 'e': case 'f': case 'g':
-         return writef<float>(obj, mode, fmt);
+         return writef(file, (float)ch, mode, fmt);
       default:
          __throw(ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
       case 'c': case 's':
@@ -538,29 +538,29 @@ template<> uint mcsl::File::writef<char>(const char& obj, char mode, FmtArgs fmt
 
    //minWidth with right justification
    if (!fmt.isLeftJust && fmt.minWidth > 1) {
-      write(PAD_CHAR, fmt.minWidth - 1);
+      file.write(PAD_CHAR, fmt.minWidth - 1);
    }
 
    //write char
-   write(obj);
+   file.write(ch);
 
    //minWidth with left justification
    if (fmt.isLeftJust && fmt.minWidth > 1) {
-      write(PAD_CHAR, fmt.minWidth - 1);
+      file.write(PAD_CHAR, fmt.minWidth - 1);
    }
 
    //return number of chars printed
    return max(1, fmt.minWidth);
 }
 
-template<> uint mcsl::File::writef<bool>(const bool& obj, char mode, FmtArgs fmt) {
+uint mcsl::writef(File& file, const bool obj, char mode, FmtArgs fmt) {
    raw_buf_str<8> str;
    const bool isLower = mode & CASE_BIT;
    switch (mode | CASE_BIT) {
       case 'u': case 'i': case 'r':
-         return writef<ubyte>(obj, mode, fmt);
+         return writef(file, (ubyte)obj, mode, fmt);
       case 'e': case 'f': case 'g':
-         return writef<to_float_t<bool>>(obj, mode, fmt);
+         return writef(file, (to_float_t<bool>)obj, mode, fmt);
       case 's':
          if (fmt.altMode) {
             if (obj) { str = raw_str{isLower ? "yes" : "YES"}; }
@@ -587,36 +587,36 @@ template<> uint mcsl::File::writef<bool>(const bool& obj, char mode, FmtArgs fmt
 
    //right-justified padding
    if (!fmt.isLeftJust && fmt.minWidth > str.size()) {
-      write(PAD_CHAR, fmt.minWidth - str.size());
+      file.write(PAD_CHAR, fmt.minWidth - str.size());
    }
 
    //bool string
-   write(str_slice{str});
+   file.write(str_slice{str});
 
    //left-justified padding
    if (fmt.isLeftJust && fmt.minWidth > str.size()) {
-      write(PAD_CHAR, fmt.minWidth - str.size());
+      file.write(PAD_CHAR, fmt.minWidth - str.size());
    }
 
    //return number of chars printed
    return max(str.size(), fmt.minWidth);
 }
 
-template<> uint mcsl::File::writef<mcsl::str_slice>(const str_slice& obj, char mode, FmtArgs fmt) {
+uint mcsl::writef(File& file, const str_slice obj, char mode, FmtArgs fmt) {
    if ((mode | CASE_BIT) != 's') {
       mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code for type (%%%c)", mode);
    }
 
-   const str_slice str = str_slice::make(obj.begin(), min(obj.size(), fmt.precision));
-   
+   const str_slice str = str_slice::make(obj.begin(), fmt.precision ? min(obj.size(), fmt.precision) : obj.size());
+
    if (!fmt.isLeftJust && fmt.minWidth > str.size()) {
-      write(PAD_CHAR, fmt.minWidth - str.size());
+      file.write(PAD_CHAR, fmt.minWidth - str.size());
    }
 
-   write(str);
+   file.write(str);
 
    if (fmt.isLeftJust && fmt.minWidth > str.size()) {
-      write(PAD_CHAR, fmt.minWidth - str.size());
+      file.write(PAD_CHAR, fmt.minWidth - str.size());
    }
 
    return max(str.size(), fmt.minWidth);

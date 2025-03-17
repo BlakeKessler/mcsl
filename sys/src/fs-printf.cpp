@@ -152,8 +152,10 @@ namespace {
    uint __printfImpl(mcsl::File& file, const mcsl::str_slice str, uint charsPrinted, const auto& arg0, const auto&... argv) {
       for (uint i = 0; i < str.size(); ++i) {
          if (str[i] == mcsl::FMT_INTRO) { //found format code
-            file.write(mcsl::str_slice::make(str, i));
-            charsPrinted += i;
+            if (i) {
+               mcsl::write(file, mcsl::str_slice::make(str, i));
+               charsPrinted += i;
+            }
             assert(str.size() > (i+1), "%% not followed by format code", mcsl::ErrCode::FS_ERR);
             auto [mode, fmtArgs, codeLen, flags] = __parseFmtCode(mcsl::str_slice::make(str, i+1, str.size()-(i+1)));
 
@@ -162,10 +164,10 @@ namespace {
             // if (flags & RADIX) {} //!TODO: figure out a good way to do this
 
             if (mode == mcsl::FMT_INTRO) { //%%
-               file.write(mcsl::FMT_INTRO);
+               mcsl::write(file, mcsl::FMT_INTRO);
                ++charsPrinted;
             } else { //other format code
-               charsPrinted += file.writef(arg0, str[i + codeLen], fmtArgs);
+               charsPrinted += mcsl::writef(file, arg0, str[i + codeLen], fmtArgs);
             }
             if (i + codeLen < str.size()) { //more to print
                return __printfImpl(file, mcsl::str_slice::make(str, i + codeLen + 1, str.size() - (i + codeLen + 1)), charsPrinted, argv...); //tail recursion
@@ -177,7 +179,7 @@ namespace {
       }
       //no format codes in format string
       [[unlikely]];
-      file.write(str);
+      mcsl::write(file, str);
       return str.size();
    }
    #pragma GCC diagnostic push
@@ -186,11 +188,11 @@ namespace {
       for (uint i = 0; i < str.size(); ++i) {
          if (str[i] == mcsl::FMT_INTRO) { //found format code
             [[unlikely]];
-            file.write(mcsl::str_slice::make(str, i));
+            mcsl::write(file, mcsl::str_slice::make(str, i));
             charsPrinted += i;
             assert(str.size() > (i+1), "%% not followed by format code", mcsl::ErrCode::FS_ERR);
             if (str[i + 1] == mcsl::FMT_INTRO) { //%%
-               file.write(mcsl::FMT_INTRO);
+               mcsl::write(file, mcsl::FMT_INTRO);
                ++charsPrinted;
             } else { //other format code
                mcsl::__throw(mcsl::ErrCode::FS_ERR, "printf: more consuming format codes than arguments");
@@ -204,7 +206,7 @@ namespace {
       }
       //no format codes in format string
       [[likely]];
-      file.write(str);
+      mcsl::write(file, str);
       return str.size();
    }
    #pragma GCC diagnostic pop
