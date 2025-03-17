@@ -73,6 +73,31 @@ constexpr const mcsl::str_slice mcsl::str_slice::make_from_cstr(const char* buf)
    return make(buf, std::strlen(buf));
 }
 
+//slicing
+#include "str_slice.hpp"
+template<typename char_t> constexpr const mcsl::str_slice mcsl::str_base<char_t>::slice(this const auto&& obj) {
+   return {obj.begin(), obj.size()};
+}
+template<typename char_t> constexpr const mcsl::str_slice mcsl::str_base<char_t>::slice(this const auto&& obj, uint size) {
+   assume(size <= obj.size());
+   return {obj.begin(), size};
+}
+template<typename char_t> constexpr const mcsl::str_slice mcsl::str_base<char_t>::slice(this const auto&& obj, uint begin, uint size) {
+   assume(begin + size <= obj.size());
+   return {obj.begin() + begin, size};
+}
+template<typename char_t> constexpr mcsl::str_slice mcsl::str_base<char_t>::slice(this auto&& obj) {
+   return str_slice::make(obj.begin(), obj.size());
+}
+template<typename char_t> constexpr mcsl::str_slice mcsl::str_base<char_t>::slice(this auto&& obj, uint size) {
+   assume(size <= obj.size());
+   return str_slice::make(obj.begin(), size);
+}
+template<typename char_t> constexpr mcsl::str_slice mcsl::str_base<char_t>::slice(this auto&& obj, uint begin, uint size) {
+   assume(begin + size <= obj.size());
+   return str_slice::make(obj.begin() + begin, size);
+}
+
 #pragma endregion inlinesrc
 
 #endif //MCSL_STR_SLICE_HPP

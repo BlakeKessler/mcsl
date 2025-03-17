@@ -46,30 +46,4 @@ template<typename T> struct mcsl::contig_base {
    constexpr arr_span<T> span(this auto&& obj, uint size, uint begin);
 };
 
-//slicing
-#include "arr_span.hpp"
-template<typename T> constexpr const mcsl::arr_span<T> mcsl::contig_base<T>::span(this const auto&& obj) {
-   return {obj.begin(), obj.size()};
-}
-template<typename T> constexpr const mcsl::arr_span<T> mcsl::contig_base<T>::span(this const auto&& obj, uint size) {
-   assume(size <= obj.size());
-   return {obj.begin(), size};
-}
-template<typename T> constexpr const mcsl::arr_span<T> mcsl::contig_base<T>::span(this const auto&& obj, uint begin, uint size) {
-   assume(begin + size <= obj.size());
-   return {obj.begin() + begin, size};
-}
-template<typename T> constexpr mcsl::arr_span<T> mcsl::contig_base<T>::span(this auto&& obj) {
-   return arr_span<T>::make(obj.begin(), obj.size());
-}
-template<typename T> constexpr mcsl::arr_span<T> mcsl::contig_base<T>::span(this auto&& obj, uint size) {
-   assume(size <= obj.size());
-   return arr_span<T>::make(obj.begin(), size);
-}
-template<typename T> constexpr mcsl::arr_span<T> mcsl::contig_base<T>::span(this auto&& obj, uint begin, uint size) {
-   assume(begin + size <= obj.size());
-   return arr_span<T>::make(obj.begin() + begin, size);
-}
-
-
 #endif //MCSL_CONTIG_BASE_HPP
