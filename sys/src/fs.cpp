@@ -122,7 +122,7 @@ mcsl::str_slice mcsl::File::readln(str_slice dest, const char nl) {
       }
       dest[i++] = ch;
    }
-   __throw(ErrCode::SEGFAULT, "buffer overflow in File::readln");
+   __throw(ErrCode::SEGFAULT, mcsl::FMT("buffer overflow in File::readln"));
 }
 
 mcsl::string mcsl::File::readln(const char nl) {

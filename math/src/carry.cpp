@@ -10,7 +10,7 @@ template<bool isError> [[gnu::always_inline, gnu::pure]] inline bool mcsl::carry
    if constexpr (isError) {
       sint tmp;
       if (__builtin_sadd_overflow(lhs, rhs, &tmp)) {
-         __throw(ErrCode::INT_OVERFLOW, "integer overflow (%d + %d > %d)", lhs, rhs, TYPEMAX<sint>());
+         __throw(ErrCode::INT_OVERFLOW, mcsl::FMT("integer overflow (%i + %i > %i)"), lhs, rhs, TYPEMAX<sint>());
          return true;
       }
       *res = tmp;
@@ -24,7 +24,7 @@ template<bool isError> [[gnu::always_inline, gnu::pure]] inline bool mcsl::carry
    if constexpr (isError) {
       slong tmp;
       if (__builtin_saddl_overflow(lhs, rhs, &tmp)) {
-         __throw(ErrCode::INT_OVERFLOW, "long integer overflow (%ld + %ld > %ld)", lhs, rhs, TYPEMAX<slong>());
+         __throw(ErrCode::INT_OVERFLOW, mcsl::FMT("long integer overflow (%i + %i > %i)"), lhs, rhs, TYPEMAX<slong>());
          return true;
       }
       *res = tmp;
@@ -38,7 +38,7 @@ template<bool isError> [[gnu::always_inline, gnu::pure]] inline bool mcsl::carry
    if constexpr (isError) {
       uint tmp;
       if (__builtin_uadd_overflow(lhs, rhs, &tmp)) {
-         __throw(ErrCode::INT_OVERFLOW, "unsigned integer overflow (%u + %u > %u)", lhs, rhs, TYPEMAX<uint>());
+         __throw(ErrCode::INT_OVERFLOW, mcsl::FMT("unsigned integer overflow (%u + %u > %u)"), lhs, rhs, TYPEMAX<uint>());
          return true;
       }
       *res = tmp;
@@ -52,7 +52,7 @@ template<bool isError> [[gnu::always_inline, gnu::pure]] inline bool mcsl::carry
    if constexpr (isError) {
       ulong tmp;
       if (__builtin_uaddl_overflow(lhs, rhs, &tmp)) {
-         __throw(ErrCode::INT_OVERFLOW, "unsigned long integer overflow (%lu + %lu > %lu)", lhs, rhs, TYPEMAX<ulong>());
+         __throw(ErrCode::INT_OVERFLOW, mcsl::FMT("unsigned long integer overflow (%u + %u > %u)"), lhs, rhs, TYPEMAX<ulong>());
          return true;
       }
       *res = tmp;
@@ -68,7 +68,7 @@ template<bool isError> [[gnu::always_inline, gnu::pure]] inline bool mcsl::carry
    if constexpr (isError) {
       sint tmp;
       if (__builtin_ssub_overflow(lhs, rhs, &tmp)) {
-         __throw(ErrCode::INT_OVERFLOW, "integer overflow (%d - %d)", lhs, rhs);
+         __throw(ErrCode::INT_OVERFLOW, mcsl::FMT("integer overflow (%i - %i)"), lhs, rhs);
          return true;
       }
       *res = tmp;
@@ -82,7 +82,7 @@ template<bool isError> [[gnu::always_inline, gnu::pure]] inline bool mcsl::carry
    if constexpr (isError) {
       slong tmp;
       if (__builtin_ssubl_overflow(lhs, rhs, &tmp)) {
-         __throw(ErrCode::INT_OVERFLOW, "long integer overflow (%ld - %ld)", lhs, rhs);
+         __throw(ErrCode::INT_OVERFLOW, mcsl::FMT("long integer overflow (%i - %i)"), lhs, rhs);
          return true;
       }
       *res = tmp;
@@ -96,7 +96,7 @@ template<bool isError> [[gnu::always_inline, gnu::pure]] inline bool mcsl::carry
    if constexpr (isError) {
       uint tmp;
       if (__builtin_usub_overflow(lhs, rhs, &tmp)) {
-         __throw(ErrCode::INT_OVERFLOW, "unsigned integer overflow (%u - %u)", lhs, rhs);
+         __throw(ErrCode::INT_OVERFLOW, mcsl::FMT("unsigned integer overflow (%u - %u)"), lhs, rhs);
          return true;
       }
       *res = tmp;
@@ -110,7 +110,7 @@ template<bool isError> [[gnu::always_inline, gnu::pure]] inline bool mcsl::carry
    if constexpr (isError) {
       ulong tmp;
       if (__builtin_usubl_overflow(lhs, rhs, &tmp)) {
-         __throw(ErrCode::INT_OVERFLOW, "unsigned long integer overflow (%lu - %lu)", lhs, rhs);
+         __throw(ErrCode::INT_OVERFLOW, mcsl::FMT("unsigned long integer overflow (%u - %u)"), lhs, rhs);
          return true;
       }
       *res = tmp;
@@ -126,7 +126,7 @@ template<bool isError> [[gnu::always_inline, gnu::pure]] inline sint mcsl::carry
    if constexpr (isError) {
       sint tmp;
       if (__builtin_smul_overflow(lhs, rhs, &tmp)) {
-         __throw(ErrCode::INT_OVERFLOW, "integer overflow (%d * %d)", lhs, rhs);
+         __throw(ErrCode::INT_OVERFLOW, mcsl::FMT("integer overflow (%i * %i)"), lhs, rhs);
          return true;
       }
       *res = tmp;
@@ -142,7 +142,7 @@ template<bool isError> [[gnu::always_inline, gnu::pure]] inline slong mcsl::carr
    if constexpr (isError) {
       slong tmp;
       if (__builtin_smull_overflow(lhs, rhs, &tmp)) {
-         __throw(ErrCode::INT_OVERFLOW, "long integer overflow (%ld * %ld)", lhs, rhs);
+         __throw(ErrCode::INT_OVERFLOW, mcsl::FMT("long integer overflow (%i * %i)"), lhs, rhs);
          return true;
       }
       *res = tmp;
@@ -158,7 +158,7 @@ template<bool isError> [[gnu::always_inline, gnu::pure]] inline uint mcsl::carry
    if constexpr (isError) {
       uint tmp;
       if (__builtin_umul_overflow(lhs, rhs, &tmp)) {
-         __throw(ErrCode::INT_OVERFLOW, "unsigned integer overflow (%u * %u)", lhs, rhs);
+         __throw(ErrCode::INT_OVERFLOW, mcsl::FMT("unsigned integer overflow (%u * %u)"), lhs, rhs);
          return true;
       }
       *res = tmp;
@@ -174,7 +174,7 @@ template<bool isError> [[gnu::always_inline, gnu::pure]] inline ulong mcsl::carr
    if constexpr (isError) {
       ulong tmp;
       if (__builtin_umull_overflow(lhs, rhs, &tmp)) {
-         __throw(ErrCode::INT_OVERFLOW, "unsigned long integer overflow (%lu * %lu)", lhs, rhs);
+         __throw(ErrCode::INT_OVERFLOW, mcsl::FMT("unsigned long integer overflow (%u * %u)"), lhs, rhs);
          return true;
       }
       *res = tmp;

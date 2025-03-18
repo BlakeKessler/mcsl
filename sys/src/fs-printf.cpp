@@ -30,7 +30,7 @@ namespace {
       bool usedDefaultPrec = true;
       do {
          if (i >= str.size()) {
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, "un-terminated format code");
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("un-terminated format code"));
          }
          switch (str[i]) {
             case 'f': case 'F':
@@ -66,7 +66,7 @@ namespace {
                break;
             
             default:
-               mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format");
+               mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format"));
          }
       } while (!mode);
 
@@ -132,15 +132,15 @@ namespace {
                break;
 
             case mcsl::FMT_INTRO: 
-               mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format (%% may not have arguments)");
+               mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format (%% may not have arguments)"));
             default:
-               mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format");
+               mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format"));
          }
       }
       #pragma GCC diagnostic pop
 
       if (flags & flags) { //warn the user that variable fields are not yet supported
-         mcsl::__throw(mcsl::ErrCode::FS_ERR, "WARNING: mcsl::printf does not yet support variable format fields - if are printing variable-length strings, use an mcsl::str_slice");
+         mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("WARNING: mcsl::printf does not yet support variable format fields - if are printing variable-length strings, use an mcsl::str_slice"));
       }
 
       return {mode, args, i, flags};
@@ -195,7 +195,7 @@ namespace {
                mcsl::write(file, mcsl::FMT_INTRO);
                ++charsPrinted;
             } else { //other format code
-               mcsl::__throw(mcsl::ErrCode::FS_ERR, "printf: more consuming format codes than arguments");
+               mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("printf: more consuming format codes than arguments"));
             }
             if (i+2 < str.size()) { //more to print
                return __printfImpl(file, str.slice(i + 2, str.size() - (i + 2)), charsPrinted);

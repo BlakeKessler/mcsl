@@ -5,6 +5,7 @@
 #include "carry.hpp"
 
 #include "fs.hpp"
+#include "throw.hpp"
 
 template<uint _capacity> uint mcsl::uint_n<_capacity>::bit_width() {
    return 8 * _size + std::bit_width(_buf[_size]);
@@ -32,7 +33,7 @@ template<uint _capacity> mcsl::uint_n<_capacity>& mcsl::uint_n<_capacity>::opera
    }
    if (carry) {
       if (_size >= _capacity) {
-         __throw(ErrCode::INT_OVERFLOW, "mcsl::uint_n<%u> overflow", _capacity);
+         __throw(ErrCode::INT_OVERFLOW, mcsl::FMT("mcsl::uint_n<%u> overflow"), _capacity);
       }
       _buf[_size] = carry;
       ++_size;
@@ -50,7 +51,7 @@ template<uint _capacity> mcsl::uint_n<_capacity>& mcsl::uint_n<_capacity>::opera
    }
    if (carry) {
       if (_size >= _capacity) {
-         __throw(ErrCode::INT_OVERFLOW, "mcsl::uint_n<%u> overflow", _capacity);
+         __throw(ErrCode::INT_OVERFLOW, mcsl::FMT("mcsl::uint_n<%u> overflow"), _capacity);
       }
       _buf[_size] = carry;
       ++_size;

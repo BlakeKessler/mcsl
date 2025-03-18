@@ -4,7 +4,7 @@
 
 #include "MCSL_DEFINES.hpp"
 #include "MCSL_MSG_LOCALIZATION.hpp"
-#include "throw.hpp"
+// #include "throw.hpp"
 #include "concepts.hpp"
 
 //!TODO: so-called "pessimizing" moves
@@ -40,6 +40,7 @@ namespace mcsl {
    template<uint _size> class raw_cstr;
    class str_slice;
    template<uint _size, typename size_t = ubyte> class raw_buf_str;
+   const str_slice FMT(const char* buf);
 
    struct str_hash_func;
    template<typename T> struct hash_func;

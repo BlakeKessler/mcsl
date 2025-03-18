@@ -42,7 +42,7 @@
 
    //check radix
    if (radix < 2 || radix > 36) {
-      __throw(ErrCode::STRTOINT, "radix for mcsl::str_to_uint() must be between 2 and 36 (not %u)", radix);
+      __throw(ErrCode::STRTOINT, mcsl::FMT("radix for mcsl::str_to_uint() must be between 2 and 36 (not %u)"), radix);
    }
 
    //parse integer
@@ -57,7 +57,7 @@
       uoverlong tmp = (uoverlong)val * (uoverlong)radix;
       val = (ulong)tmp;
       if ((ulong)(tmp >> (sizeof(ulong) * 8))) { [[unlikely]] //check for overflow
-         __throw(ErrCode::STRTOINT, "unsigned integer overflow at index %u", i);
+         __throw(ErrCode::STRTOINT, mcsl::FMT("unsigned integer overflow at index %u"), i);
       }
 
       val += digit;
@@ -125,7 +125,7 @@
       
       default: [[unlikely]] return -1;
    }
-   // __throw(ErrCode::STRTOINT, "%c (ASCII: %u) is not a valid base-36 digit", ch, (uint)ch);
+   // __throw(ErrCode::STRTOINT, mcsl::FMT("%c (ASCII: %u) is not a valid base-36 digit"), ch, (uint)ch);
 }
 
 //!returns whether or not an entire string is digits for the specifed base

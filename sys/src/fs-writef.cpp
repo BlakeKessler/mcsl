@@ -67,9 +67,9 @@ namespace {
    template<mcsl::uint_t T> uint writefImpl(mcsl::File& file, T num, char mode, mcsl::FmtArgs& fmt) {
       switch (mode | mcsl::CASE_BIT) {
          case 'c': case 's':
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code for type (%%%c)", mode);
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
          default:
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
          case 'e': case 'f': case 'g':
             return mcsl::writef(file, (mcsl::to_float_t<T>)num, mode, fmt);
          case 'i': return mcsl::writef(file, (mcsl::to_sint_t<T>)num, mode, fmt);
@@ -87,7 +87,7 @@ namespace {
       //check radix
       switch (fmt.radix) {
          default:
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, "unsupported radix for printing unsigned integers: %u", fmt.radix);
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("unsupported radix for printing unsigned integers: %u"), fmt.radix);
          case 2: case 8: case 10: case 16:
             break;
       }
@@ -151,9 +151,9 @@ namespace {
    template<mcsl::sint_t T> uint writefImpl(mcsl::File& file, T num, char mode, mcsl::FmtArgs& fmt) {
       switch (mode | mcsl::CASE_BIT) {
          case 'c': case 's':
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code for type (%%%c)", mode);
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
          default:
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
          case 'e': case 'f': case 'g':
             return mcsl::writef(file, (mcsl::to_float_t<T>)num, mode, fmt);
          case 'i': 
@@ -238,9 +238,9 @@ namespace {
    template<mcsl::float_t T> uint writefImpl(mcsl::File& file, T num, char mode, mcsl::FmtArgs& fmt) {
       switch (mode | mcsl::CASE_BIT) {
          case 'c': case 's': case 'i': case 'u':
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code for type (%%%c)", mode);
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
          default:
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
          case 'e': case 'f': case 'g':
             fmt.radix = fmt.radix ? fmt.radix : mcsl::DEFAULT_FLOAT_RADIX;
             break;
@@ -256,7 +256,7 @@ namespace {
       //check radix
       switch (fmt.radix) {
          default:
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, "unsupported radix for printing floating-point numbers: %u", fmt.radix);
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("unsupported radix for printing floating-point numbers: %u"), fmt.radix);
          case 2: case 8: case 10: case 16:
             break;
       }
@@ -522,7 +522,7 @@ uint mcsl::writef(File& file, const char ch, char mode, FmtArgs fmt) {
       case 'e': case 'f': case 'g':
          return writef(file, (float)ch, mode, fmt);
       default:
-         __throw(ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
+         __throw(ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
       case 'c': case 's':
          break;
    }
@@ -573,7 +573,7 @@ uint mcsl::writef(File& file, const bool obj, char mode, FmtArgs fmt) {
          break;
       
       default:
-         mcsl::__throw(ErrCode::FS_ERR, "invalid format code (%%%c)", mode);
+         mcsl::__throw(ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
    }
 
    //right-justified padding
@@ -595,7 +595,7 @@ uint mcsl::writef(File& file, const bool obj, char mode, FmtArgs fmt) {
 
 uint mcsl::writef(File& file, const str_slice obj, char mode, FmtArgs fmt) {
    if ((mode | CASE_BIT) != 's') {
-      mcsl::__throw(mcsl::ErrCode::FS_ERR, "invalid format code for type (%%%c)", mode);
+      mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
    }
 
    const str_slice str = obj.slice(fmt.precision ? min(obj.size(), fmt.precision) : obj.size());

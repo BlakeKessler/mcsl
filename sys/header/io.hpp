@@ -19,7 +19,6 @@ namespace mcsl {
    mcsl::File stdin = mcsl::File::ReopenLibcFile(::stdin);
 
    //!standard formatted IO
-   inline const str_slice _FMT_(const char* buf) { return str_slice::make_from_cstr(buf); }
    inline uint printf(const str_slice fmt, const auto&... argv) { return stdout.printf(fmt, argv...); }
    inline uint err_printf(const str_slice fmt, const auto&... argv) { return stderr.printf(fmt, argv...); }
    inline uint scanf(const str_slice fmt, auto*... argv) { return stdin.scanf(fmt, argv...); }
