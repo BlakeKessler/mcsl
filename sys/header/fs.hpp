@@ -86,6 +86,8 @@ class mcsl::File {
       char read() { return std::getc(_file); }
       arr_span<ubyte> read(arr_span<ubyte> dest);
       str_slice read(str_slice dest) { return {dest.begin(), read(arr_span<ubyte>((ubyte*)dest.begin(), dest.size())).size()}; }
+      string readChars(uint charCount);
+      dyn_arr<ubyte> readBytes(uint byteCount);
       str_slice readln(str_slice dest, const char nl = '\n');
       string readln(const char nl = '\n');
 
@@ -112,12 +114,23 @@ namespace mcsl {
    _fdeclio(void*);
 
    template<typename T> File& write(File& file, const arr_span<T> buf) {
-      file.write(buf.size());
-      for (uint i = 0; i < buf.size(); ++i) {
-         write(file, i);
+      if (buf.size()) {
+         write(file, buf[0]);
+         for (uint i = 1; i < buf.size(); ++i) {
+            write(file, ',');
+            write(file, ' ');
+            write(file, i);
+         }
       }
       return file;
    }
+   // template<typename T> File& write(File& file, const arr_span<T> buf) {
+   //    file.write(buf.size());
+   //    for (uint i = 0; i < buf.size(); ++i) {
+   //       write(file, i);
+   //    }
+   //    return file;
+   // }
 };
 
 #undef _fdeclio

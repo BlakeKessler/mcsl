@@ -4,7 +4,7 @@
 #include "uint_n.hpp"
 #include "carry.hpp"
 
-#include <cstdio>
+#include "fs.hpp"
 
 template<uint _capacity> uint mcsl::uint_n<_capacity>::bit_width() {
    return 8 * _size + std::bit_width(_buf[_size]);
@@ -59,12 +59,11 @@ template<uint _capacity> mcsl::uint_n<_capacity>& mcsl::uint_n<_capacity>::opera
    return self;
 }
 
-template<uint _capacity> void mcsl::uint_n<_capacity>::print() {
-   uint i = _size;
-   std::printf("%lx", _buf[--i]);
-   while (i) {
-      std::printf(" %0lx", _buf[--i]);
+template<uint _capacity> mcsl::File& mcsl::write(File& file, const uint_n<_capacity> obj) {
+   for (uint i = obj.size(); i--;) {
+      writef(file, obj[i], 'r', {});
    }
+   return file;
 }
 
 #endif //MCSL_UINT_N_CPP

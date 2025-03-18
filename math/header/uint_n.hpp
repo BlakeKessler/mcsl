@@ -42,6 +42,10 @@ template <uint _capacity> struct mcsl::uint_n : mcsl::contig_base<ulong> {
       void print();
 };
 
+namespace mcsl {
+   template<uint _capacity> File& write(File&, const uint_n<_capacity>);
+};
+
 #include "../src/uint_n.cpp"
 
 #endif //MCSL_UINT_N_HPP

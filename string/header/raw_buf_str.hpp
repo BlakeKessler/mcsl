@@ -21,7 +21,7 @@ class [[clang::trivial_abi]] mcsl::raw_buf_str : public str_base<char> {
       constexpr raw_buf_str(const char* str, const size_t strlen);
       // constexpr raw_buf_str(const raw_buf_str& other):_buf{other._buf},_size{other._size} {}
       constexpr raw_buf_str(const str_t auto& other): raw_buf_str(other.begin(), other.size()) {}
-      constexpr raw_buf_str(const char str[_capacity+1]): raw_buf_str(str, _capacity) {}
+      constexpr raw_buf_str(const char str[_capacity+1]): raw_buf_str(str, _capacity) {} //might not be working properly
       // template<uint len> requires (len <= _capacity) constexpr raw_buf_str(const char str[len+1]): raw_buf_str(str, len) {}
 
       //properties

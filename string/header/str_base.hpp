@@ -9,11 +9,6 @@
 #include "math.hpp"
 #include "mem.hpp"
 
-#include <cstdio>
-#ifdef MCSL
-   #undef NULL
-#endif
-
 //!IMPLEMENTATION GUIDE:
 //!   consider null-termination
 //!      if possible, owning string classes should maintain null-termination
@@ -26,7 +21,6 @@ struct mcsl::str_base : public contig_base<char_t> {
    // static constexpr const raw_str _nameof = "str_base";
    static constexpr const char _nameof[] = "str_base";
    constexpr static const auto& nameof() { return _nameof; }
-   void printf(this auto&& obj) { std::printf("%.*s", obj.size(), obj.begin()); }
 
    constexpr const str_slice slice(this const auto&& obj);
    constexpr const str_slice slice(this const auto&& obj, uint size);
