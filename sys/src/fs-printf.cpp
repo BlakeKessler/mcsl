@@ -6,6 +6,8 @@
 #include "tuple.hpp"
 #include "str_to_num.hpp"
 
+#include "throw.hpp"
+
 namespace {
    enum FmtVarFields : ubyte {
       NONE = 0,

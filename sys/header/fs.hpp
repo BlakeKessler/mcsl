@@ -119,7 +119,7 @@ namespace mcsl {
          for (uint i = 1; i < buf.size(); ++i) {
             write(file, ',');
             write(file, ' ');
-            write(file, i);
+            write(file, buf[i]);
          }
       }
       return file;
@@ -136,13 +136,13 @@ namespace mcsl {
 #undef _fdeclio
 #include "MAP_MACRO_UNDEF.h"
 
-
-
 #pragma region inlinesrc
 
-#include "../src/fs-printf.cpp"
-#include "../src/fs-write.cpp"
+// #include "../src/fs-printf.cpp"
+// #include "../src/fs-write.cpp"
 
 #pragma endregion inlinesrc
+
+// #include "throw.hpp"
 
 #endif //MCSL_FS_HPP

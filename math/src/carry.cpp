@@ -2,7 +2,7 @@
 #define MCSL_CARRY_CPP
 
 #include "carry.hpp"
-#include "type_traits.hpp"
+// #include "type_traits.hpp"
 #include "throw.hpp"
 
 #pragma region add

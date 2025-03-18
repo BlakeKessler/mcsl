@@ -101,11 +101,6 @@ struct mcsl::str_base : public contig_base<char_t> {
       const uint len = mcsl::min(s.size(), other.size());
       return mcsl::memcmp(s.begin(), other.begin(), len);
    }
-
-   //typecasts
-   inline constexpr operator bool(this const auto& obj) { return obj.size(); }
-   inline constexpr operator const char_t*(this const auto& obj) { return obj.data(); }
-   inline constexpr operator char_t*(this auto& obj) { return obj.data(); }
 };
 
 
