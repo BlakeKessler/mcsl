@@ -171,7 +171,7 @@ namespace {
       //check radix
       switch (fmt.radix) {
          default:
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, "unsupported radix for printing unsigned integers: %u", fmt.radix);
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("unsupported radix for printing unsigned integers: %u"), fmt.radix);
          case 2: case 8: case 10: case 16:
             break;
       }
