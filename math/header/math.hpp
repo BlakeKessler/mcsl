@@ -9,8 +9,7 @@
 #include "pair.hpp"
 
 #include "MAP_MACRO.h"
-#define _DECLTYPE(x) decltype(x)
-#define _TYPES(...) MCSL_MAP_LIST(_DECLTYPE, __VA_ARGS__)
+#define _TYPES(...) MCSL_MAP_LIST(decltype, __VA_ARGS__)
 #define _MPT(...) most_precise_t<_TYPES(__VA_ARGS__)>
 
 #define _N const num_t auto
@@ -227,7 +226,6 @@ constexpr auto mcsl::factorial(_U x) -> decltype(x) {
 
 #undef _MPT
 #undef _TYPES
-#undef _DECLTYPE
 #include "MAP_MACRO_UNDEF.h"
 
 #endif //MCSL_MATH_HPP

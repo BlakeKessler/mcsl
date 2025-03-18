@@ -23,7 +23,7 @@ namespace mcsl {
    template<float_t T> constexpr pair<T> fextract(const T x);
    template<float_t T> constexpr pair<T, sint> fextracti(const T x);
 
-   template<float_t T> constexpr T noexp(const T x);
+   // template<float_t T> constexpr T noexp(const T x);
    template<float_t T> constexpr pair<T, sint> sci_notat(const T x, const uint radix); //M*r^E = (M*b^((E*log[b](r))%1))*(b^(floor(E*log[b](r))))    (I think, might have made a mistake)
    //!TODO: the rest of the cmath floating point manipulation functions
 };
@@ -60,9 +60,9 @@ template<mcsl::float_t T> constexpr mcsl::pair<T, sint> mcsl::fextracti(const T 
    return {signif, exp};
 }
 
-template<mcsl::float_t T> constexpr T mcsl::noexp(const T x) {
-   //!TODO: implement
-}
+// template<mcsl::float_t T> constexpr T mcsl::noexp(const T x) {
+//    //!TODO: implement
+// }
 
 template<mcsl::float_t T> constexpr mcsl::pair<T,sint> mcsl::sci_notat(const T x, const uint radix) {
    assume(radix > 1);
