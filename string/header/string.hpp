@@ -19,6 +19,8 @@ class mcsl::string : public mcsl::str_base<char> {
       string(const str_t auto& other): _buf(other) {}
       template<uint len> string(const char (&str)[len+1]): string(str, len) {}
 
+      void UNSAFE_RESIZE(const uint s) { _buf._size = s; }
+
       void free() const { _buf.free(); }
 
       string& operator=(string&&) = default;
