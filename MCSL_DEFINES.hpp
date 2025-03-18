@@ -84,6 +84,8 @@ using wchar = wchar_t;
 #define MCSL_ALL_NUM_T    MCSL_ALL_INT_T, MCSL_ALL_FLOAT_T
 #define MCSL_ALL_CHAR_T   char, wchar, char8, char16, char32
 
+#define MCSL_CFLOAT_ABBREVIATIONS FLT, DBL, LDBL
+
 //enums
 namespace mcsl {
    enum class ErrCode {
