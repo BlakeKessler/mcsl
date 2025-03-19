@@ -1,11 +1,13 @@
-#ifndef MCSL_FS_CPP
-#define MCSL_FS_CPP
+#ifndef MCSL_IO_CPP
+#define MCSL_IO_CPP
 
-#include "fs.hpp"
+#include "io.hpp"
 
 #include "alloc.hpp"
 #include "cstr.hpp"
 #include <cstdio>
+
+#include "throw.hpp"
 
 mcsl::File::File(FILE* file):
    _file{file},
@@ -163,4 +165,4 @@ mcsl::sys_endian mcsl::FmtArgs::endianness_r() const {
 }
 
 
-#endif //MCSL_FS_CPP
+#endif //MCSL_IO_CPP

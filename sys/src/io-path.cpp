@@ -1,7 +1,7 @@
 #ifndef FS_PATH_CPP
 #define FS_PATH_CPP
 
-#include "fs.hpp"
+#include "io.hpp"
 
 #include "dyn_str_span.hpp"
 #include "str_slice.hpp"

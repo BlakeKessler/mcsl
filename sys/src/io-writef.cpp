@@ -1,7 +1,7 @@
 #ifndef FS_WRITEF_CPP
 #define FS_WRITEF_CPP
 
-#include "fs.hpp"
+#include "io.hpp"
 
 #include "num_to_str.hpp"
 #include "math.hpp"
@@ -10,6 +10,10 @@
 #include "string.hpp"
 #include "raw_buf_str.hpp"
 #include "raw_str.hpp"
+
+#include "type_traits.hpp"
+
+#include "throw.hpp"
 
 #define __ALT_MODE \
 if (fmt.altMode) {\

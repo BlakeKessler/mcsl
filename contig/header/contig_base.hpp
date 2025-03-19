@@ -31,7 +31,7 @@ template<typename T> struct mcsl::contig_base {
 
    [[gnu::pure]] inline constexpr auto operator+(this auto&& obj, const uint i) -> decltype(auto)   { assume(i < obj.size()); return obj.begin() + i; }
    [[gnu::pure]] inline constexpr auto operator[](this auto&& obj, const uint i) -> decltype(auto)   { return *(obj + i); }
-   [[gnu::pure]] inline constexpr auto at(this auto&& obj, const uint i) -> decltype(auto);
+   [[gnu::pure]] inline constexpr auto at(this auto&& obj, const uint i) -> decltype(auto) { assert(i < obj.size()); return *(obj + i); }
    [[gnu::pure]] inline constexpr auto end(this auto&& obj) -> decltype(auto)   { return obj.begin() + obj.size(); }
    [[gnu::pure]] inline constexpr auto front(this auto&& obj) -> decltype(auto)   { return obj[0]; }
    [[gnu::pure]] inline constexpr auto back(this auto&& obj) -> decltype(auto)   { return obj[obj.size()-1]; }
@@ -46,6 +46,6 @@ template<typename T> struct mcsl::contig_base {
    constexpr arr_span<T> span(this auto&& obj, uint size, uint begin);
 };
 
-#include "str_slice.hpp"
+// #include "str_slice.hpp"
 
 #endif //MCSL_CONTIG_BASE_HPP

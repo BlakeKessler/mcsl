@@ -99,10 +99,8 @@ template<typename char_t> constexpr mcsl::str_slice mcsl::str_base<char_t>::slic
 }
 
 
+// #include "throw.hpp"
 
-
-template<typename T>
-[[gnu::pure]] inline constexpr auto mcsl::contig_base<T>::at(this auto&& obj, const uint i) -> decltype(auto) { if (i >= obj.size()) { __throw(ErrCode::SEGFAULT, mcsl::FMT("%s of size %u accessed at index %u"), obj.nameof(), obj.size(), i); } if (!obj.data()) { __throw(ErrCode::SEGFAULT, mcsl::FMT("null %s dereferenced"), obj.nameof()); } return obj[i]; }
 
 #pragma endregion inlinesrc
 

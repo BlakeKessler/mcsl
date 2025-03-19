@@ -5,15 +5,17 @@
 #include "carry.hpp"
 #include "uint_n.hpp"
 #include "assert.hpp"
+#include "type_traits.hpp"
 
 #include <cmath>
+#include "throw.hpp"
 
 //!TODO: add template parameters for radix, only deduce when radix == 0
 
 //!convert string to unsigned integer
 //!legal radices: {0, 2, ... , 36}
 //!when radix is 0, base is deduced from contents of string
-[[gnu::pure]] /*constexpr*/ ulong mcsl::str_to_uint(const char* str, const uint strlen, uint radix) {
+[[gnu::pure]] constexpr ulong mcsl::str_to_uint(const char* str, const uint strlen, uint radix) {
    assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    uint i = 0;
@@ -68,7 +70,7 @@
 //!convert string to signed integer
 //!legal radices: {0, 2, ... , 36}
 //!when radix is 0, base is deduced from contents of string
-[[gnu::pure]] /*constexpr*/ slong mcsl::str_to_sint(const char* str, const uint strlen, uint radix) {
+[[gnu::pure]] constexpr slong mcsl::str_to_sint(const char* str, const uint strlen, uint radix) {
    assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    if (str[0] == '-') {
@@ -81,7 +83,7 @@
 }
 
 //!converts a single character into a base-36 digit
-[[gnu::const, gnu::always_inline]] /*constexpr*/ sint8 mcsl::digit_to_uint(const char ch) {
+[[gnu::const, gnu::always_inline]] constexpr sint8 mcsl::digit_to_uint(const char ch) {
    switch (ch) {
       case '0':
       case '1':
@@ -129,7 +131,7 @@
 }
 
 //!returns whether or not an entire string is digits for the specifed base
-[[gnu::pure]] /*constexpr*/ bool mcsl::is_uint(const char* str, const uint strlen, const uint radix) {
+[[gnu::pure]] constexpr bool mcsl::is_uint(const char* str, const uint strlen, const uint radix) {
    assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    for (uint i = 0; i < strlen; ++i) {
@@ -143,7 +145,7 @@
 //!convert string to floating point number
 //!legal radices: {0, 2, 8, 10, 16}
 //!when radix is 0, base is deduced from contents of string
-[[gnu::pure]] /*constexpr*/ flong mcsl::str_to_real(const char* str, const uint strlen, uint radix) {
+[[gnu::pure]] constexpr flong mcsl::str_to_real(const char* str, const uint strlen, uint radix) {
    assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    //deduce sign, radix, and starting index
@@ -240,7 +242,7 @@
 //!NOTE: slightly imprecise
 //!TODO: fix inf, nan, signan
 //!TODO: apostrophes?
-[[gnu::pure]] /*constexpr*/ flong mcsl::c_float_lit_str_to_real(const char* str, const uint strlen, uint radix) {
+[[gnu::pure]] constexpr flong mcsl::c_float_lit_str_to_real(const char* str, const uint strlen, uint radix) {
    //https://dl.acm.org/doi/pdf/10.1145/93548.93559?download=false
    //https://dl.acm.org/doi/pdf/10.1145/93548.93557?download=false
    //https://www.netlib.org/fp/

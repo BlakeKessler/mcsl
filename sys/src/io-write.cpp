@@ -1,7 +1,7 @@
-#ifndef MCSL_FS_WRITE_CPP
-#define MCSL_FS_WRITE_CPP
+#ifndef MCSL_WRITE_CPP
+#define MCSL_WRITE_CPP
 
-#include "fs.hpp"
+#include "io.hpp"
 
 #include "MAP_MACRO.h"
 #define __write(T, code, fmt) \
@@ -31,4 +31,4 @@ inline mcsl::File& mcsl::write(File& file, const void* ptr) {
 inline mcsl::File& mcsl::write(File& file, const char ch) { return file.write(ch); }
 inline mcsl::File& mcsl::write(File& file, str_slice str) { return file.write(str); }
 
-#endif //MCSL_FS_WRITE_CPP
+#endif //MCSL_WRITE_CPP
