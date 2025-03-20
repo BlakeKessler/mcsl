@@ -26,16 +26,13 @@ namespace mcsl {
       }
    }
    constexpr uint cstrcpy(char* dest, const char* src, const uint capacity) {
-      if consteval {
-         for (uint i = 0; i < capacity; ++i) {
-            if (!src[i]) {
-               return i;
-            }
-            dest[i] = src[i];
+      for (uint i = 0; i < capacity; ++i) {
+         if (!src[i]) {
+            return i;
          }
-      } else {
-         std::strncpy(dest, src, capacity);
+         dest[i] = src[i];
       }
+      return capacity;
    }
    constexpr sint memcmp(const ubyte* lhs, const ubyte* rhs, const uint len) {
       if consteval {
