@@ -6,7 +6,7 @@
 #include "throw.hpp"
 
 [[noreturn]] void mcsl::__unreachable(const std::source_location loc) {
-   mcsl::__throw(ErrCode::UNREACHABLE_REACHED, mcsl::FMT("%s:%u(%u): %s"), loc.file_name(), loc.line(), loc.column(), loc.function_name());
+   mcsl::__throw(ErrCode::UNREACHABLE_REACHED, mcsl::FMT("%s:%u(%u): %s"), FMT(loc.file_name()), loc.line(), loc.column(), FMT(loc.function_name()));
    std::unreachable();
 }
 
