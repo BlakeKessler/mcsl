@@ -70,7 +70,7 @@ class mcsl::File {
       static File ReopenLibcFile(FILE* file) { return File{file}; }
 
       ~File();
-      void close() { File::~File(); }
+      void close();
       
       void flush();
 
