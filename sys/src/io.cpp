@@ -91,16 +91,16 @@ mcsl::File& mcsl::File::write(const ubyte c, uint repCount) {
 
 mcsl::File& mcsl::File::write(const mcsl::arr_span<ubyte> data) {
    if (data.size() + _endIndex < _capacity) {
-      std::memcpy(_buf + _endIndex, data.begin(), data.size());
+      mcsl::memcpy(_buf + _endIndex, data.begin(), data.size());
       _endIndex += data.size();
    } else {
       const uint initCharCount = _capacity - _endIndex;
-      std::memcpy(_buf + _endIndex, data.begin(), initCharCount);
+      mcsl::memcpy(_buf + _endIndex, data.begin(), initCharCount);
       flush();
       const mcsl::arr_span<ubyte> remainder{const_cast<ubyte*>(data.begin() + initCharCount), data.size() - initCharCount};
       debug_assert(_endIndex == 0);
       if (remainder.size() < _capacity) {
-         std::memcpy(_buf, remainder.begin(), remainder.size());
+         mcsl::memcpy(_buf, remainder.begin(), remainder.size());
          _endIndex = remainder.size();
       } else {
          std::fwrite(remainder.begin(), 1, remainder.size(), _file);
