@@ -100,15 +100,11 @@ class mcsl::File {
 
 
 
-
-#include <cstdio>
-#undef NULL
-
 namespace mcsl {
    //!standard files
-   extern mcsl::File stdout;
-   extern mcsl::File stderr;
-   extern mcsl::File stdin;
+   extern File stdout;
+   extern File stderr;
+   extern File stdin;
 
    //!standard formatted IO
    inline uint printf(const str_slice fmt, const auto&... argv) { return stdout.printf(fmt, argv...); }

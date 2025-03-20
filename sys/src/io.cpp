@@ -5,9 +5,10 @@
 
 #include "alloc.hpp"
 #include "cstr.hpp"
-#include <cstdio>
-
 #include "throw.hpp"
+
+#include <cstdio>
+#undef NULL
 
 mcsl::File::File(FILE* file):
    _file{file},

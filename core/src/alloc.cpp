@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cwchar>
 #include <cstring>
+#undef NULL
 
 //!dynamically allocate a contiguous array large enough to hold itemCount items of type T according to the compilation mode
 template<typename T> [[gnu::malloc]] T* mcsl::alloc(const uint itemCount) {

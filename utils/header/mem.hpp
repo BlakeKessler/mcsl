@@ -5,6 +5,7 @@
 #include "MCSL.hpp"
 
 #include <cstring>
+#undef NULL
 
 namespace mcsl {
    constexpr void memcpy(ubyte* dest, const ubyte* src, const uint len) {

@@ -3,7 +3,6 @@
 #define MCSL_ERR_HPP
 
 #include "MCSL.hpp"
-#include <stdexcept>
 #include "str_slice.hpp"
 
 namespace mcsl {
