@@ -169,15 +169,18 @@ namespace {
             if (mode == mcsl::FMT_INTRO) { //%%
                mcsl::write(file, mcsl::FMT_INTRO);
                ++charsPrinted;
+               if (i + codeLen < str.size()) { //more to print
+                  return __printfImpl(file, str.slice(i + codeLen + 1, str.size() - (i + codeLen + 1)), charsPrinted, arg0, argv...); //tail recursion
+               }
             } else { //other format code
                charsPrinted += mcsl::writef(file, arg0, mode, fmtArgs);
+               if (i + codeLen < str.size()) { //more to print
+                  return __printfImpl(file, str.slice(i + codeLen + 1, str.size() - (i + codeLen + 1)), charsPrinted, argv...); //tail recursion
+               }
             }
-            if (i + codeLen < str.size()) { //more to print
-               return __printfImpl(file, str.slice(i + codeLen + 1, str.size() - (i + codeLen + 1)), charsPrinted, argv...); //tail recursion
-            } else { //end of format string
-               [[unlikely]];
-               return charsPrinted;
-            }
+            //end of format string
+            [[unlikely]];
+            return charsPrinted;
          }
       }
       //no format codes in format string
