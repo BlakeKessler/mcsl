@@ -15,6 +15,8 @@
 
 #include "throw.hpp"
 
+#include "MAP_MACRO.h"
+
 #define __ALT_MODE \
 if (fmt.altMode) {\
    file.write('0');\
@@ -29,6 +31,11 @@ if (fmt.altMode) {\
    file.write(ch);\
    charsPrinted += 2;\
 }
+#define __PRINT_AS_CHAR(char_t) \
+if constexpr (sizeof(T) == sizeof(char_t)) {    \
+   return writef(file, (char_t)num, mode, fmt); \
+}
+#define __PRINT_AS_CHARS MCSL_MAP(__PRINT_AS_CHAR, MCSL_ALL_CHAR_T)
 
 namespace {
    constexpr mcsl::str_slice __EXP_NOTAT = mcsl::str_slice::make(mcsl::EXP_NOTAT, sizeof(mcsl::EXP_NOTAT) - !mcsl::EXP_NOTAT[sizeof(mcsl::EXP_NOTAT)-1]);
@@ -70,13 +77,12 @@ namespace {
    
    template<mcsl::uint_t T> uint writefImpl(mcsl::File& file, T num, char mode, mcsl::FmtArgs& fmt) {
       switch (mode | mcsl::CASE_BIT) {
-         case 'c': case 's':
-            // UNREACHABLE;
-            // std::abort();
+         case 'c':
+            __PRINT_AS_CHARS
+         [[fallthrough]];
+         case 's':
             mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c) for type"), mode);
          default:
-            // UNREACHABLE;
-            // std::abort();
             mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
          case 'e': case 'f': case 'g':
             return mcsl::writef(file, (mcsl::to_float_t<T>)num, mode, fmt);
@@ -158,13 +164,12 @@ namespace {
 
    template<mcsl::sint_t T> uint writefImpl(mcsl::File& file, T num, char mode, mcsl::FmtArgs& fmt) {
       switch (mode | mcsl::CASE_BIT) {
-         case 'c': case 's':
-            // UNREACHABLE;
-            // std::abort();
+         case 'c':
+            __PRINT_AS_CHARS
+         [[fallthrough]];
+         case 's':
             mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
          default:
-            // UNREACHABLE;
-            // std::abort();
             mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
          case 'e': case 'f': case 'g':
             return mcsl::writef(file, (mcsl::to_float_t<T>)num, mode, fmt);
@@ -251,12 +256,8 @@ namespace {
       switch (mode | mcsl::CASE_BIT) {
          case 'c': case 's': case 'i': case 'u':
             mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
-            // UNREACHABLE;
-            // std::abort();
          default:
             mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
-            // UNREACHABLE;
-            // std::abort();
          case 'e': case 'f': case 'g':
             fmt.radix = fmt.radix ? fmt.radix : mcsl::DEFAULT_FLOAT_RADIX;
             break;
@@ -518,7 +519,6 @@ namespace {
    }
 };
 
-#include "MAP_MACRO.h"
 #define _writefImpl(T)\
 uint mcsl::writef(File& file, const T obj, char mode, FmtArgs fmt) {\
    return writefImpl<T>(file, obj, mode, fmt);\
@@ -527,7 +527,6 @@ uint mcsl::writef(File& file, const T obj, char mode, FmtArgs fmt) {\
 MCSL_MAP(_writefImpl, MCSL_ALL_NUM_T)
 
 #undef _writefImpl
-#include "MAP_MACRO_UNDEF.h"
 
 uint mcsl::writef(File& file, const void* obj, char mode, FmtArgs fmt) {
    return writef(file, (uptr)obj, mode, fmt);
@@ -563,6 +562,23 @@ uint mcsl::writef(File& file, const char ch, char mode, FmtArgs fmt) {
    //return number of chars printed
    return max(1, fmt.minWidth);
 }
+
+//!TODO: implement these
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+uint mcsl::writef(File& file, const wchar ch, char mode, FmtArgs fmt) {
+   __throw(ErrCode::FS_ERR, FMT("printing `wchar`s is not yet supported"));
+}
+uint mcsl::writef(File& file, const char8 ch, char mode, FmtArgs fmt) {
+   __throw(ErrCode::FS_ERR, FMT("printing `char8`s is not yet supported"));
+}
+uint mcsl::writef(File& file, const char16 ch, char mode, FmtArgs fmt) {
+   __throw(ErrCode::FS_ERR, FMT("printing `char16`s is not yet supported"));
+}
+uint mcsl::writef(File& file, const char32 ch, char mode, FmtArgs fmt) {
+   __throw(ErrCode::FS_ERR, FMT("printing `char32`s is not yet supported"));
+}
+#pragma GCC diagnostic pop
 
 uint mcsl::writef(File& file, const bool obj, char mode, FmtArgs fmt) {
    raw_buf_str<8> str;
@@ -615,8 +631,6 @@ uint mcsl::writef(File& file, const bool obj, char mode, FmtArgs fmt) {
 
 uint mcsl::writef(File& file, const str_slice obj, char mode, FmtArgs fmt) {
    if ((mode | CASE_BIT) != 's') {
-      // UNREACHABLE;
-      // std::abort();
       mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
    }
 
@@ -634,5 +648,11 @@ uint mcsl::writef(File& file, const str_slice obj, char mode, FmtArgs fmt) {
 
    return max(str.size(), fmt.minWidth);
 }
+
+#undef __PRINT_AS_CHARS
+#undef __PRINT_AS_CHAR
+#undef __ALT_MODE
+
+#include "MAP_MACRO_UNDEF.h"
 
 #endif //FS_WRITEF_CPP
