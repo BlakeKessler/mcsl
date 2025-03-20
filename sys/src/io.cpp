@@ -39,10 +39,17 @@ mcsl::File::File(const Path fileName, const char* mode, arr_span<ubyte> buf, boo
 }
 
 mcsl::File::~File() {
+   const_cast<File*>(this)->close();
+}
+void mcsl::File::close() {
    flush();
-   std::fclose(_file);
-   if (_ownsBuf) {
+   if (_file) { [[likely]];
+      std::fclose(_file);
+      _file = nullptr;
+   }
+   if (_ownsBuf) { [[likely]];
       mcsl::free(_buf);
+      _buf = nullptr;
    }
 }
 
