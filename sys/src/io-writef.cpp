@@ -17,21 +17,21 @@
 
 #include "MAP_MACRO.h"
 
-#define __ALT_MODE \
-if (fmt.altMode) {\
-   file.write('0');\
-   char ch = isLower ? mcsl::CASE_BIT : 0;\
-   switch (fmt.radix) {\
-      case  2: ch |= 'B'; break;\
-      case  8: ch |= 'O'; break;\
-      case 10: ch |= 'D'; break;\
-      case 16: ch |= 'X'; break;\
-      default: UNREACHABLE;\
-   }\
-   file.write(ch);\
-   charsPrinted += 2;\
+#define __ALT_MODE                         \
+if (fmt.altMode) {                         \
+   file.write('0');                        \
+   char ch = isLower ? mcsl::CASE_BIT : 0; \
+   switch (fmt.radix) {                    \
+      case  2: ch |= 'B'; break;           \
+      case  8: ch |= 'O'; break;           \
+      case 10: ch |= 'D'; break;           \
+      case 16: ch |= 'X'; break;           \
+      default: UNREACHABLE;                \
+   }                                       \
+   file.write(ch);                         \
+   charsPrinted += 2;                      \
 }
-#define __PRINT_AS_CHAR(char_t) \
+#define __PRINT_AS_CHAR(char_t)                 \
 if constexpr (sizeof(T) == sizeof(char_t)) {    \
    return writef(file, (char_t)num, mode, fmt); \
 }
@@ -519,9 +519,9 @@ namespace {
    }
 };
 
-#define _writefImpl(T)\
-uint mcsl::writef(File& file, const T obj, char mode, FmtArgs fmt) {\
-   return writefImpl<T>(file, obj, mode, fmt);\
+#define _writefImpl(T)                                               \
+uint mcsl::writef(File& file, const T obj, char mode, FmtArgs fmt) { \
+   return writefImpl<T>(file, obj, mode, fmt);                       \
 }
 
 MCSL_MAP(_writefImpl, MCSL_ALL_NUM_T)
@@ -532,7 +532,7 @@ uint mcsl::writef(File& file, const void* obj, char mode, FmtArgs fmt) {
    return writef(file, (uptr)obj, mode, fmt);
 }
 
-uint mcsl::writef(File& file, const char ch, char mode, FmtArgs fmt) {
+uint mcsl::writef(File& file, const char ch, char mode, FmtArgs fmt) { //!TODO: consider locale
    switch (mode | CASE_BIT) {
       case 'u': case 'r':
          return writef(file, (ubyte)ch, mode, fmt);
