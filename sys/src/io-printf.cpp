@@ -183,7 +183,8 @@ namespace {
       //no format codes in format string
       [[unlikely]];
       mcsl::write(file, str);
-      return str.size();
+      charsPrinted += str.size();
+      return charsPrinted;
    }
    #pragma GCC diagnostic push
    #pragma GCC diagnostic ignored "-Wunneeded-internal-declaration"
@@ -210,7 +211,8 @@ namespace {
       //no format codes in format string
       [[likely]];
       mcsl::write(file, str);
-      return str.size();
+      charsPrinted += str.size();
+      return charsPrinted;
    }
    #pragma GCC diagnostic pop
 };
