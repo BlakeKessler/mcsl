@@ -71,10 +71,9 @@ namespace {
    template<mcsl::uint_t T> uint writefImpl(mcsl::File& file, T num, char mode, mcsl::FmtArgs& fmt) {
       switch (mode | mcsl::CASE_BIT) {
          case 'c': case 's':
-            // // UNREACHABLE; //!TODO: this one is the problem
-            // mcsl::stderr.flush(); //!TODO: 
+            // UNREACHABLE;
             // std::abort();
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c) for type"), mode); //!TODO: %% is broken
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c) for type"), mode);
          default:
             // UNREACHABLE;
             // std::abort();
