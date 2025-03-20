@@ -529,6 +529,9 @@ MCSL_MAP(_writefImpl, MCSL_ALL_NUM_T)
 #undef _writefImpl
 
 uint mcsl::writef(File& file, const void* obj, char mode, FmtArgs fmt) {
+   if ((mode | CASE_BIT) == 's') {
+      __throw(ErrCode::FS_ERR, FMT("invalid format code for type `void*` (%%%c) - \033[1;36mNOTE:\033[22;39m if you are trying to print a `char*` as a string, pass it as a `mcsl::str_slice`"), mode);
+   }
    return writef(file, (uptr)obj, mode, fmt);
 }
 
