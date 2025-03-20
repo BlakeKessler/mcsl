@@ -5,7 +5,7 @@
 
 #include "MAP_MACRO.h"
 #define __write(T, code, fmt) \
-inline mcsl::File& mcsl::write(File& file, const T x) { \
+mcsl::File& mcsl::write(File& file, const T x) { \
    mcsl::writef(file, x, code, mcsl::FmtArgs fmt);\
    return file;\
 }
@@ -23,12 +23,12 @@ MCSL_MAP(__writeF, MCSL_ALL_FLOAT_T)
 #undef __write
 #include "MAP_MACRO_UNDEF.h"
 
-inline mcsl::File& mcsl::write(File& file, const void* ptr) {
+mcsl::File& mcsl::write(File& file, const void* ptr) {
    mcsl::writef(file, (uptr)ptr, 'u', mcsl::FmtArgs{.radix=mcsl::DEFAULT_RAW_RADIX});
    return file;
 }
 
-inline mcsl::File& mcsl::write(File& file, const char ch) { return file.write(ch); }
-inline mcsl::File& mcsl::write(File& file, str_slice str) { return file.write(str); }
+mcsl::File& mcsl::write(File& file, const char ch) { return file.write(ch); }
+mcsl::File& mcsl::write(File& file, str_slice str) { return file.write(str); }
 
 #endif //MCSL_WRITE_CPP

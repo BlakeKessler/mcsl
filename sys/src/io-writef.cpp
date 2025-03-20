@@ -71,8 +71,13 @@ namespace {
    template<mcsl::uint_t T> uint writefImpl(mcsl::File& file, T num, char mode, mcsl::FmtArgs& fmt) {
       switch (mode | mcsl::CASE_BIT) {
          case 'c': case 's':
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
+            // // UNREACHABLE; //!TODO: this one is the problem
+            // mcsl::stderr.flush(); //!TODO: 
+            // std::abort();
+            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c) for type"), mode); //!TODO: %% is broken
          default:
+            // UNREACHABLE;
+            // std::abort();
             mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
          case 'e': case 'f': case 'g':
             return mcsl::writef(file, (mcsl::to_float_t<T>)num, mode, fmt);
@@ -155,8 +160,12 @@ namespace {
    template<mcsl::sint_t T> uint writefImpl(mcsl::File& file, T num, char mode, mcsl::FmtArgs& fmt) {
       switch (mode | mcsl::CASE_BIT) {
          case 'c': case 's':
+            // UNREACHABLE;
+            // std::abort();
             mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
          default:
+            // UNREACHABLE;
+            // std::abort();
             mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
          case 'e': case 'f': case 'g':
             return mcsl::writef(file, (mcsl::to_float_t<T>)num, mode, fmt);
@@ -243,8 +252,12 @@ namespace {
       switch (mode | mcsl::CASE_BIT) {
          case 'c': case 's': case 'i': case 'u':
             mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
+            // UNREACHABLE;
+            // std::abort();
          default:
             mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
+            // UNREACHABLE;
+            // std::abort();
          case 'e': case 'f': case 'g':
             fmt.radix = fmt.radix ? fmt.radix : mcsl::DEFAULT_FLOAT_RADIX;
             break;
@@ -517,6 +530,10 @@ MCSL_MAP(_writefImpl, MCSL_ALL_NUM_T)
 #undef _writefImpl
 #include "MAP_MACRO_UNDEF.h"
 
+uint mcsl::writef(File& file, const void* obj, char mode, FmtArgs fmt) {
+   return writef(file, (uptr)obj, mode, fmt);
+}
+
 uint mcsl::writef(File& file, const char ch, char mode, FmtArgs fmt) {
    switch (mode | CASE_BIT) {
       case 'u': case 'r':
@@ -599,6 +616,8 @@ uint mcsl::writef(File& file, const bool obj, char mode, FmtArgs fmt) {
 
 uint mcsl::writef(File& file, const str_slice obj, char mode, FmtArgs fmt) {
    if ((mode | CASE_BIT) != 's') {
+      // UNREACHABLE;
+      // std::abort();
       mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
    }
 

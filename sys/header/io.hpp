@@ -106,9 +106,9 @@ class mcsl::File {
 
 namespace mcsl {
    //!standard files
-   mcsl::File stdout = mcsl::File::ReopenLibcFile(::stdout);
-   mcsl::File stderr = mcsl::File::ReopenLibcFile(::stderr);
-   mcsl::File stdin = mcsl::File::ReopenLibcFile(::stdin);
+   extern mcsl::File stdout;
+   extern mcsl::File stderr;
+   extern mcsl::File stdin;
 
    //!standard formatted IO
    inline uint printf(const str_slice fmt, const auto&... argv) { return stdout.printf(fmt, argv...); }

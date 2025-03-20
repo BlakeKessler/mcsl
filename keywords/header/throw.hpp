@@ -23,6 +23,7 @@ namespace mcsl {
    mcsl::err_printf(FMT("\033[31;1;4mMCSL ERROR:\033[0m %s"), ERR_MSG_ARR[+code]);
    mcsl::err_printf(formatStr, std::forward<decltype(args)>(args)...);
    mcsl::err_printf(FMT("\n"));
+   mcsl::stderr.flush();
    std::abort();
    // std::exit(EXIT_FAILURE);
 }
@@ -31,6 +32,7 @@ namespace mcsl {
    mcsl::err_printf(FMT("\033[31;1;4mMCSL ERROR:\033[0m %s"), ERR_MSG_ARR[+code]);
    mcsl::err_printf(formatStr, std::forward<decltype(args)>(args)...);
    mcsl::err_printf(FMT(" \033[35m(line %u)\033[0m\n"), lineNum);
+   mcsl::stderr.flush();
    std::abort();
    // std::exit(EXIT_FAILURE);
 }

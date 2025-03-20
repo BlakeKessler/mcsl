@@ -26,11 +26,14 @@ mcsl::File::File(const Path fileName, const char* mode):
    } {
 }
 mcsl::File::File(const Path fileName, const char* mode, arr_span<ubyte> buf, bool ownsBuf):
-   _file{std::fopen(fileName, mode)},
+   _file{std::fopen(fileName.begin(), mode)},
    _buf{buf.data()},
    _capacity{buf.size()},
    _endIndex{0},
    _ownsBuf{ownsBuf} {
+      if (!_file) {
+         __throw(ErrCode::FS_ERR, mcsl::FMT("bad file: %s"), fileName.slice());
+      }
       std::setvbuf(_file, nullptr, _IONBF, 0);
 }
 
@@ -164,5 +167,18 @@ mcsl::sys_endian mcsl::FmtArgs::endianness_r() const {
    }
 }
 
+
+
+mcsl::string mcsl::File::readChars(uint charCount) {
+   string buf{charCount};
+   ulong tmp = std::fread(buf.begin(), 1, charCount, _file);
+   assume(tmp == charCount);
+   return std::move(buf);
+}
+
+
+mcsl::File mcsl::stdout = mcsl::File::ReopenLibcFile(::stdout);
+mcsl::File mcsl::stderr = mcsl::File::ReopenLibcFile(::stderr);
+mcsl::File mcsl::stdin = mcsl::File::ReopenLibcFile(::stdin);
 
 #endif //MCSL_IO_CPP

@@ -37,7 +37,8 @@ namespace {
          switch (str[i]) {
             case 'f': case 'F':
                args.precision = mcsl::DEFAULT_FLT_PREC;
-
+               [[fallthrough]];
+               
             case mcsl::FMT_INTRO: [[fallthrough]];
 
             case 'r': case 'R':
@@ -169,7 +170,7 @@ namespace {
                mcsl::write(file, mcsl::FMT_INTRO);
                ++charsPrinted;
             } else { //other format code
-               charsPrinted += mcsl::writef(file, arg0, str[i + codeLen], fmtArgs);
+               charsPrinted += mcsl::writef(file, arg0, mode, fmtArgs);
             }
             if (i + codeLen < str.size()) { //more to print
                return __printfImpl(file, str.slice(i + codeLen + 1, str.size() - (i + codeLen + 1)), charsPrinted, argv...); //tail recursion
