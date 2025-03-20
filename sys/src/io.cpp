@@ -181,6 +181,7 @@ mcsl::string mcsl::File::readChars(uint charCount) {
    string buf{charCount};
    ulong tmp = std::fread(buf.begin(), 1, charCount, _file);
    assume(tmp == charCount);
+   buf.UNSAFE_RESIZE(tmp);
    return std::move(buf);
 }
 
