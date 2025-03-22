@@ -12,6 +12,7 @@ const mcsl::str_slice mcsl::ERR_MSG_ARR[] {
    FMT("Debug Assertion failed: "),
    FMT("Assumption violated: "),
    FMT("Unreachable statement reached: "),
+   FMT("TODO: "),
    FMT("Segmentation fault: "),
    FMT("Allocation failure: "),
    FMT("Integer Overflow: "),

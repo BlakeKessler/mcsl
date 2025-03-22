@@ -38,11 +38,11 @@ struct mcsl::FmtArgs {
    uint radix = 0;
    uint minWidth = 0;
    uint precision = 0;
-   bool isLeftJust = false;
-   bool alwaysPrintSign = false;
-   bool padForPosSign = false;
-   bool padWithZero = false;
-   bool altMode = false;
+   bool isLeftJust = false;      //-
+   bool alwaysPrintSign = false; //+
+   bool padForPosSign = false;   //_
+   bool padWithZero = false;     //0
+   bool altMode = false;         //#
 
    sys_endian endianness_b() const;
    sys_endian endianness_r() const;

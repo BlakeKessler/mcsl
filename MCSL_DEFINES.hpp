@@ -94,6 +94,7 @@ namespace mcsl {
       DEBUG_ASSERT_FAIL,
       ASSUMPTION_FAIL,
       UNREACHABLE_REACHED,
+      TODO_CODE,
       SEGFAULT,
       ALLOC_FAIL,
       INT_OVERFLOW,
