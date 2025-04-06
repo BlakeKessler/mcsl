@@ -72,15 +72,15 @@ template<typename T> constexpr const mcsl::arr_span<T> mcsl::arr_span<T>::make(c
 //slicing
 #include "arr_span.hpp"
 template<typename T> constexpr const mcsl::arr_span<T> mcsl::contig_base<T>::span(this const auto&& obj) {
-   return {obj.begin(), obj.size()};
+   return {const_cast<T*>(obj.begin()), obj.size()};
 }
 template<typename T> constexpr const mcsl::arr_span<T> mcsl::contig_base<T>::span(this const auto&& obj, uint size) {
    assume(size <= obj.size());
-   return {obj.begin(), size};
+   return {const_cast<T*>(obj.begin()), size};
 }
 template<typename T> constexpr const mcsl::arr_span<T> mcsl::contig_base<T>::span(this const auto&& obj, uint begin, uint size) {
    assume(begin + size <= obj.size());
-   return {obj.begin() + begin, size};
+   return {const_cast<T*>(obj.begin()) + begin, size};
 }
 template<typename T> constexpr mcsl::arr_span<T> mcsl::contig_base<T>::span(this auto&& obj) {
    return arr_span<T>::make(obj.begin(), obj.size());
