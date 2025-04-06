@@ -22,7 +22,7 @@ template<typename T> struct mcsl::contig_base {
 
    //properties
    [[gnu::pure]] constexpr uint size(this auto&& obj) { return obj.size(); }
-   [[gnu::pure]] constexpr operator bool() const { return size(); }
+   [[gnu::pure]] constexpr operator bool(this auto&& obj) { return obj.size(); }
 
    //element access
    [[gnu::pure]] constexpr T* const* ptr_to_buf(this auto&& obj)   { return obj.ptr_to_buf(); }
