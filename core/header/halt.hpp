@@ -5,8 +5,8 @@
 #include "MCSL.hpp"
 
 namespace mcsl {
-   [[noreturn]] void exit();
-   [[noreturn]] void quick_exit();
+   [[noreturn]] void exit(sint status);
+   [[noreturn]] void quick_exit(sint status);
    [[noreturn]] void terminate();
    [[noreturn]] void abort();
 };
