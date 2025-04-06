@@ -106,6 +106,9 @@ namespace mcsl {
    extern File stderr;
    extern File stdin;
 
+   //!misc standard IO
+   inline void flush() { stdout.flush(); stderr.flush(); }
+
    //!standard formatted IO
    inline uint printf(const str_slice fmt, const auto&... argv) { return stdout.printf(fmt, argv...); }
    inline uint err_printf(const str_slice fmt, const auto&... argv) { return stderr.printf(fmt, argv...); }
@@ -121,11 +124,11 @@ namespace mcsl {
    inline File& writeln(const str_slice str, const char nl = '\n') { stdout.write(str); stdout.write(nl); return stdout; }
 
    //!standard unformatted input
-   inline char read() { return stdin.read(); }
-   inline arr_span<ubyte> read(arr_span<ubyte> dest) { return stdin.read(dest); }
-   inline str_slice read(str_slice dest) { return stdin.read(dest); }
-   inline str_slice readln(str_slice dest, const char nl = '\n') { return stdin.readln(dest, nl); }
-   inline string readln(const char nl = '\n') { return stdin.readln(nl); }
+   inline char read() { flush(); return stdin.read(); }
+   inline arr_span<ubyte> read(arr_span<ubyte> dest) { flush(); return stdin.read(dest); }
+   inline str_slice read(str_slice dest) { flush(); return stdin.read(dest); }
+   inline str_slice readln(str_slice dest, const char nl = '\n') { flush(); return stdin.readln(dest, nl); }
+   inline string readln(const char nl = '\n') { flush(); return stdin.readln(nl); }
 }
 
 
