@@ -3,11 +3,6 @@
 
 #include "MCSL.hpp"
 
-namespace mcsl {
-   lcg_engine<ulong> rand;
-   void srand(const ulong seed) { rand.seed() = seed; }
-};
-
 //max == 0 -> skip modulus step
 //!NOTE: maybe replace with a PCG[https://en.wikipedia.org/wiki/Permuted_congruential_generator]
 template<mcsl::uint_t T = ulong,
@@ -37,6 +32,11 @@ struct mcsl::lcg_engine {
       constexpr T skip(uint count);
 
       constexpr bool operator==(const lcg_engine& other) const { return _seed == other._seed; }
+};
+
+namespace mcsl {
+   lcg_engine<ulong> rand;
+   void srand(const ulong seed) { rand.seed() = seed; }
 };
 
 

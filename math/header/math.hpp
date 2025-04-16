@@ -6,6 +6,7 @@
 
 #include <utility>
 #include <cmath>
+#undef NULL
 #include "pair.hpp"
 
 #include "MAP_MACRO.h"
