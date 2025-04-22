@@ -121,6 +121,7 @@ template<typename T, uint _bufCapacity> T* mcsl::arr_list<T,_bufCapacity>::empla
 
 template<typename T, uint _bufCapacity> T mcsl::arr_list<T,_bufCapacity>::pop_back() {
    T poppedElem = back();
+   std::destroy_at(&back());
    if (--_size % _bufCapacity == 0) {
       mcsl::free(_buf[_size / _bufCapacity]);
       _buf[_size / _bufCapacity] = nullptr;

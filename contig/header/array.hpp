@@ -14,7 +14,8 @@
 template <typename T> class mcsl::array : public contig_base<T> {
    private:
       T* _buf;
-      const uint _size;
+      uint _size;
+      // const uint _size;
 
       static constexpr const raw_str _nameof = "array";
    public:
@@ -25,9 +26,13 @@ template <typename T> class mcsl::array : public contig_base<T> {
       array(const T* buf, const uint size);
       array(array&& other);
       array(const array& other);
+      template<contig_t<T> Other_t> array(const Other_t& other);
       array(castable_to<T> auto&&... initList);
       ~array() { for (uint i = 0; i < _size; ++i) { std::destroy_at(_buf + i); } self.free(); }
       void free() const { mcsl::free(_buf); const_cast<T*&>(_buf) = nullptr; const_cast<uint&>(_size) = 0; }
+
+      array& operator=(array&& other) = default;
+      array& operator=(const array& other) = default;
 
       [[gnu::pure]] constexpr uint size() const { return _size; }
       
@@ -83,6 +88,11 @@ template<typename T> mcsl::array<T>::array(const array& other):
       for (uint i = 0; i < _size; ++i) {
          self[i] = other[i];
       }
+}
+//!copy constructor
+template<typename T> template<mcsl::contig_t<T> Other_t> mcsl::array<T>::array(const Other_t& other):
+   array(other.begin(), other.size()) {
+      
 }
 
 //!construct in place

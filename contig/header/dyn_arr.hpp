@@ -112,7 +112,7 @@ template<typename T> template<mcsl::contig_t<T> Other_t> mcsl::dyn_arr<T>::dyn_a
 template<typename T> bool mcsl::dyn_arr<T>::reserve_exact(const uint newSize) {
    _buf = mcsl::realloc<T>(_buf, newSize);
    _capacity = newSize;
-   _size = _size > _capacity ? _capacity : _size;
+   _size = _size > _capacity ? _capacity : _size; //!TODO: destroy removed elements or prevent reserve from shrinking the array and make shrink and shrink_exact methods
    return true;
 }
 

@@ -11,15 +11,15 @@ template<mcsl::uint_t T = ulong,
    T _mult = MCSL_LCG64_MULT,
    T _inc = MCSL_LCG64_INC,
    T _defaultSeed = MCSL_LCG64_SEED
-> requires (_max == 0 || (_min <= _max && _mult <= (_max - _min + 1)))
+> //requires (_max == 0 || (_min <= _max && _mult <= (_max - _min + 1)))
 struct mcsl::lcg_engine {
    private:
       T _seed;
    public:
       constexpr lcg_engine(T seed = _defaultSeed):_seed{seed} {}
 
-      static constexpr T max() const { return _max; }
-      static constexpr T min() const { return _min; }
+      static constexpr T max() { return _max; }
+      static constexpr T min() { return _min; }
 
       constexpr T& seed() { return _seed; }
       constexpr T  seed() const { return _seed; }
@@ -44,11 +44,11 @@ namespace mcsl {
 
 #include "type_traits.hpp"
 
-template<mcsl::uint_t T, T _max, T _min, T _mult, T _inc, T _defaultSeed>
-constexpr T mcsl::lcg_engine<T,_max,_min,_mult,_inc,_defaultSeed>::getCurr() const {
-   if constexpr (_min) { return _seed + _min; }
-   else { return _seed; }
-}
+// template<mcsl::uint_t T, T _max, T _min, T _mult, T _inc, T _defaultSeed>
+// constexpr T mcsl::lcg_engine<T,_max,_min,_mult,_inc,_defaultSeed>::getCurr() const {
+//    if constexpr (_min) { return _seed + _min; }
+//    else { return _seed; }
+// }
 
 template<mcsl::uint_t T, T _max, T _min, T _mult, T _inc, T _defaultSeed>
 constexpr T mcsl::lcg_engine<T,_max,_min,_mult,_inc,_defaultSeed>::skip(uint count) {
