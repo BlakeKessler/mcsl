@@ -35,14 +35,22 @@ struct mcsl::lcg_engine {
 };
 
 namespace mcsl {
-   lcg_engine<ulong> rand;
-   void srand(const ulong seed) { rand.seed() = seed; }
+   inline lcg_engine<ulong> rand;
+   inline void srand(const ulong seed) { rand.seed() = seed; }
+
+   inline double randp();
 };
 
 
 #pragma region inlinesrc
 
 #include "type_traits.hpp"
+
+//generate a random proportion (floating point number in the range [0.0, 1.0))
+double mcsl::randp() {
+   ulong intVal = rand();
+   return ((double)(intVal)) / ((double)(TYPEMAX<ulong>()) + 1);
+}
 
 // template<mcsl::uint_t T, T _max, T _min, T _mult, T _inc, T _defaultSeed>
 // constexpr T mcsl::lcg_engine<T,_max,_min,_mult,_inc,_defaultSeed>::getCurr() const {
