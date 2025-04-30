@@ -35,9 +35,10 @@ class mcsl::Path : public mcsl::cstr { //base type is implementation-defined
 };
 
 struct mcsl::FmtArgs {
-   uint radix = 0;
-   uint minWidth = 0;
-   uint precision = 0;
+   uint radix = 0;               //like precision, but using a comma instead of a period
+   uint minWidth = 0;            //same as in std::printf
+   uint precision = 0;           //same as in std::printf
+
    bool isLeftJust = false;      //-
    bool alwaysPrintSign = false; //+
    bool padForPosSign = false;   //_
