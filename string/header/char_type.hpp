@@ -4,7 +4,7 @@
 
 #include "MCSL.hpp"
 
-//!NOTE: implement character locales as a singleton
+//!TODO: implement character locales as a singleton
 namespace mcsl {
    //char/string const
    constexpr char ASCII_CASE_BIT = 'a' ^ 'A';
@@ -37,7 +37,6 @@ namespace mcsl {
          default:
             return false;
       }
-      // return (ch == ' ') || (ch == '\t') || (ch == '\n') || (ch == '\r');
    }
 }
 
