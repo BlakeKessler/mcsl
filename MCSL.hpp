@@ -23,6 +23,8 @@ namespace mcsl {
 
    template<typename T, uint _bufCapacity> class arr_list;
 
+   template<typename T> class list;
+
    template<typename T> struct contig_base;
    template<typename T, uint _capacity> class buf;
    template<typename T, uint _capacity> class heap_buf;
@@ -42,8 +44,9 @@ namespace mcsl {
    template<uint _size, typename size_t = ubyte> class raw_buf_str;
    const str_slice FMT(const char* buf);
 
-   struct str_hash_func;
-   template<typename T> struct hash_func;
+   template<typename T> struct assoc_base;
+   template<typename T, hash_t<T> HashFunc, cmp_t<T> CmpFunc> class set;
+   template<typename key_t, hash_t<key_t> HashFunc, cmp_t<key_t> CmpFunc> class map;
 
    template<uint_t T, T _max, T _min, T _mult, T _inc, T _defaultSeed> struct lcg_engine; //linear congruential generator engine
 
@@ -54,10 +57,5 @@ namespace mcsl {
    class Dir;
    struct FmtArgs;
 };
-
-
-
-// //for nameof() functins
-// #include "raw_str.hpp"
 
 #endif //MCSL_HPP
