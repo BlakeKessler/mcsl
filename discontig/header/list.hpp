@@ -102,7 +102,7 @@ template<typename T> class mcsl::list {
       list& unique();
       void splice(it pos, list& other);
       void splice(it pos, list&& other);
-      void splice(it pos, list& other, it other_pos);
+      void splice(it pos, list& other, it otherPos);
       void splice(it pos, list& other, it begin, it end);
 
 
@@ -117,6 +117,7 @@ template<typename T> class mcsl::list {
 
 
 #pragma region inlinesrc
+#define __APPEND(first, second) first->next = second; second->prev = first
 
 template<typename T> mcsl::list<T>::list():
    _end(node::make()),
@@ -273,6 +274,52 @@ template<typename T> mcsl::list<T>& mcsl::list<T>::unique() {
    return self;
 }
 
+template<typename T> void mcsl::list<T>::splice(it pos, list& other) {
+   node* prev = pos->prev.ptr;
+   __APPEND(prev, other._begin);
+   __APPEND(other._end->prev, pos);
+   _size += other._size;
+
+   other._end->prev = nullptr;
+   other._begin = other._end;
+   other._size = 0;
+}
+template<typename T> void mcsl::list<T>::splice(it pos, list& other) {
+   node* prev = pos->prev.ptr;
+   __APPEND(prev, other._begin);
+   __APPEND(other._end->prev, pos);
+   _size += other._size;
+   
+   it{other._end}.free();
+   other._end = nullptr;
+   other._begin = nullptr;
+   other._size = 0;
+}
+template<typename T> void mcsl::list<T>::splice(it pos, list& other, it otherPos) {
+   node* prev = pos->prev.ptr;
+   node* tmp = otherPos->prev;
+
+   __APPEND(prev, otherPos);
+   __APPEND(tmp, otherPos->next);
+   __APPEND(otherPos, pos);
+   
+   ++_size;
+   --other._size;
+}
+template<typename T> void mcsl::list<T>::splice(it pos, list& other, it begin, it end) {
+   node* prev = pos->prev;
+   node* tmp = begin->prev;
+
+   __APPEND(prev, begin);
+   __APPEND(end->prev, pos);
+   __APPEND(tmp, end);
+
+   for (it i = begin, i != end, ++i) {
+      ++_size;
+      --other._size;
+   }
+}
+
 template<typename T> mcsl::list<T>& mcsl::list<T>::sort() {
    auto [f,l] = __sortImpl(_begin, _end->prev, _size);
    f->prev = nullptr;
@@ -353,7 +400,6 @@ template<typename T> template<mcsl::cmp_t<T> comp> mcsl::list<T>& mcsl::list<T>:
 }
 
 #pragma region __impl
-#define __APPEND(first, second) first->next = second; second->prev = first
 
 template<typename T> mcsl::pair<typename mcsl::list<T>::node*> mcsl::list<T>::__sortImpl(node* first, node* last, uint len) {
    assume(len);
@@ -476,9 +522,9 @@ template<typename T> template<mcsl::cmp_t<T> comp> mcsl::pair<typename mcsl::lis
    return bounds;
 }
 
-#undef __APPEND
 #pragma endregion __impl
 
+#undef __APPEND
 #pragma endregion inlinesrc
 
 #endif //MCSL_LIST_HPP
