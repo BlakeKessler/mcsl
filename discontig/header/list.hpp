@@ -258,16 +258,17 @@ template<typename T> mcsl::list<T>& mcsl::list<T>::reverse() {
    if (_size <= 1) { return self; }
 
    node* oldlast = _end->prev;
-   _end->prev->next = nullptr;
-   _end->prev = _begin;
-   _begin->prev = _end;
-   _begin = oldlast;
 
-   for (node* i = _end->prev; i != _end; i = i->next) {
+   for (node* i = _end->prev; i; i = i->next) {
+      debug_assert(i);
       node* tmp = i->prev;
       i->prev = i->next;
       i->next = tmp;
    }
+
+   __APPEND(_begin, _end);
+   oldlast->prev = nullptr;
+   _begin = oldlast;
 
    return self;
 }
