@@ -132,7 +132,6 @@ template<typename T> class mcsl::list {
       template<cmp_t<T> comp> static pair<node*> __sortImpl(comp cmp, node* first, node* last, uint len);
       static pair<node*> __mergeImpl(node* lhsFirst, node* lhsLast, uint lhsLen, node* rhsFirst, node* rhsLast, uint rhsLen);
       template<cmp_t<T> comp> static pair<node*> __mergeImpl(comp cmp, node* lhsFirst, node* lhsLast, uint lhsLen, node* rhsFirst, node* rhsLast, uint rhsLen);
-
    public:
       list();
       ~list();
@@ -152,12 +151,15 @@ template<typename T> class mcsl::list {
       it push_front(const T& obj);
       it emplace_back(auto... argv) requires valid_ctor<T, decltype(argv)...>;
       it emplace_front(auto... argv) requires valid_ctor<T, decltype(argv)...>;
+      it UNSAFE_malloc_ptr_push_back(T* objptr);
+      it UNSAFE_malloc_ptr_push_front(T* objptr);
 
       void pop_back();
       void pop_front();
 
       it insert(it pos, const T& obj); //insert before pos
       it emplace(it pos, auto... argv) requires valid_ctor<T, decltype(argv)...>; //emplace before pos
+      it UNSAFE_malloc_ptr_insert(it pos, const T* objptr); //insert before pos
 
       it erase(it pos);
       it erase(it begin, it end);
@@ -236,6 +238,22 @@ template<typename T> mcsl::list<T>::it mcsl::list<T>::emplace_front(auto... argv
    return _begin;
 }
 
+template<typename T> mcsl::list<T>::it mcsl::list<T>::UNSAFE_malloc_ptr_push_back(T* objptr) {
+   ++_size;
+   node* ptr = node::make(_end, _end->prev);
+   ptr->objptr = objptr;
+   if (_begin == _end) {
+      _begin = ptr;
+   }
+   return ptr;
+}
+template<typename T> mcsl::list<T>::it mcsl::list<T>::UNSAFE_malloc_ptr_push_front(T* objptr) {
+   ++_size;
+   _begin = node::make(_begin, nullptr);
+   _begin->objptr = objptr;
+   return _begin;
+}
+
 template<typename T> void mcsl::list<T>::pop_back() {
    assume(_size);
    --_size;
@@ -260,6 +278,14 @@ template<typename T> mcsl::list<T>::it mcsl::list<T>::insert(it pos, const T& ob
    node* ptr = node::make(pos.ptr);
    ptr->objptr = mcsl::malloc<T>(1);
    *(ptr->objptr) = obj;
+   if (pos.ptr == _begin) {
+      _begin = ptr;
+   }
+}
+template<typename T> mcsl::list<T>::it mcsl::list<T>::UNSAFE_malloc_ptr_insert(it pos, const T* objptr) {
+   ++_size;
+   node* ptr = node::make(pos.ptr);
+   ptr->objptr = objptr;
    if (pos.ptr == _begin) {
       _begin = ptr;
    }

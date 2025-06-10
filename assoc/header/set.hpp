@@ -83,15 +83,18 @@ tplt(bool)::insert(const arr_span<T&> objs) {
 }
 //returns whether an element was inserted
 tplt(bool)::emplace(auto... argv) requires valid_ctor<T, decltype(argv)...> {
-   T obj(std::forward<decltype(argv)>(argv)...);
+   entry* entryptr = mcsl::malloc<entry>(1);
+   T& obj = entryptr->val;
+   new (&obj) T (std::forward<decltype(argv)>(argv)...);
    ulong hash = HashFunc(obj);
+   entryptr->hash = hash;
    list<entry>& bucket = _buckets[hash % _buckets.size()];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
       if (it->hash == hash && CmpFunc(obj, it->val)) { //obj is already in the set
          return false;
       }
    }
-   bucket.emplace_back(obj, hash);
+   bucket.UNSAFE_malloc_ptr_push_back(entryptr);
    ++_size;
    if (_size > _maxLoadFactor * _buckets.size()) {
       rehash(_buckets.size() << 1);
