@@ -17,6 +17,7 @@ template<typename T, mcsl::Hasher<T> HashFunc, mcsl::Comparator<T> CmpFunc> clas
       };
 
       arr_list<list<entry>> _buckets;
+      uint _hashMask;
       uint _size;
       float _maxLoadFactor;
 
@@ -52,6 +53,8 @@ template<typename T, mcsl::Hasher<T> HashFunc, mcsl::Comparator<T> CmpFunc> clas
 
 tplt()::set(uint bucketCount):
 _buckets(), _size(0), _maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR) {
+   bucketCount = std::bit_ceil(bucketCount);
+   _hashMask = bucketCount - 1;
    while (_buckets.size() < bucketCount) {
       _buckets.emplace_back();
    }
@@ -60,7 +63,7 @@ _buckets(), _size(0), _maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR) {
 //returns whether an element was inserted
 tplt(bool)::insert(const T& obj) {
    ulong hash = HashFunc(obj);
-   list<entry>& bucket = _buckets[hash % _buckets.size()];
+   list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
       if (it->hash == hash && CmpFunc(obj, it->val)) { //obj is already in the set
          return false;
@@ -69,7 +72,7 @@ tplt(bool)::insert(const T& obj) {
    bucket.emplace_back(obj, hash);
    ++_size;
    if (_size > _maxLoadFactor * _buckets.size()) {
-      rehash(_buckets.size() << 1);
+      rehash();
    }
    return true;
 }
@@ -88,16 +91,17 @@ tplt(bool)::emplace(auto... argv) requires valid_ctor<T, decltype(argv)...> {
    new (&obj) T (std::forward<decltype(argv)>(argv)...);
    ulong hash = HashFunc(obj);
    entryptr->hash = hash;
-   list<entry>& bucket = _buckets[hash % _buckets.size()];
+   list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
       if (it->hash == hash && CmpFunc(obj, it->val)) { //obj is already in the set
+         mcsl::free(entryptr);
          return false;
       }
    }
    bucket.UNSAFE_malloc_ptr_push_back(entryptr);
    ++_size;
    if (_size > _maxLoadFactor * _buckets.size()) {
-      rehash(_buckets.size() << 1);
+      rehash();
    }
    return true;
 }
@@ -105,7 +109,7 @@ tplt(bool)::emplace(auto... argv) requires valid_ctor<T, decltype(argv)...> {
 //returns whether an element was removed
 tplt(bool)::remove(const T& obj) {
    ulong hash = HashFunc(obj);
-   list<entry>& bucket = _buckets[hash % _buckets.size()];
+   list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
       if (it->hash == hash && CmpFunc(obj, *it)) { //obj is in the set
          bucket.erase(it);
@@ -127,7 +131,7 @@ tplt(bool)::remove(const arr_span<T&> objs) {
 
 tplt(T*)::find(const T& obj) {
    ulong hash = HashFunc(obj);
-   list<entry>& bucket = _buckets[hash % _buckets.size()];
+   list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
       if (it->hash == hash && CmpFunc(obj, *it)) { //obj is in the set
          return &(it->val);
@@ -138,7 +142,7 @@ tplt(T*)::find(const T& obj) {
 }
 tplt(const T*)::find(const T& obj) const {
    ulong hash = HashFunc(obj);
-   const list<entry>& bucket = _buckets[hash % _buckets.size()];
+   const list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
       if (it->hash == hash && CmpFunc(obj, it->val)) { //obj is in the set
          return &(it->val);
@@ -168,13 +172,13 @@ tplt(void)::__rehashImpl(uint count) {
    do {
       _buckets.emplace_back();
    } while (_buckets.size() < count);
+   _hashMask = count - 1;
 
    //rehash
-   uint hashMask = (1 << count) - 1;
    while (i--) {
       mcsl::list<entry>& bucket = _buckets[i];
       for (auto it = bucket.begin(); it != bucket.end(); ++it) { //check hash for each node
-         uint newHash = it->hash & hashMask;
+         uint newHash = it->hash & _hashMask;
          if (newHash != i) { //move node if necessary
             auto& newBucket = _buckets[newHash];
             newBucket.splice(newBucket.end(), bucket, it);
