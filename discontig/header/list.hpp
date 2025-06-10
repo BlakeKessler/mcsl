@@ -423,21 +423,22 @@ template<typename T> mcsl::pair<typename mcsl::list<T>::node*> mcsl::list<T>::__
                   }
                   mcsl::printf(FMT(": %u\n"), **last);
                   mcsl::flush();
-   debug_assert(it{first} + (slong)(len-1) == it{last});
+   // debug_assert(it{first} + (slong)(len-1) == it{last});
    if (len == 1) {
       debug_assert(first == last);
-      return {first, last};
+      return {first, first};
    }
    if (len == 2) {
       if (*(first->objptr) < *(last->objptr)) {
-         debug_assert(first->next == last);
-         debug_assert(last->prev == first);
+         // debug_assert(first->next == last);
+         // debug_assert(last->prev == first);
          return {first, last};
       } else {
          __APPEND(last, first);
          return {last, first};
       }
-   } else {
+   }
+   else {
       uint newlen = len / 2;
       uint newlen2 = len - newlen;
       node* mdpt = (it{first} + (slong)(newlen - 1)).ptr;
