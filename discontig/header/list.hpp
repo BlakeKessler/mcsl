@@ -38,13 +38,12 @@ template<typename T> class mcsl::list {
             node* ptr;
 
             void free() {
-               if (ptr) {
-                  if (ptr->objptr) {
-                     std::destroy_at(ptr->objptr);
-                     mcsl::free(ptr->objptr);
-                  }
-                  mcsl::free(ptr);
-               }
+               std::destroy_at(ptr->objptr);
+               mcsl::free(ptr->objptr);
+               mcsl::free(ptr);
+            }
+            void free_end() {
+               mcsl::free(ptr);
             }
          public:
             friend class list; //apparently necessary for `~list()` for some reason
@@ -79,16 +78,6 @@ template<typename T> class mcsl::list {
       struct const_it {
          private:
             node* ptr;
-
-            void free() {
-               if (ptr) {
-                  if (ptr->objptr) {
-                     std::destroy_at(ptr->objptr);
-                     mcsl::free(ptr->objptr);
-                  }
-                  mcsl::free(ptr);
-               }
-            }
          public:
             friend class list; //apparently necessary for `~list()` for some reason
             const_it(node* p):ptr{p} {}
@@ -192,11 +181,12 @@ template<typename T> mcsl::list<T>::list():
 }
 template<typename T> mcsl::list<T>::~list() {
    node* i = _begin;
-   while (i) { //while instead of do-while to protect against double-deletion
+   while (i != _end) { //while instead of do-while to protect against double-deletion
       it tmp = i;
       i = i->next;
       tmp.free();
    }
+   it{_end}.free_end();
    
    _begin = nullptr;
    _end = nullptr;
