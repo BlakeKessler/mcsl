@@ -19,7 +19,7 @@ template<typename T> class mcsl::list {
          const T* operator->() const { return objptr; }
 
          static node* make() { return mcsl::calloc<node>(1); }
-         static node* make(node* n, node* p = nullptr) {
+         static node* make(node* n, node* p) {
             node* ptr = make();
             if (n) { [[likely]];
                ptr->next = n;
@@ -29,6 +29,7 @@ template<typename T> class mcsl::list {
                ptr->prev = p;
                p->next = ptr;
             }
+            return ptr;
          }
       };
 
@@ -42,12 +43,14 @@ template<typename T> class mcsl::list {
                mcsl::free(ptr);
             }
          public:
+            friend class list; //apparently necessary for `~list()` for some reason
+            it(node* p):ptr{p} {}
             operator bool() const { return ptr; }
 
-            T& operator*() { return **ptr; }
-            T* operator->() { return *ptr; }
-            const T& operator*() const { return **ptr; }
-            const T* operator->() const { return *ptr; }
+            T& operator*() { assume(ptr && ptr->objptr); return **ptr; }
+            T* operator->() { assume(ptr && ptr->objptr); return *ptr; }
+            const T& operator*() const { assume(ptr && ptr->objptr); return **ptr; }
+            const T* operator->() const { assume(ptr && ptr->objptr); return *ptr; }
 
             it& operator++() { ptr = ptr->next; return self; }
             it& operator++(int) { it tmp = self; ptr = ptr->next; return tmp; }
@@ -65,6 +68,8 @@ template<typename T> class mcsl::list {
             it& operator-=(slong n) const { return self += (-n); }
             it operator+(slong n) { it tmp = self; tmp += n; return tmp; }
             it operator-(slong n) { it tmp = self; tmp -= n; return tmp; }
+
+            bool operator==(const it other) const { return ptr == other.ptr; }
       };
 
 
@@ -82,7 +87,12 @@ template<typename T> class mcsl::list {
 
       it begin() { return _begin; }
       it end() { return _end; }
-      uint size() { return _size; }
+      uint size() const { return _size; }
+
+      T& first() { return *(_begin->objptr); }
+      T& last() { return *(_end->prev->objptr); }
+      const T& first() const { return *_begin; }
+      const T& last() const { return *(_end->prev); }
 
       it push_back(const T& obj);
       it push_front(const T& obj);
@@ -139,7 +149,7 @@ template<typename T> mcsl::list<T>::~list() {
 
 template<typename T> mcsl::list<T>::it mcsl::list<T>::push_back(const T& obj) {
    ++_size;
-   node* ptr = node::make(_end);
+   node* ptr = node::make(_end, _end->prev);
    ptr->objptr = mcsl::malloc<T>(1);
    *(ptr->objptr) = obj;
    if (_begin == _end) {
@@ -149,14 +159,14 @@ template<typename T> mcsl::list<T>::it mcsl::list<T>::push_back(const T& obj) {
 }
 template<typename T> mcsl::list<T>::it mcsl::list<T>::push_front(const T& obj) {
    ++_size;
-   _begin = node::make(_begin);
+   _begin = node::make(_begin, nullptr);
    _begin->objptr = mcsl::malloc<T>(1);
    *(_begin->objptr) = obj;
    return _begin;
 }
 template<typename T> mcsl::list<T>::it mcsl::list<T>::emplace_back(auto... argv) requires valid_ctor<T, decltype(argv)...> {
    ++_size;
-   node* ptr = node::make(_end);
+   node* ptr = node::make(_end, _end->prev);
    ptr->objptr = mcsl::malloc<T>(1);
    new (ptr->objptr) T(std::forward<decltype(argv)>(argv)...);
    if (_begin == _end) {
@@ -166,7 +176,7 @@ template<typename T> mcsl::list<T>::it mcsl::list<T>::emplace_back(auto... argv)
 }
 template<typename T> mcsl::list<T>::it mcsl::list<T>::emplace_front(auto... argv) requires valid_ctor<T, decltype(argv)...> {
    ++_size;
-   _begin = node::make(_begin);
+   _begin = node::make(_begin, nullptr);
    _begin->objptr = mcsl::malloc<T>(1);
    new (_begin->objptr) T(std::forward<decltype(argv)>(argv)...);
    return _begin;
@@ -188,7 +198,7 @@ template<typename T> void mcsl::list<T>::pop_front() {
    node* ptr = _begin;
    _begin = ptr->next;
    _begin->prev = nullptr;
-   ptr.free();
+   ptr->free();
 }
 
 template<typename T> mcsl::list<T>::it mcsl::list<T>::insert(it pos, const T& obj) {
@@ -221,7 +231,7 @@ template<typename T> mcsl::list<T>::it mcsl::list<T>::erase(it pos) {
       pos->next->prev = pos->prev;
    }
    pos.free();
-   --_size();
+   --_size;
    return tmp;
 }
 template<typename T> mcsl::list<T>::it mcsl::list<T>::erase(it begin, it end) {
@@ -284,7 +294,7 @@ template<typename T> void mcsl::list<T>::splice(it pos, list& other) {
    other._begin = other._end;
    other._size = 0;
 }
-template<typename T> void mcsl::list<T>::splice(it pos, list& other) {
+template<typename T> void mcsl::list<T>::splice(it pos, list&& other) {
    node* prev = pos->prev.ptr;
    __APPEND(prev, other._begin);
    __APPEND(other._end->prev, pos);
@@ -314,7 +324,7 @@ template<typename T> void mcsl::list<T>::splice(it pos, list& other, it begin, i
    __APPEND(end->prev, pos);
    __APPEND(tmp, end);
 
-   for (it i = begin, i != end, ++i) {
+   for (it i = begin; i != end; ++i) {
       ++_size;
       --other._size;
    }
@@ -342,7 +352,7 @@ template<typename T> mcsl::list<T>& mcsl::list<T>::merge(list& other) {
    other._end->prev = nullptr;
    other._size = 0;
 
-   return self
+   return self;
 }
 template<typename T> mcsl::list<T>& mcsl::list<T>::merge(list&& other) {
    auto [f,l] = __mergeImpl(_begin, _end->prev, _size, other._begin, other._end->prev, other._size);
@@ -357,7 +367,7 @@ template<typename T> mcsl::list<T>& mcsl::list<T>::merge(list&& other) {
    other._begin = nullptr;
    other._size = 0;
 
-   return self
+   return self;
 }
 template<typename T> template<mcsl::cmp_t<T> comp> mcsl::list<T>& mcsl::list<T>::sort(comp cmp) {
    auto [f,l] = __sortImpl(cmp, _begin, _end->prev, _size);
@@ -381,7 +391,7 @@ template<typename T> template<mcsl::cmp_t<T> comp> mcsl::list<T>& mcsl::list<T>:
    other._end->prev = nullptr;
    other._size = 0;
 
-   return self
+   return self;
 }
 template<typename T> template<mcsl::cmp_t<T> comp> mcsl::list<T>& mcsl::list<T>::merge(list&& other, comp cmp) {
    auto [f,l] = __mergeImpl(cmp, _begin, _end->prev, _size, other._begin, other._end->prev, other._size);
@@ -396,7 +406,7 @@ template<typename T> template<mcsl::cmp_t<T> comp> mcsl::list<T>& mcsl::list<T>:
    other._begin = nullptr;
    other._size = 0;
 
-   return self
+   return self;
 }
 
 #pragma region __impl
@@ -488,11 +498,11 @@ template<typename T> template<mcsl::cmp_t<T> comp> mcsl::pair<typename mcsl::lis
    if (cmp(*(lhsFirst->objptr), *(rhsFirst->objptr))) {
       bounds.first = lhsFirst;
       lhsFirst = lhsFirst->next;
-      --lhsLen
+      --lhsLen;
    } else {
       bounds.first = rhsFirst;
       rhsFirst = rhsFirst->next;
-      --rhsLen
+      --rhsLen;
    }
    
    node* curr = bounds.first;
