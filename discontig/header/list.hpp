@@ -84,6 +84,9 @@ template<typename T> class mcsl::list {
       template<cmp_t<T> comp> static pair<node*> __sortImpl(comp cmp, node* first, node* last, uint len);
       static pair<node*> __mergeImpl(node* lhsFirst, node* lhsLast, uint lhsLen, node* rhsFirst, node* rhsLast, uint rhsLen);
       template<cmp_t<T> comp> static pair<node*> __mergeImpl(comp cmp, node* lhsFirst, node* lhsLast, uint lhsLen, node* rhsFirst, node* rhsLast, uint rhsLen);
+
+      void __CHECK_REP();
+      static void __CHECK_REP(node* first, node* last, uint len);
    public:
       list();
       ~list();
@@ -337,14 +340,21 @@ template<typename T> void mcsl::list<T>::splice(it pos, list& other, it begin, i
 }
 
 template<typename T> mcsl::list<T>& mcsl::list<T>::sort() {
+   __CHECK_REP();
+   if (_size <= 1) { return self; }
+   
    auto [f,l] = __sortImpl(_begin, _end->prev, _size);
    f->prev = nullptr;
    _begin = f;
    __APPEND(l, _end);
    
+   __CHECK_REP();
+
    return self;
 }
 template<typename T> mcsl::list<T>& mcsl::list<T>::merge(list& other) {
+   __CHECK_REP();
+   other.__CHECK_REP();
    auto [f,l] = __mergeImpl(_begin, _end->prev, _size, other._begin, other._end->prev, other._size);
    f->prev = nullptr;
    _begin = f;
@@ -356,9 +366,12 @@ template<typename T> mcsl::list<T>& mcsl::list<T>::merge(list& other) {
    other._end->prev = nullptr;
    other._size = 0;
 
+   __CHECK_REP();
+
    return self;
 }
 template<typename T> mcsl::list<T>& mcsl::list<T>::merge(list&& other) {
+   __CHECK_REP();
    auto [f,l] = __mergeImpl(_begin, _end->prev, _size, other._begin, other._end->prev, other._size);
    f->prev = nullptr;
    _begin = f;
@@ -370,17 +383,23 @@ template<typename T> mcsl::list<T>& mcsl::list<T>::merge(list&& other) {
    other._begin = nullptr;
    other._size = 0;
 
+   __CHECK_REP();
+
    return self;
 }
 template<typename T> template<mcsl::cmp_t<T> comp> mcsl::list<T>& mcsl::list<T>::sort(comp cmp) {
+   __CHECK_REP();
    auto [f,l] = __sortImpl(cmp, _begin, _end->prev, _size);
    f->prev = nullptr;
    _begin = f;
    __APPEND(l, _end);
    
+   __CHECK_REP();
+   
    return self;
 }
 template<typename T> template<mcsl::cmp_t<T> comp> mcsl::list<T>& mcsl::list<T>::merge(list& other, comp cmp) {
+   __CHECK_REP();
    auto [f,l] = __mergeImpl(cmp, _begin, _end->prev, _size, other._begin, other._end->prev, other._size);
    f->prev = nullptr;
    _begin = f;
@@ -392,9 +411,12 @@ template<typename T> template<mcsl::cmp_t<T> comp> mcsl::list<T>& mcsl::list<T>:
    other._end->prev = nullptr;
    other._size = 0;
 
+   __CHECK_REP();
+
    return self;
 }
 template<typename T> template<mcsl::cmp_t<T> comp> mcsl::list<T>& mcsl::list<T>::merge(list&& other, comp cmp) {
+   __CHECK_REP();
    auto [f,l] = __mergeImpl(cmp, _begin, _end->prev, _size, other._begin, other._end->prev, other._size);
    f->prev = nullptr;
    _begin = f;
@@ -405,6 +427,8 @@ template<typename T> template<mcsl::cmp_t<T> comp> mcsl::list<T>& mcsl::list<T>:
    other._end = nullptr;
    other._begin = nullptr;
    other._size = 0;
+
+   __CHECK_REP();
 
    return self;
 }
@@ -412,44 +436,26 @@ template<typename T> template<mcsl::cmp_t<T> comp> mcsl::list<T>& mcsl::list<T>:
 #pragma region __impl
 
 template<typename T> mcsl::pair<typename mcsl::list<T>::node*> mcsl::list<T>::__sortImpl(node* first, node* last, uint len) {
-   assume(len);
-   debug_assert(first);
-   debug_assert(last);
-                  mcsl::printf(FMT("%u: "), len);
-                  node* IT = first;
-                  for (uint i = 0; i < len; ++i) {
-                     mcsl::printf(FMT("%u "), **IT);
-                     IT = IT->next;
-                  }
-                  mcsl::printf(FMT(": %u\n"), **last);
-                  mcsl::flush();
-   // debug_assert(it{first} + (slong)(len-1) == it{last});
+   debug_assert(len);
+   __CHECK_REP(first, last, len);
    if (len == 1) {
       debug_assert(first == last);
       return {first, first};
    }
-   if (len == 2) {
-      if (*(first->objptr) < *(last->objptr)) {
-         // debug_assert(first->next == last);
-         // debug_assert(last->prev == first);
-         return {first, last};
-      } else {
-         __APPEND(last, first);
-         return {last, first};
-      }
-   }
    else {
-      uint newlen = len / 2;
-      uint newlen2 = len - newlen;
-      node* mdpt = (it{first} + (slong)(newlen - 1)).ptr;
-      // debug_assert(it{first} + (slong)(newlen + newlen2 - 1) == last);
-      // debug_assert(it{mdpt} + (slong)(newlen2) == last);
-      debug_assert(it{first} + (slong)(newlen + newlen2 - 1) == it{mdpt} + (slong)(newlen2));
-      auto [f1, l1] = __sortImpl(first, mdpt, newlen);
-      auto [f2, l2] = __sortImpl(mdpt->next, last, newlen2);
-                     mcsl::printf(FMT("\nMERGING\n"));
-                     mcsl::flush();
-      return __mergeImpl(f1, l1, newlen, f2, l2, newlen2);
+      uint len1 = len / 2;
+      uint len2 = len - len1;
+      node* mdpt1 = (it{first} + (slong)(len1 - 1)).ptr;
+      node* mdpt2 = mdpt1->next;
+      __CHECK_REP(first, mdpt1, len1);
+      __CHECK_REP(mdpt2, last, len2);
+      auto [f1, l1] = __sortImpl(first, mdpt1, len1);
+      auto [f2, l2] = __sortImpl(mdpt2, last, len2);
+      __CHECK_REP(f1, l1, len1);
+      __CHECK_REP(f2, l2, len2);
+      auto [f, l] = __mergeImpl(f1, l1, len1, f2, l2, len2);
+      __CHECK_REP(f, l, len);
+      return {f,l};
    }
 }
 template<typename T> mcsl::pair<typename mcsl::list<T>::node*> mcsl::list<T>::__mergeImpl(node* lhsFirst, node* lhsLast, uint lhsLen, node* rhsFirst, node* rhsLast, uint rhsLen) {
@@ -466,6 +472,8 @@ template<typename T> mcsl::pair<typename mcsl::list<T>::node*> mcsl::list<T>::__
 
    node* curr = bounds.first;
    LOOP_BEGIN: {
+      debug_assert(lhsFirst);
+      debug_assert(rhsFirst);
       if (!lhsLen) { //lhs done
          debug_assert(rhsLen);
          __APPEND(curr, rhsFirst);
@@ -493,24 +501,26 @@ template<typename T> mcsl::pair<typename mcsl::list<T>::node*> mcsl::list<T>::__
 }
 
 template<typename T> template<mcsl::cmp_t<T> comp> mcsl::pair<typename mcsl::list<T>::node*> mcsl::list<T>::__sortImpl(comp cmp, node* first, node* last, uint len) {
-   assume(len);
+   debug_assert(len);
+   __CHECK_REP(first, last, len);
    if (len == 1) {
       debug_assert(first == last);
-      return {first, last};
+      return {first, first};
    }
-   if (len == 2) {
-      if (cmp(*(first->objptr), *(last->objptr))) {
-         return {first, last};
-      } else {
-         __APPEND(last, first);
-         return {last, first};
-      }
-   } else {
-      uint newlen = len / 2;
-      node* mdpt = (it{first} + newlen).ptr;
-      auto [f1, l1] = __sortImpl(cmp, first, mdpt, newlen);
-      auto [f2, l2] = __sortImpl(cmp, mdpt->next, last, len - newlen);
-      return __mergeImpl(cmp, f1, l1, newlen, f2, l2, len - newlen);
+   else {
+      uint len1 = len / 2;
+      uint len2 = len - len1;
+      node* mdpt1 = (it{first} + (slong)(len1 - 1)).ptr;
+      node* mdpt2 = mdpt1->next;
+      __CHECK_REP(first, mdpt1, len1);
+      __CHECK_REP(mdpt2, last, len2);
+      auto [f1, l1] = __sortImpl(cmp, first, mdpt1, len1);
+      auto [f2, l2] = __sortImpl(cmp, mdpt2, last, len2);
+      __CHECK_REP(f1, l1, len1);
+      __CHECK_REP(f2, l2, len2);
+      auto [f, l] = __mergeImpl(cmp, f1, l1, len1, f2, l2, len2);
+      __CHECK_REP(f, l, len);
+      return {f,l};
    }
 }
 template<typename T> template<mcsl::cmp_t<T> comp> mcsl::pair<typename mcsl::list<T>::node*> mcsl::list<T>::__mergeImpl(comp cmp, node* lhsFirst, node* lhsLast, uint lhsLen, node* rhsFirst, node* rhsLast, uint rhsLen) {
@@ -555,6 +565,39 @@ template<typename T> template<mcsl::cmp_t<T> comp> mcsl::pair<typename mcsl::lis
 #pragma endregion __impl
 
 #undef __APPEND
+
+
+template<typename T> void mcsl::list<T>::__CHECK_REP() {
+#ifndef NDEBUG
+   debug_assert(_begin);
+   debug_assert(_end);
+   debug_assert(!_begin->prev);
+   debug_assert(!_end->next);
+   debug_assert(!_end->objptr);
+   node* i = _begin;
+   while (i != _end) {
+      debug_assert(i->next->prev == i);
+      debug_assert(i->objptr);
+      i = i->next;
+   }
+   debug_assert((it{_begin} + (slong)(_size)).ptr == _end);
+#endif
+}
+template<typename T> void mcsl::list<T>::__CHECK_REP(node* first, node* last, uint len) {
+#ifndef NDEBUG
+   debug_assert(first);
+   debug_assert(last);
+   node* i = first;
+   while (i != last) {
+      debug_assert(i->next->prev == i);
+      debug_assert(i->objptr);
+      i = i->next;
+   }
+   debug_assert((it{first} + (slong)(len - 1)).ptr == last);
+#endif
+}
+
+
 #pragma endregion inlinesrc
 
 #endif //MCSL_LIST_HPP
