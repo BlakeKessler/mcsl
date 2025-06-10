@@ -126,6 +126,7 @@ namespace mcsl {
    constexpr const uint DEFAULT_BUCKET_SIZE = 4;
    constexpr const uint DEFAULT_ARR_LIST_BUF_SIZE = 16;
    constexpr const uint DEFAULT_HASH_TABLE_BUCKET_COUNT = 16;
+   constexpr const float DEFAULT_HASH_TABLE_LOAD_FACTOR = 1.0;
 
    //IO parameters
    constexpr uint DEFAULT_INT_RADIX = 10;
