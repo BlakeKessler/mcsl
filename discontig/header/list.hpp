@@ -38,22 +38,24 @@ template<typename T> class mcsl::list {
             node* ptr;
 
             void free() {
-               std::destroy_at(ptr->objptr);
-               mcsl::free(ptr->objptr);
-               mcsl::free(ptr);
+               if (ptr) {
+                  if (ptr->objptr) {
+                     std::destroy_at(ptr->objptr);
+                     mcsl::free(ptr->objptr);
+                  }
+                  mcsl::free(ptr);
+               }
             }
          public:
             friend class list; //apparently necessary for `~list()` for some reason
             it(node* p):ptr{p} {}
             operator bool() const { return ptr; }
 
-            T& operator*() { assume(ptr && ptr->objptr); return *ptr->objptr; }
-            T* operator->() { assume(ptr && ptr->objptr); return ptr->objptr; }
-            const T& operator*() const { assume(ptr && ptr->objptr); return *ptr->objptr; }
-            const T* operator->() const { assume(ptr && ptr->objptr); return ptr->objptr; }
+            T& operator*() const { assume(ptr && ptr->objptr); return *ptr->objptr; }
+            T* operator->() const { assume(ptr && ptr->objptr); return ptr->objptr; }
 
-            it next() { return ptr->next; }
-            it prev() { return ptr->prev; }
+            it next() const { return ptr->next; }
+            it prev() const { return ptr->prev; }
             it& operator++() { ptr = ptr->next; return self; }
             it& operator++(int) { it tmp = self; ptr = ptr->next; return tmp; }
             it& operator--() { ptr = ptr->prev; return self; }
@@ -69,10 +71,56 @@ template<typename T> class mcsl::list {
                return self;
             }
             it& operator-=(slong n) { return self += (-n); }
-            it operator+(slong n) { it tmp = self; tmp += n; return tmp; }
-            it operator-(slong n) { it tmp = self; tmp -= n; return tmp; }
+            it operator+(slong n) const { it tmp = self; tmp += n; return tmp; }
+            it operator-(slong n) const { it tmp = self; tmp -= n; return tmp; }
             
             bool operator==(const it other) const { return ptr == other.ptr; }
+      };
+      struct const_it {
+         private:
+            node* ptr;
+
+            void free() {
+               if (ptr) {
+                  if (ptr->objptr) {
+                     std::destroy_at(ptr->objptr);
+                     mcsl::free(ptr->objptr);
+                  }
+                  mcsl::free(ptr);
+               }
+            }
+         public:
+            friend class list; //apparently necessary for `~list()` for some reason
+            const_it(node* p):ptr{p} {}
+            const_it(const it p):ptr{p.ptr} {}
+            operator bool() const { return ptr; }
+
+            const T& operator*() { assume(ptr && ptr->objptr); return *ptr->objptr; }
+            const T* operator->() { assume(ptr && ptr->objptr); return ptr->objptr; }
+            const T& operator*() const { assume(ptr && ptr->objptr); return *ptr->objptr; }
+            const T* operator->() const { assume(ptr && ptr->objptr); return ptr->objptr; }
+
+            const_it next() { return ptr->next; }
+            const_it prev() { return ptr->prev; }
+            const_it& operator++() { ptr = ptr->next; return self; }
+            const_it& operator++(int) { it tmp = self; ptr = ptr->next; return tmp; }
+            const_it& operator--() { ptr = ptr->prev; return self; }
+            const_it& operator--(int) { it tmp = self; ptr = ptr->prev; return tmp; }
+
+            const_it& operator+=(slong n) {
+               if (n > 0) {
+                  [[likely]];
+                  do { ++self; } while (--n);
+               } else if (n < 0) {
+                  do { --self; } while (++n);
+               }
+               return self;
+            }
+            const_it& operator-=(slong n) { return self += (-n); }
+            const_it operator+(slong n) { it tmp = self; tmp += n; return tmp; }
+            const_it operator-(slong n) { it tmp = self; tmp -= n; return tmp; }
+            
+            bool operator==(const const_it other) const { return ptr == other.ptr; }
       };
 
 
@@ -91,6 +139,8 @@ template<typename T> class mcsl::list {
 
       it begin() { return _begin; }
       it end() { return _end; }
+      const_it begin() const { return _begin; }
+      const_it end() const { return _end; }
       uint size() const { return _size; }
 
       T& first() { return *(_begin->objptr); }

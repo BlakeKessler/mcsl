@@ -188,6 +188,8 @@ namespace mcsl {
    #pragma endregion containers
 
    #pragma region utils
+   template<typename T> using Hasher = ulong(*)(const T&);
+   template<typename T> using Comparator = bool(*)(const T&, const T&);
    template<typename T, typename func> concept hash_t = requires (T obj, func f) {
       { f(obj) } -> int_t;
    };
