@@ -46,7 +46,7 @@ namespace mcsl {
 
    template<typename T> struct assoc_base;
    template<typename T, Hasher<T> HashFunc, Comparator<T> CmpFunc> class set;
-   template<typename key_t, Hasher<key_t> HashFunc, Comparator<key_t> CmpFunc> class map;
+   template<typename key_t, typename val_t, Hasher<key_t> HashFunc, Comparator<key_t> CmpFunc> class map;
 
    template<uint_t T, T _max, T _min, T _mult, T _inc, T _defaultSeed> struct lcg_engine; //linear congruential generator engine
 
