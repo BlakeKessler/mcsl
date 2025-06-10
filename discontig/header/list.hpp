@@ -47,11 +47,13 @@ template<typename T> class mcsl::list {
             it(node* p):ptr{p} {}
             operator bool() const { return ptr; }
 
-            T& operator*() { assume(ptr && ptr->objptr); return **ptr; }
-            T* operator->() { assume(ptr && ptr->objptr); return *ptr; }
-            const T& operator*() const { assume(ptr && ptr->objptr); return **ptr; }
-            const T* operator->() const { assume(ptr && ptr->objptr); return *ptr; }
+            T& operator*() { assume(ptr && ptr->objptr); return *ptr->objptr; }
+            T* operator->() { assume(ptr && ptr->objptr); return ptr->objptr; }
+            const T& operator*() const { assume(ptr && ptr->objptr); return *ptr->objptr; }
+            const T* operator->() const { assume(ptr && ptr->objptr); return ptr->objptr; }
 
+            it next() { return ptr->next; }
+            it prev() { return ptr->prev; }
             it& operator++() { ptr = ptr->next; return self; }
             it& operator++(int) { it tmp = self; ptr = ptr->next; return tmp; }
             it& operator--() { ptr = ptr->prev; return self; }
@@ -223,12 +225,12 @@ template<typename T> mcsl::list<T>::it mcsl::list<T>::emplace(it pos, auto... ar
 
 template<typename T> mcsl::list<T>::it mcsl::list<T>::erase(it pos) {
    assume(pos);
-   it tmp = pos->next;
-   if (pos->prev) {
-      pos->prev->next = pos->next;
+   it tmp = pos.next();
+   if (pos.ptr->prev) {
+      pos.ptr->prev->next = pos.ptr->next;
    }
-   if (pos->next) {
-      pos->next->prev = pos->prev;
+   if (pos.ptr->next) {
+      pos.ptr->next->prev = pos.ptr->prev;
    }
    pos.free();
    --_size;
@@ -274,19 +276,21 @@ template<typename T> mcsl::list<T>& mcsl::list<T>::reverse() {
 }
 template<typename T> mcsl::list<T>& mcsl::list<T>::unique() {
    it i = _begin;
-   while (i != _end) {
-      if (*i == *(i->next)) {
-         erase(i->next);
+   it next = i.next();
+   while (next != _end) {
+      if (*i == *(next)) { //remove duplicate (invalidates next)
+         erase(next);
       }
-      else {
-         ++i;
+      else { //advance
+         i = next;
       }
+      next = i.next(); //update next
    }
    return self;
 }
 
 template<typename T> void mcsl::list<T>::splice(it pos, list& other) {
-   node* prev = pos->prev.ptr;
+   node* prev = pos.ptr->prev;
    __APPEND(prev, other._begin);
    __APPEND(other._end->prev, pos);
    _size += other._size;
@@ -296,7 +300,7 @@ template<typename T> void mcsl::list<T>::splice(it pos, list& other) {
    other._size = 0;
 }
 template<typename T> void mcsl::list<T>::splice(it pos, list&& other) {
-   node* prev = pos->prev.ptr;
+   node* prev = pos.ptr->prev;
    __APPEND(prev, other._begin);
    __APPEND(other._end->prev, pos);
    _size += other._size;
@@ -307,23 +311,23 @@ template<typename T> void mcsl::list<T>::splice(it pos, list&& other) {
    other._size = 0;
 }
 template<typename T> void mcsl::list<T>::splice(it pos, list& other, it otherPos) {
-   node* prev = pos->prev.ptr;
-   node* tmp = otherPos->prev;
+   node* prev = pos.ptr->prev;
+   node* tmp = otherPos.ptr->prev;
 
-   __APPEND(prev, otherPos);
-   __APPEND(tmp, otherPos->next);
-   __APPEND(otherPos, pos);
+   __APPEND(prev, otherPos.ptr);
+   __APPEND(tmp, otherPos.ptr->next);
+   __APPEND(otherPos.ptr, pos.ptr);
    
    ++_size;
    --other._size;
 }
 template<typename T> void mcsl::list<T>::splice(it pos, list& other, it begin, it end) {
-   node* prev = pos->prev;
-   node* tmp = begin->prev;
+   node* prev = pos.ptr->prev;
+   node* tmp = begin.ptr->prev;
 
-   __APPEND(prev, begin);
-   __APPEND(end->prev, pos);
-   __APPEND(tmp, end);
+   __APPEND(prev, begin.ptr);
+   __APPEND(end.ptr->prev, pos.ptr);
+   __APPEND(tmp, end.ptr);
 
    for (it i = begin; i != end; ++i) {
       ++_size;
