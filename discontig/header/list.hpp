@@ -292,7 +292,7 @@ template<typename T> mcsl::list<T>& mcsl::list<T>::unique() {
 template<typename T> void mcsl::list<T>::splice(it pos, list& other) {
    node* prev = pos.ptr->prev;
    __APPEND(prev, other._begin);
-   __APPEND(other._end->prev, pos);
+   __APPEND(other._end->prev, pos.ptr);
    _size += other._size;
 
    other._end->prev = nullptr;
@@ -302,7 +302,7 @@ template<typename T> void mcsl::list<T>::splice(it pos, list& other) {
 template<typename T> void mcsl::list<T>::splice(it pos, list&& other) {
    node* prev = pos.ptr->prev;
    __APPEND(prev, other._begin);
-   __APPEND(other._end->prev, pos);
+   __APPEND(other._end->prev, pos.ptr);
    _size += other._size;
    
    it{other._end}.free();
