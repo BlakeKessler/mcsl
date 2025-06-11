@@ -8,6 +8,7 @@
 #include "list.hpp"
 #include "math.hpp"
 #include "throw.hpp"
+#include "tuple.hpp"
 #include <bit>
 
 template<typename key_t, typename val_t, mcsl::Hasher<key_t> HashFunc, mcsl::Comparator<key_t> CmpFunc> class mcsl::map {
@@ -30,9 +31,9 @@ template<typename key_t, typename val_t, mcsl::Hasher<key_t> HashFunc, mcsl::Com
       uint size() const { return _size; }
 
       bool insert(const key_t& key, const val_t& val);
-      bool emplace(const key_t& key, auto... argv) requires valid_ctor<val_t, decltype(argv)...>;
+      template<typename... key_argv_t, typename... val_argv_t> bool emplace(tuple<key_argv_t...> keyArgs, tuple<val_argv_t...> valArgs) requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...>;
       bool insert_or_assign(const key_t& key, const val_t& val);
-      bool emplace_or_assign(const key_t& key, auto... argv) requires valid_ctor<val_t, decltype(argv)...>;
+      template<typename... key_argv_t, typename... val_argv_t> bool emplace_or_assign(tuple<key_argv_t...> keyArgs, tuple<val_argv_t...> valArgs) requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...>;
       val_t& operator[](const key_t& key);
       const val_t& operator[](const key_t& key) const;
       bool remove(const key_t& key);
@@ -107,18 +108,22 @@ tplt(bool)::insert(const key_t& key, const val_t& val) {
    }
    return true;
 }
-tplt(bool)::emplace(const key_t& key, auto... argv) requires valid_ctor<val_t, decltype(argv)...> {
+template<typename key_t, typename val_t, mcsl::Hasher<key_t> HashFunc, mcsl::Comparator<key_t> CmpFunc>
+template<typename... key_argv_t, typename... val_argv_t>
+bool mcsl::map<key_t, val_t, HashFunc, CmpFunc>::emplace(tuple<key_argv_t...> keyArgs, tuple<val_argv_t...> valArgs)
+requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...> {
+   entry* entryptr = mcsl::malloc<entry>(1);
+   entryptr->key = from_tuple<key_t>(keyArgs);
+   key_t& key = entryptr->key;
    ulong hash = HashFunc(key);
+   entryptr->hash = hash;
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
       if (it->hash == hash && CmpFunc(key, it->key)) { //key is already in the set
          return false;
       }
    }
-   entry* entryptr = mcsl::malloc<entry>(1);
-   entryptr->key = key;
-   new (&(entryptr->val)) val_t (std::forward<decltype(argv)...>(argv)...);
-   entryptr->hash = hash;
+   entryptr->val = from_tuple<val_t>(valArgs);
    bucket.UNSAFE_malloc_ptr_push_back(entryptr);
    ++_size;
    if (_size > _maxLoadFactor * _buckets.size()) {
@@ -146,20 +151,26 @@ tplt(bool)::insert_or_assign(const key_t& key, const val_t& val) {
    }
    return true;
 }
-tplt(bool)::emplace_or_assign(const key_t& key, auto... argv) requires valid_ctor<val_t, decltype(argv)...> {
+template<typename key_t, typename val_t, mcsl::Hasher<key_t> HashFunc, mcsl::Comparator<key_t> CmpFunc>
+template<typename... key_argv_t, typename... val_argv_t>
+bool mcsl::map<key_t, val_t, HashFunc, CmpFunc>::emplace_or_assign(tuple<key_argv_t...> keyArgs, tuple<val_argv_t...> valArgs)
+requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...> {
+   entry* entryptr = mcsl::malloc<entry>(1);
+   entryptr->key = from_tuple<key_t>(keyArgs);
+   key_t& key = entryptr->key;
    ulong hash = HashFunc(key);
+   entryptr->hash = hash;
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
       if (it->hash == hash && CmpFunc(key, it->key)) { //key is already in the set
          std::destroy_at(&(it->val));
-         new (&(it->val)) val_t (std::forward<decltype(argv)...>(argv)...);
+         it->val = from_tuple(valArgs);
+         std::destroy_at(&key);
+         mcsl::free(entryptr);
          return false;
       }
    }
-   entry* entryptr = mcsl::malloc<entry>(1);
-   entryptr->key = key;
-   new (&(entryptr->val)) val_t (std::forward<decltype(argv)...>(argv)...);
-   entryptr->hash = hash;
+   entryptr->val = from_tuple<val_t>(valArgs);
    bucket.UNSAFE_malloc_ptr_push_back(entryptr);
    ++_size;
    if (_size > _maxLoadFactor * _buckets.size()) {
