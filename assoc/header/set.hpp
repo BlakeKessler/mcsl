@@ -47,7 +47,7 @@ class mcsl::set {
                ++_entryIt;
                while (_entryIt == _buckIt->end()) {
                   ++_buckIt;
-                  _entryIt = _buckIt ? _buckIt->begin() : list<entry>::it();
+                  _entryIt = _buckIt ? _buckIt->begin() : typename list<entry>::it();
                }
                return self;
             }
@@ -56,7 +56,7 @@ class mcsl::set {
                --_entryIt;
                while (!_entryIt) {
                   --_buckIt;
-                  _entryIt = _buckIt ? _buckIt->end() - 1 : list<entry>::it();
+                  _entryIt = _buckIt ? _buckIt->end() - 1 : typename list<entry>::it();
                }
                return self;
             }
@@ -97,7 +97,7 @@ class mcsl::set {
                ++_entryIt;
                while (_entryIt == _buckIt->end()) {
                   ++_buckIt;
-                  _entryIt = _buckIt ? _buckIt->begin() : list<entry>::const_it();
+                  _entryIt = _buckIt ? _buckIt->begin() : typename list<entry>::const_it();
                }
                return self;
             }
@@ -106,7 +106,7 @@ class mcsl::set {
                --_entryIt;
                while (!_entryIt) {
                   --_buckIt;
-                  _entryIt = _buckIt ? _buckIt->end() - 1 : list<entry>::const_it();
+                  _entryIt = _buckIt ? _buckIt->end() - 1 : typename list<entry>::const_it();
                }
                return self;
             }
@@ -131,10 +131,10 @@ class mcsl::set {
       set(uint bucketCount = DEFAULT_HASH_TABLE_BUCKET_COUNT, Hash hash = {}, KeyEq keyEq = {});
 
       uint size() const { return _size; }
-      it begin() { return _size ? it::make_begin(_buckets.begin()) : it{_buckets.begin(), list<entry>::it()}; }
-      const_it begin() const { return _size ? const_it::make_begin(_buckets.begin()) : const_it{_buckets.begin(), list<entry>::const_it()}; }
-      it end() { return _size ? it::make_end(_buckets.end() - 1) : it{_buckets.end(), list<entry>::it()}; }
-      const_it end() const { return _size ? const_it::make_end(_buckets.end() - 1) : const_it{_buckets.end(), list<entry>::const_it()}; }
+      it begin() { return _size ? it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
+      const_it begin() const { return _size ? const_it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
+      it end() { return _size ? it::make_end(_buckets.end() - 1) : it{_buckets.end(), typename list<entry>::it()}; }
+      const_it end() const { return _size ? const_it::make_end(_buckets.end() - 1) : const_it{_buckets.end(), typename list<entry>::const_it()}; }
 
       bool insert(const T& obj);
       bool insert(const arr_span<T&> objs);
