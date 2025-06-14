@@ -108,15 +108,27 @@ struct mcsl::str_base : public contig_base<char_t> {
 
 //hashing
 template<mcsl::str_t str_t> struct std::hash<str_t> {
-   uword operator()(const str_t& str) const noexcept { //FNV HASH
+   using is_transparent = void;
+
+   uword __impl(const char* str, const uint size) const noexcept { //FNV HASH
       uword hash = 0;
-      for (uint i = str.size(); i;) {
+      for (uint i = size; i;) {
          --i;
          hash = (hash << 8) + (uint8)(str[i]);
          // hash = (hash << 8) + (byte)(str[i]);
       }
       return hash;
    }
+
+   template<mcsl::str_t other_t> inline uword operator()(const other_t& str) const noexcept { return __impl(str.begin(), str.size()); }
+   inline uword operator()(const std::string_view str) const noexcept { return __impl(str.begin(), str.size()); }
+   inline uword operator()(const std::string& str) const noexcept { return __impl(str.begin(), str.size()); }
+};
+//equality checking
+template<mcsl::str_t str_t> struct std::equal_to<str_t> {
+   using is_transparent = void;
+
+   template<mcsl::str_t other_t> inline bool operator()(const str_t& lhs, const other_t& rhs) const noexcept { return lhs == rhs; }
 };
 
 #endif //MCSL_STR_BASE_HPP
