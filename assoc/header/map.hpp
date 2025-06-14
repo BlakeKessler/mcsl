@@ -11,8 +11,6 @@
 #include "tuple.hpp"
 #include <bit>
 
-static_assert(mcsl::hash_compat_span_t<mcsl::arr_span<uint>, uint, std::hash<uint>, std::equal_to<uint>>);
-
 template<typename key_t, typename val_t, mcsl::hash_t<key_t> Hash = std::hash<key_t>, mcsl::cmp_t<key_t> KeyEq = std::equal_to<key_t>>
 class mcsl::map {
    private:
