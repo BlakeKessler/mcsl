@@ -33,6 +33,7 @@ template<typename T> class mcsl::list {
          }
       };
 
+   public:
       struct it {
          private:
             node* ptr;
@@ -113,7 +114,7 @@ template<typename T> class mcsl::list {
             bool operator==(const const_it other) const { return ptr == other.ptr; }
       };
 
-
+   private:
       node* _end;
       node* _begin;
       uint _size;
