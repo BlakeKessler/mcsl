@@ -11,7 +11,10 @@
 #include "tuple.hpp"
 #include <bit>
 
-template<typename key_t, typename val_t, mcsl::Hasher<key_t> HashFunc, mcsl::Comparator<key_t> CmpFunc> class mcsl::map {
+//!TODO: heterogeneous lookup
+
+template<typename key_t, typename val_t, mcsl::hash_t<key_t> Hash = std::hash<key_t>, mcsl::cmp_t<key_t> KeyEq = std::equal_to<key_t>>
+class mcsl::map {
    private:
       struct entry {
          key_t key;
@@ -24,9 +27,12 @@ template<typename key_t, typename val_t, mcsl::Hasher<key_t> HashFunc, mcsl::Com
       uint _size;
       float _maxLoadFactor;
 
+      Hash _hash;
+      KeyEq _eq;
+
       void __rehashImpl(uint count);
    public:
-      map(uint bucketCount = DEFAULT_HASH_TABLE_BUCKET_COUNT);
+      map(uint bucketCount = DEFAULT_HASH_TABLE_BUCKET_COUNT, Hash hash = {}, KeyEq keyEq = {});
 
       uint size() const { return _size; }
 
@@ -55,10 +61,10 @@ template<typename key_t, typename val_t, mcsl::Hasher<key_t> HashFunc, mcsl::Com
 
 
 #pragma region inlinesrc
-#define tplt(ret_t) template<typename key_t, typename val_t, mcsl::Hasher<key_t> HashFunc, mcsl::Comparator<key_t> CmpFunc> ret_t mcsl::map<key_t, val_t, HashFunc, CmpFunc>
+#define tplt(ret_t) template<typename key_t, typename val_t, mcsl::hash_t<key_t> Hash, mcsl::cmp_t<key_t> KeyEq> ret_t mcsl::map<key_t, val_t, Hash, KeyEq>
 
-tplt()::map(uint bucketCount):
-_buckets(), _size(0), _maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR) {
+tplt()::map(uint bucketCount, Hash hash, KeyEq keyEq):
+_buckets(),_size(0),_maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR),_hash(hash),_eq(keyEq) {
    bucketCount = std::bit_ceil(bucketCount);
    _hashMask = bucketCount - 1;
    while (_buckets.size() < bucketCount) {
@@ -68,10 +74,10 @@ _buckets(), _size(0), _maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR) {
 
 //returns whether an element was removed
 tplt(bool)::remove(const key_t& key) {
-   ulong hash = HashFunc(key);
+   ulong hash = _hash(key);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && CmpFunc(key, *it)) { //obj is in the map
+      if (it->hash == hash && _eq(key, *it)) { //obj is in the map
          bucket.erase(it);
          --_size;
          return true;
@@ -90,10 +96,10 @@ tplt(bool)::remove(const arr_span<key_t&> keys) {
 }
 
 tplt(bool)::insert(const key_t& key, const val_t& val) {
-   ulong hash = HashFunc(key);
+   ulong hash = _hash(key);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && CmpFunc(key, it->key)) { //key is already in the set
+      if (it->hash == hash && _eq(key, it->key)) { //key is already in the set
          return false;
       }
    }
@@ -108,18 +114,18 @@ tplt(bool)::insert(const key_t& key, const val_t& val) {
    }
    return true;
 }
-template<typename key_t, typename val_t, mcsl::Hasher<key_t> HashFunc, mcsl::Comparator<key_t> CmpFunc>
+template<typename key_t, typename val_t, mcsl::hash_t<key_t> Hash, mcsl::cmp_t<key_t> KeyEq>
 template<typename... key_argv_t, typename... val_argv_t>
-bool mcsl::map<key_t, val_t, HashFunc, CmpFunc>::emplace(tuple<key_argv_t...> keyArgs, tuple<val_argv_t...> valArgs)
+bool mcsl::map<key_t, val_t, Hash, KeyEq>::emplace(tuple<key_argv_t...> keyArgs, tuple<val_argv_t...> valArgs)
 requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...> {
    entry* entryptr = mcsl::malloc<entry>(1);
    entryptr->key = from_tuple<key_t>(keyArgs);
    key_t& key = entryptr->key;
-   ulong hash = HashFunc(key);
+   ulong hash = _hash(key);
    entryptr->hash = hash;
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && CmpFunc(key, it->key)) { //key is already in the set
+      if (it->hash == hash && _eq(key, it->key)) { //key is already in the set
          return false;
       }
    }
@@ -132,10 +138,10 @@ requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...> {
    return true;
 }
 tplt(bool)::insert_or_assign(const key_t& key, const val_t& val) {
-   ulong hash = HashFunc(key);
+   ulong hash = _hash(key);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && CmpFunc(key, it->key)) { //key is already in the set
+      if (it->hash == hash && _eq(key, it->key)) { //key is already in the set
          it->val = val;
          return false;
       }
@@ -151,18 +157,18 @@ tplt(bool)::insert_or_assign(const key_t& key, const val_t& val) {
    }
    return true;
 }
-template<typename key_t, typename val_t, mcsl::Hasher<key_t> HashFunc, mcsl::Comparator<key_t> CmpFunc>
+template<typename key_t, typename val_t, mcsl::hash_t<key_t> Hash, mcsl::cmp_t<key_t> KeyEq>
 template<typename... key_argv_t, typename... val_argv_t>
-bool mcsl::map<key_t, val_t, HashFunc, CmpFunc>::emplace_or_assign(tuple<key_argv_t...> keyArgs, tuple<val_argv_t...> valArgs)
+bool mcsl::map<key_t, val_t, Hash, KeyEq>::emplace_or_assign(tuple<key_argv_t...> keyArgs, tuple<val_argv_t...> valArgs)
 requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...> {
    entry* entryptr = mcsl::malloc<entry>(1);
    entryptr->key = from_tuple<key_t>(keyArgs);
    key_t& key = entryptr->key;
-   ulong hash = HashFunc(key);
+   ulong hash = _hash(key);
    entryptr->hash = hash;
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && CmpFunc(key, it->key)) { //key is already in the set
+      if (it->hash == hash && _eq(key, it->key)) { //key is already in the set
          std::destroy_at(&(it->val));
          it->val = from_tuple(valArgs);
          std::destroy_at(&key);
@@ -180,10 +186,10 @@ requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...> {
 }
 
 tplt(val_t&)::operator[](const key_t& key) {
-   ulong hash = HashFunc(key);
+   ulong hash = _hash(key);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && CmpFunc(key, it->key)) { //obj is already in the set
+      if (it->hash == hash && _eq(key, it->key)) { //obj is already in the set
          return it->val;
       }
    }
@@ -198,10 +204,10 @@ tplt(val_t&)::operator[](const key_t& key) {
    return entryptr->val;
 }
 tplt(const val_t&)::operator[](const key_t& key) const {
-   ulong hash = HashFunc(key);
+   ulong hash = _hash(key);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && CmpFunc(key, it->key)) { //obj is already in the set
+      if (it->hash == hash && _eq(key, it->key)) { //obj is already in the set
          return it->val;
       }
    }
@@ -209,10 +215,10 @@ tplt(const val_t&)::operator[](const key_t& key) const {
 }
 
 tplt(val_t*)::find(const key_t& key) {
-   ulong hash = HashFunc(key);
+   ulong hash = _hash(key);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && CmpFunc(key, *it)) { //obj is in the map
+      if (it->hash == hash && _eq(key, it->key)) { //obj is in the map
          return &(it->val);
       }
    }
@@ -220,10 +226,10 @@ tplt(val_t*)::find(const key_t& key) {
    return nullptr;
 }
 tplt(const val_t*)::find(const key_t& key) const {
-   ulong hash = HashFunc(key);
+   ulong hash = _hash(key);
    const list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && CmpFunc(key, it->key)) { //obj is in the map
+      if (it->hash == hash && _eq(key, it->key)) { //obj is in the map
          return &(it->val);
       }
    }

@@ -14,6 +14,7 @@
 namespace mcsl {
    #pragma region checks
    template<typename lhs, typename rhs> concept same_t = std::same_as<lhs,rhs>;
+   template<typename lhs, typename rhs> concept diff_t = !same_t<lhs,rhs>;
    template<typename child_t, typename parent_t> concept is_t = std::derived_from<child_t,parent_t> || same_t<child_t,parent_t>;
    template<typename orig_t, typename target_t> concept castable_to = std::convertible_to<orig_t,target_t>;
 
@@ -38,6 +39,10 @@ namespace mcsl {
    template<typename ...Ts> concept all_sint_t  = ( sint_t<Ts> && ...);
    template<typename ...Ts> concept all_ptr_t   = (  ptr_t<Ts> && ...);
    #pragma endregion checks
+
+   #pragma region type_traits
+   template<typename T> concept default_constructable = std::is_default_constructible_v<T>;
+   #pragma endregion type_traits
 
    #pragma region basic_select
    template<bool b, typename T1, typename T2> using select = std::conditional_t<b,T1,T2>;
@@ -190,12 +195,12 @@ namespace mcsl {
    #pragma region utils
    template<typename T> using Hasher = ulong(*)(const T&);
    template<typename T> using Comparator = bool(*)(const T&, const T&);
-   template<typename T, typename func> concept hash_t = requires (T obj, func f) {
+   template<typename func, typename T> concept hash_t = requires (T obj, func f) {
       { f(obj) } -> int_t;
-   };
-   template<typename T, typename func> concept cmp_t = requires (T lhs, T rhs, func f) {
+   } && default_constructable<func>;
+   template<typename func, typename T> concept cmp_t = requires (T lhs, T rhs, func f) {
       { f(lhs,rhs) } -> same_t<bool>;
-   };
+   } && default_constructable<func>;
 
    template<typename func_t, typename ...Args> concept callable_t = requires (func_t f, Args... args) {
       f(args...);

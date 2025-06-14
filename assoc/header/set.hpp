@@ -9,7 +9,10 @@
 #include "math.hpp"
 #include <bit>
 
-template<typename T, mcsl::Hasher<T> HashFunc, mcsl::Comparator<T> CmpFunc> class mcsl::set {
+//!TODO: heterogeneous lookup
+
+template<typename T, mcsl::hash_t<T> Hash = std::hash<T>, mcsl::cmp_t<T> KeyEq = std::equal_to<T>>
+class mcsl::set {
    private:
       struct entry {
          T val;
@@ -21,9 +24,12 @@ template<typename T, mcsl::Hasher<T> HashFunc, mcsl::Comparator<T> CmpFunc> clas
       uint _size;
       float _maxLoadFactor;
 
+      Hash _hash;
+      KeyEq _eq;
+
       void __rehashImpl(uint count);
    public:
-      set(uint bucketCount = DEFAULT_HASH_TABLE_BUCKET_COUNT);
+      set(uint bucketCount = DEFAULT_HASH_TABLE_BUCKET_COUNT, Hash hash = {}, KeyEq keyEq = {});
 
       uint size() const { return _size; }
 
@@ -49,10 +55,10 @@ template<typename T, mcsl::Hasher<T> HashFunc, mcsl::Comparator<T> CmpFunc> clas
 
 
 #pragma region inlinesrc
-#define tplt(ret_t) template<typename T, mcsl::Hasher<T> HashFunc, mcsl::Comparator<T> CmpFunc> ret_t mcsl::set<T, HashFunc, CmpFunc>
+#define tplt(ret_t) template<typename T, mcsl::hash_t<T> Hash, mcsl::cmp_t<T> KeyEq> ret_t mcsl::set<T, Hash, KeyEq>
 
-tplt()::set(uint bucketCount):
-_buckets(), _size(0), _maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR) {
+tplt()::set(uint bucketCount, Hash hash, KeyEq keyEq):
+_buckets(),_size(0),_maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR),_hash(hash),_eq(keyEq) {
    bucketCount = std::bit_ceil(bucketCount);
    _hashMask = bucketCount - 1;
    while (_buckets.size() < bucketCount) {
@@ -62,10 +68,10 @@ _buckets(), _size(0), _maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR) {
 
 //returns whether an element was inserted
 tplt(bool)::insert(const T& obj) {
-   ulong hash = HashFunc(obj);
+   ulong hash = _hash(obj);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && CmpFunc(obj, it->val)) { //obj is already in the set
+      if (it->hash == hash && _cmp(obj, it->val)) { //obj is already in the set
          return false;
       }
    }
@@ -89,11 +95,11 @@ tplt(bool)::emplace(auto... argv) requires valid_ctor<T, decltype(argv)...> {
    entry* entryptr = mcsl::malloc<entry>(1);
    T& obj = entryptr->val;
    new (&obj) T (std::forward<decltype(argv)>(argv)...);
-   ulong hash = HashFunc(obj);
+   ulong hash = _hash(obj);
    entryptr->hash = hash;
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && CmpFunc(obj, it->val)) { //obj is already in the set
+      if (it->hash == hash && _cmp(obj, it->val)) { //obj is already in the set
          mcsl::free(entryptr);
          return false;
       }
@@ -108,10 +114,10 @@ tplt(bool)::emplace(auto... argv) requires valid_ctor<T, decltype(argv)...> {
 
 //returns whether an element was removed
 tplt(bool)::remove(const T& obj) {
-   ulong hash = HashFunc(obj);
+   ulong hash = _hash(obj);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && CmpFunc(obj, *it)) { //obj is in the set
+      if (it->hash == hash && _cmp(obj, *it)) { //obj is in the set
          bucket.erase(it);
          --_size;
          return true;
@@ -130,10 +136,10 @@ tplt(bool)::remove(const arr_span<T&> objs) {
 }
 
 tplt(T*)::find(const T& obj) {
-   ulong hash = HashFunc(obj);
+   ulong hash = _hash(obj);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && CmpFunc(obj, *it)) { //obj is in the set
+      if (it->hash == hash && _cmp(obj, *it)) { //obj is in the set
          return &(it->val);
       }
    }
@@ -141,10 +147,10 @@ tplt(T*)::find(const T& obj) {
    return nullptr;
 }
 tplt(const T*)::find(const T& obj) const {
-   ulong hash = HashFunc(obj);
+   ulong hash = _hash(obj);
    const list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && CmpFunc(obj, it->val)) { //obj is in the set
+      if (it->hash == hash && _cmp(obj, it->val)) { //obj is in the set
          return &(it->val);
       }
    }
