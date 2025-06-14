@@ -25,13 +25,116 @@ class mcsl::set {
       Hash _hash;
       KeyEq _eq;
 
-      template<typename other_t> concept span_compat_t<arr_span<other_t&>> = hash_compat_t<T, Hash, KeyEq><other_t>;
-
       void __rehashImpl(uint count);
    public:
+      struct it {
+         private:
+            arr_list<list<entry>>::it _buckIt;
+            list<entry>::it _entryIt;
+
+         public:
+            friend class set;
+            it(arr_list<list<entry>>::it buckIt, list<entry>::it entryIt):_buckIt{buckIt},_entryIt{entryIt} {}
+            static it make_begin(arr_list<list<entry>>::it buckIt) { return {buckIt,buckIt->begin()}; }
+            static it make_end(arr_list<list<entry>>::it buckIt) { return {buckIt,buckIt->end()}; }
+            it(const it& other):_buckIt{other._buckIt},_entryIt{other._entryIt} {}
+            operator bool() const { return _buckIt && _entryIt; }
+
+            T& operator*() const { assume(_buckIt && _entryIt); return _entryIt->val; }
+            T* operator->() const { assume(_buckIt && _entryIt); return &_entryIt->val; }
+
+            it& operator++() {
+               ++_entryIt;
+               while (_entryIt == _buckIt->end()) {
+                  ++_buckIt;
+                  _entryIt = _buckIt ? _buckIt->begin() : list<entry>::it();
+               }
+               return self;
+            }
+            it& operator++(int) { it tmp = self; ++self; return tmp; }
+            it& operator--() {
+               --_entryIt;
+               while (!_entryIt) {
+                  --_buckIt;
+                  _entryIt = _buckIt ? _buckIt->end() - 1 : list<entry>::it();
+               }
+               return self;
+            }
+            it& operator--(int) { it tmp = self; --self; return tmp; }
+            it next() const { return ++it{tmp};}
+            it prev() const { return --it{tmp};}
+
+            it& operator+=(slong n) {
+               if (n > 0) {
+                  [[likely]];
+                  do { ++self; } while (--n);
+               } else if (n < 0) {
+                  do { --self; } while (++n);
+               }
+               return self;
+            }
+            it& operator-=(slong n) { return self += (-n); }
+            it operator+(slong n) const { return it{self} += n; }
+            it operator-(slong n) const { return it{self} -= n; }
+      };
+      struct const_it {
+         private:
+            arr_list<list<entry>>::const_it _buckIt;
+            list<entry>::const_it _entryIt;
+
+         public:
+            friend class set;
+            const_it(arr_list<list<entry>>::const_it buckIt, list<entry>::const_it entryIt):_buckIt{buckIt},_entryIt{entryIt} {}
+            static const_it make_begin(arr_list<list<entry>>::const_it buckIt) { return {buckIt,buckIt->begin()}; }
+            static const_it make_end(arr_list<list<entry>>::const_it buckIt) { return {buckIt,buckIt->end()}; }
+            const_it(const const_it& other):_buckIt{other._buckIt},_entryIt{other._entryIt} {}
+            operator bool() const { return _buckIt && _entryIt; }
+
+            const T& operator*() const { assume(_buckIt && _entryIt); return _entryIt->val; }
+            const T* operator->() const { assume(_buckIt && _entryIt); return &_entryIt->val; }
+
+            const_it& operator++() {
+               ++_entryIt;
+               while (_entryIt == _buckIt->end()) {
+                  ++_buckIt;
+                  _entryIt = _buckIt ? _buckIt->begin() : list<entry>::const_it();
+               }
+               return self;
+            }
+            const_it& operator++(int) { const_it tmp = self; ++self; return tmp; }
+            const_it& operator--() {
+               --_entryIt;
+               while (!_entryIt) {
+                  --_buckIt;
+                  _entryIt = _buckIt ? _buckIt->end() - 1 : list<entry>::const_it();
+               }
+               return self;
+            }
+            const_it& operator--(int) { const_it tmp = self; --self; return tmp; }
+            const_it next() const { return ++const_it{tmp};}
+            const_it prev() const { return --const_it{tmp};}
+
+            const_it& operator+=(slong n) {
+               if (n > 0) {
+                  [[likely]];
+                  do { ++self; } while (--n);
+               } else if (n < 0) {
+                  do { --self; } while (++n);
+               }
+               return self;
+            }
+            const_it& operator-=(slong n) { return self += (-n); }
+            const_it operator+(slong n) const { return const_it{self} += n; }
+            const_it operator-(slong n) const { return const_it{self} -= n; }
+      };
+
       set(uint bucketCount = DEFAULT_HASH_TABLE_BUCKET_COUNT, Hash hash = {}, KeyEq keyEq = {});
 
       uint size() const { return _size; }
+      it begin() { return _size ? it::make_begin(_buckets.begin()) : it{_buckets.begin(), list<entry>::it()}; }
+      const_it begin() const { return _size ? const_it::make_begin(_buckets.begin()) : const_it{_buckets.begin(), list<entry>::const_it()}; }
+      it end() { return _size ? it::make_end(_buckets.end() - 1) : it{_buckets.end(), list<entry>::it()}; }
+      const_it end() const { return _size ? const_it::make_end(_buckets.end() - 1) : const_it{_buckets.end(), list<entry>::const_it()}; }
 
       bool insert(const T& obj);
       bool insert(const arr_span<T&> objs);

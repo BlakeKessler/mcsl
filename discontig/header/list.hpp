@@ -47,6 +47,7 @@ template<typename T> class mcsl::list {
             }
          public:
             friend class list; //apparently necessary for `~list()` for some reason
+            it():ptr{} {}
             it(node* p):ptr{p} {}
             operator bool() const { return ptr; }
 
@@ -70,8 +71,8 @@ template<typename T> class mcsl::list {
                return self;
             }
             it& operator-=(slong n) { return self += (-n); }
-            it operator+(slong n) const { it tmp = self; tmp += n; return tmp; }
-            it operator-(slong n) const { it tmp = self; tmp -= n; return tmp; }
+            it operator+(slong n) const { return it{self} += n; }
+            it operator-(slong n) const { return it{self} -= n; }
             
             bool operator==(const it other) const { return ptr == other.ptr; }
       };
