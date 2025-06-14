@@ -12,6 +12,7 @@
 #define __CLOSE_SPEC(_) >
 
 namespace mcsl {
+   template<typename T> class arr_span;
    #pragma region checks
    template<typename lhs, typename rhs> concept same_t = std::same_as<lhs,rhs>;
    template<typename lhs, typename rhs> concept diff_t = !same_t<lhs,rhs>;
@@ -72,6 +73,8 @@ namespace mcsl {
    template<typename T> using remove_volatile = std::remove_volatile_t<T>;
    template<typename T> using remove_cv = std::remove_cv_t<T>;
    template<typename T> using remove_cvref = std::remove_cvref_t<T>;
+
+   template<typename T> using decay = std::decay_t<T>;
    #pragma endregion mods
 
    #pragma region selectors
@@ -198,9 +201,11 @@ namespace mcsl {
    template<typename func, typename T> concept hash_t = requires (T obj, func f) {
       { f(obj) } -> int_t;
    } && default_constructable<func>;
-   template<typename func, typename T> concept cmp_t = requires (T lhs, T rhs, func f) {
+   template<typename func, typename T1, typename T2 = T1> concept cmp_t = requires (T1 lhs, T2 rhs, func f) {
       { f(lhs,rhs) } -> same_t<bool>;
    } && default_constructable<func>;
+   template<typename other_t, typename T, typename hashFunc_t, typename keyEqFunc_t> concept hash_compat_t = hash_t<hashFunc_t, T> && cmp_t<keyEqFunc_t, T> && hash_t<hashFunc_t, other_t> && cmp_t<keyEqFunc_t, T, other_t>;
+   template<typename span_t, typename T, typename hashFunc_t, typename keyEqFunc_t> concept hash_compat_span_t = requires (span_t span) { requires hash_compat_t<decltype(span[0]), T, hashFunc_t, keyEqFunc_t>; requires same_t<span_t, arr_span<decay<decltype(span[0])>>>; };
 
    template<typename func_t, typename ...Args> concept callable_t = requires (func_t f, Args... args) {
       f(args...);

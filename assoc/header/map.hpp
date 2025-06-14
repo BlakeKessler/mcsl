@@ -11,7 +11,7 @@
 #include "tuple.hpp"
 #include <bit>
 
-//!TODO: heterogeneous lookup
+static_assert(mcsl::hash_compat_span_t<mcsl::arr_span<uint>, uint, std::hash<uint>, std::equal_to<uint>>);
 
 template<typename key_t, typename val_t, mcsl::hash_t<key_t> Hash = std::hash<key_t>, mcsl::cmp_t<key_t> KeyEq = std::equal_to<key_t>>
 class mcsl::map {
@@ -44,10 +44,21 @@ class mcsl::map {
       const val_t& operator[](const key_t& key) const;
       bool remove(const key_t& key);
       bool remove(const arr_span<key_t&> key);
-      bool contains(const key_t& key) const { return find(key); }
+
+      bool insert(const hash_compat_t<key_t, Hash, KeyEq> auto& key, const val_t& val) requires valid_ctor<key_t, decltype(key)>;
+      bool insert_or_assign(const hash_compat_t<key_t, Hash, KeyEq> auto& key, const val_t& val) requires valid_ctor<key_t, decltype(key)>;
+      val_t& operator[](const hash_compat_t<key_t, Hash, KeyEq> auto& key) requires valid_ctor<key_t, decltype(key)>;
+      const val_t& operator[](const hash_compat_t<key_t, Hash, KeyEq> auto& key) const requires valid_ctor<key_t, decltype(key)>;
+      bool remove(const hash_compat_t<key_t, Hash, KeyEq> auto& obj);
+      bool remove(const hash_compat_span_t<key_t, Hash, KeyEq> auto objs);
 
       val_t* find(const key_t& key);
       const val_t* find(const key_t& key) const;
+      val_t* find(const hash_compat_t<key_t, Hash, KeyEq> auto& obj);
+      const val_t* find(const hash_compat_t<key_t, Hash, KeyEq> auto& obj) const;
+
+      bool contains(const key_t& key) const { return find(key); }
+      bool contains(const hash_compat_t<key_t, Hash, KeyEq> auto& obj) const { return find(obj); }
 
       float load_factor() const { return ((float)_size) / _buckets.size(); }
       float& max_load_factor() { return _maxLoadFactor; }
@@ -72,34 +83,11 @@ _buckets(),_size(0),_maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR),_hash(hash),_
    }
 }
 
-//returns whether an element was removed
-tplt(bool)::remove(const key_t& key) {
-   ulong hash = _hash(key);
-   list<entry>& bucket = _buckets[hash & _hashMask];
-   for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _eq(key, *it)) { //obj is in the map
-         bucket.erase(it);
-         --_size;
-         return true;
-      }
-   }
-   //obj is not in the map
-   return false;
-}
-//returns whether an element was removed
-tplt(bool)::remove(const arr_span<key_t&> keys) {
-   bool didRemove = false;
-   for (const key_t& key : keys) {
-      didRemove |= remove(key);
-   }
-   return didRemove;
-}
-
 tplt(bool)::insert(const key_t& key, const val_t& val) {
    ulong hash = _hash(key);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _eq(key, it->key)) { //key is already in the set
+      if (it->hash == hash && _eq(it->key, key)) { //key is already in the set
          return false;
       }
    }
@@ -119,13 +107,15 @@ template<typename... key_argv_t, typename... val_argv_t>
 bool mcsl::map<key_t, val_t, Hash, KeyEq>::emplace(tuple<key_argv_t...> keyArgs, tuple<val_argv_t...> valArgs)
 requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...> {
    entry* entryptr = mcsl::malloc<entry>(1);
-   entryptr->key = from_tuple<key_t>(keyArgs);
    key_t& key = entryptr->key;
+   key = from_tuple<key_t>(keyArgs);
    ulong hash = _hash(key);
    entryptr->hash = hash;
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _eq(key, it->key)) { //key is already in the set
+      if (it->hash == hash && _eq(it->key, key)) { //key is already in the set
+         std::destroy_at(&key);
+         mcsl::free(entryptr);
          return false;
       }
    }
@@ -137,11 +127,50 @@ requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...> {
    }
    return true;
 }
+tplt(bool)::insert(const hash_compat_t<key_t, Hash, KeyEq> auto& key, const val_t& val) requires valid_ctor<key_t, decltype(key)> {
+   ulong hash = _hash(key);
+   list<entry>& bucket = _buckets[hash & _hashMask];
+   for (auto it = bucket.begin(); it != bucket.end(); ++it) {
+      if (it->hash == hash && _eq(it->key, key)) { //key is already in the set
+         return false;
+      }
+   }
+   entry* entryptr = mcsl::malloc<entry>(1);
+   entryptr->key = key;
+   entryptr->val = val;
+   entryptr->hash = hash;
+   bucket.UNSAFE_malloc_ptr_push_back(entryptr);
+   ++_size;
+   if (_size > _maxLoadFactor * _buckets.size()) {
+      rehash();
+   }
+   return true;
+}
 tplt(bool)::insert_or_assign(const key_t& key, const val_t& val) {
    ulong hash = _hash(key);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _eq(key, it->key)) { //key is already in the set
+      if (it->hash == hash && _eq(it->key, key)) { //key is already in the set
+         it->val = val;
+         return false;
+      }
+   }
+   entry* entryptr = mcsl::malloc<entry>(1);
+   entryptr->key = key;
+   entryptr->val = val;
+   entryptr->hash = hash;
+   bucket.UNSAFE_malloc_ptr_push_back(entryptr);
+   ++_size;
+   if (_size > _maxLoadFactor * _buckets.size()) {
+      rehash();
+   }
+   return true;
+}
+tplt(bool)::insert_or_assign(const hash_compat_t<key_t, Hash, KeyEq> auto& key, const val_t& val) requires valid_ctor<key_t, decltype(key)> {
+   ulong hash = _hash(key);
+   list<entry>& bucket = _buckets[hash & _hashMask];
+   for (auto it = bucket.begin(); it != bucket.end(); ++it) {
+      if (it->hash == hash && _eq(it->key, key)) { //key is already in the set
          it->val = val;
          return false;
       }
@@ -168,7 +197,7 @@ requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...> {
    entryptr->hash = hash;
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _eq(key, it->key)) { //key is already in the set
+      if (it->hash == hash && _eq(it->key, key)) { //key is already in the set
          std::destroy_at(&(it->val));
          it->val = from_tuple(valArgs);
          std::destroy_at(&key);
@@ -189,7 +218,7 @@ tplt(val_t&)::operator[](const key_t& key) {
    ulong hash = _hash(key);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _eq(key, it->key)) { //obj is already in the set
+      if (it->hash == hash && _eq(it->key, key)) { //obj is already in the set
          return it->val;
       }
    }
@@ -207,18 +236,91 @@ tplt(const val_t&)::operator[](const key_t& key) const {
    ulong hash = _hash(key);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _eq(key, it->key)) { //obj is already in the set
+      if (it->hash == hash && _eq(it->key, key)) { //obj is already in the set
+         return it->val;
+      }
+   }
+   mcsl::__throw(ErrCode::SEGFAULT, FMT("key not in map"));
+}
+tplt(val_t&)::operator[](const hash_compat_t<key_t, Hash, KeyEq> auto& key) requires valid_ctor<key_t, decltype(key)> {
+   ulong hash = _hash(key);
+   list<entry>& bucket = _buckets[hash & _hashMask];
+   for (auto it = bucket.begin(); it != bucket.end(); ++it) {
+      if (it->hash == hash && _eq(it->key, key)) { //obj is already in the set
+         return it->val;
+      }
+   }
+   entry* entryptr = mcsl::calloc<entry>(1);
+   entryptr->key = key;
+   entryptr->hash = hash;
+   bucket.UNSAFE_malloc_ptr_push_back(entryptr);
+   ++_size;
+   if (_size > _maxLoadFactor * _buckets.size()) {
+      rehash();
+   }
+   return entryptr->val;
+}
+tplt(const val_t&)::operator[](const hash_compat_t<key_t, Hash, KeyEq> auto& key) const requires valid_ctor<key_t, decltype(key)> {
+   ulong hash = _hash(key);
+   list<entry>& bucket = _buckets[hash & _hashMask];
+   for (auto it = bucket.begin(); it != bucket.end(); ++it) {
+      if (it->hash == hash && _eq(it->key, key)) { //obj is already in the set
          return it->val;
       }
    }
    mcsl::__throw(ErrCode::SEGFAULT, FMT("key not in map"));
 }
 
+//returns whether an element was removed
+tplt(bool)::remove(const key_t& key) {
+   ulong hash = _hash(key);
+   list<entry>& bucket = _buckets[hash & _hashMask];
+   for (auto it = bucket.begin(); it != bucket.end(); ++it) {
+      if (it->hash == hash && _eq(*it, key)) { //obj is in the map
+         bucket.erase(it);
+         --_size;
+         return true;
+      }
+   }
+   //obj is not in the map
+   return false;
+}
+//returns whether an element was removed
+tplt(bool)::remove(const arr_span<key_t&> keys) {
+   bool didRemove = false;
+   for (const key_t& key : keys) {
+      didRemove |= remove(key);
+   }
+   return didRemove;
+}
+//returns whether an element was removed
+tplt(bool)::remove(const hash_compat_t<key_t, Hash, KeyEq> auto& key) {
+   ulong hash = _hash(key);
+   list<entry>& bucket = _buckets[hash & _hashMask];
+   for (auto it = bucket.begin(); it != bucket.end(); ++it) {
+      if (it->hash == hash && _eq(*it, key)) { //obj is in the map
+         bucket.erase(it);
+         --_size;
+         return true;
+      }
+   }
+   //obj is not in the map
+   return false;
+}
+//returns whether an element was removed
+tplt(bool)::remove(const hash_compat_span_t<key_t, Hash, KeyEq> auto keys) {
+   bool didRemove = false;
+   for (const key_t& key : keys) {
+      didRemove |= remove(key);
+   }
+   return didRemove;
+}
+
 tplt(val_t*)::find(const key_t& key) {
    ulong hash = _hash(key);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _eq(key, it->key)) { //obj is in the map
+      if (it->hash == hash && _eq(it->key, key)) { //obj is in the map
          return &(it->val);
       }
    }
@@ -229,7 +331,29 @@ tplt(const val_t*)::find(const key_t& key) const {
    ulong hash = _hash(key);
    const list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _eq(key, it->key)) { //obj is in the map
+      if (it->hash == hash && _eq(it->key, key)) { //obj is in the map
+         return &(it->val);
+      }
+   }
+   //obj is not in the map
+   return nullptr;
+}
+tplt(val_t*)::find(const hash_compat_t<key_t, Hash, KeyEq> auto& key) {
+   ulong hash = _hash(key);
+   list<entry>& bucket = _buckets[hash & _hashMask];
+   for (auto it = bucket.begin(); it != bucket.end(); ++it) {
+      if (it->hash == hash && _eq(it->key, key)) { //obj is in the map
+         return &(it->val);
+      }
+   }
+   //obj is not in the map
+   return nullptr;
+}
+tplt(const val_t*)::find(const hash_compat_t<key_t, Hash, KeyEq> auto& key) const {
+   ulong hash = _hash(key);
+   const list<entry>& bucket = _buckets[hash & _hashMask];
+   for (auto it = bucket.begin(); it != bucket.end(); ++it) {
+      if (it->hash == hash && _eq(it->key, key)) { //obj is in the map
          return &(it->val);
       }
    }

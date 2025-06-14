@@ -9,8 +9,6 @@
 #include "math.hpp"
 #include <bit>
 
-//!TODO: heterogeneous lookup
-
 template<typename T, mcsl::hash_t<T> Hash = std::hash<T>, mcsl::cmp_t<T> KeyEq = std::equal_to<T>>
 class mcsl::set {
    private:
@@ -27,6 +25,8 @@ class mcsl::set {
       Hash _hash;
       KeyEq _eq;
 
+      template<typename other_t> concept span_compat_t<arr_span<other_t&>> = hash_compat_t<T, Hash, KeyEq><other_t>;
+
       void __rehashImpl(uint count);
    public:
       set(uint bucketCount = DEFAULT_HASH_TABLE_BUCKET_COUNT, Hash hash = {}, KeyEq keyEq = {});
@@ -38,10 +38,19 @@ class mcsl::set {
       bool emplace(auto... argv) requires valid_ctor<T, decltype(argv)...>;
       bool remove(const T& obj);
       bool remove(const arr_span<T&> obj);
-      bool contains(const T& obj) const { return find(obj); }
+      
+      bool insert(const hash_compat_t<T, Hash, KeyEq> auto& obj) requires valid_ctor<T, other_t> { return emplace(obj); }
+      bool insert(const hash_compat_span_t<T, Hash, KeyEq> auto objs) requires valid_ctor<T, decltype(objs[0])>;
+      bool remove(const hash_compat_t<T, Hash, KeyEq> auto& obj);
+      bool remove(const hash_compat_span_t<T, Hash, KeyEq> auto objs);
 
       T* find(const T& obj);
       const T* find(const T& obj) const;
+      T* find(const hash_compat_t<T, Hash, KeyEq> auto& obj);
+      const T* find(const hash_compat_t<T, Hash, KeyEq> auto& obj) const;
+
+      bool contains(const T& obj) const { return find(obj); }
+      bool contains(const hash_compat_t<T, Hash, KeyEq> auto& obj) const { return find(obj); }
 
       float load_factor() const { return ((float)_size) / _buckets.size(); }
       float& max_load_factor() { return _maxLoadFactor; }
@@ -71,7 +80,7 @@ tplt(bool)::insert(const T& obj) {
    ulong hash = _hash(obj);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _cmp(obj, it->val)) { //obj is already in the set
+      if (it->hash == hash && _cmp(it->val, obj)) { //obj is already in the set
          return false;
       }
    }
@@ -84,8 +93,18 @@ tplt(bool)::insert(const T& obj) {
 }
 //returns whether an element was inserted
 tplt(bool)::insert(const arr_span<T&> objs) {
+   reserve(_size + objs.size());
    bool didInsert = false;
    for (const T& obj : objs) {
+      didInsert |= insert(obj);
+   }
+   return didInsert;
+}
+//returns whether an element was inserted
+tplt(bool)::insert(const hash_compat_span_t<T, Hash, KeyEq> auto objs) requires valid_ctor<T, decltype(objs[0])> {
+   reserve(_size + objs.size());
+   bool didInsert = false;
+   for (const auto& obj : objs) {
       didInsert |= insert(obj);
    }
    return didInsert;
@@ -99,7 +118,8 @@ tplt(bool)::emplace(auto... argv) requires valid_ctor<T, decltype(argv)...> {
    entryptr->hash = hash;
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _cmp(obj, it->val)) { //obj is already in the set
+      if (it->hash == hash && _cmp(it->val, obj)) { //obj is already in the set
+         std::destroy_at(&obj);
          mcsl::free(entryptr);
          return false;
       }
@@ -117,7 +137,7 @@ tplt(bool)::remove(const T& obj) {
    ulong hash = _hash(obj);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _cmp(obj, *it)) { //obj is in the set
+      if (it->hash == hash && _cmp(*it, obj)) { //obj is in the set
          bucket.erase(it);
          --_size;
          return true;
@@ -134,12 +154,34 @@ tplt(bool)::remove(const arr_span<T&> objs) {
    }
    return didRemove;
 }
+//returns whether an element was removed
+tplt(bool)::remove(const hash_compat_t<T, Hash, KeyEq> auto& obj) {
+   ulong hash = _hash(obj);
+   list<entry>& bucket = _buckets[hash & _hashMask];
+   for (auto it = bucket.begin(); it != bucket.end(); ++it) {
+      if (it->hash == hash && _cmp(*it, obj)) { //obj is in the set
+         bucket.erase(it);
+         --_size;
+         return true;
+      }
+   }
+   //obj is not in the set
+   return false;
+}
+//returns whether an element was removed
+tplt(bool)::remove(const hash_compat_span_t<T, Hash, KeyEq> auto objs) {
+   bool didRemove = false;
+   for (const auto& obj : objs) {
+      didRemove |= remove(obj);
+   }
+   return didRemove;
+}
 
 tplt(T*)::find(const T& obj) {
    ulong hash = _hash(obj);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _cmp(obj, *it)) { //obj is in the set
+      if (it->hash == hash && _cmp(*it, obj)) { //obj is in the set
          return &(it->val);
       }
    }
@@ -150,7 +192,30 @@ tplt(const T*)::find(const T& obj) const {
    ulong hash = _hash(obj);
    const list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _cmp(obj, it->val)) { //obj is in the set
+      if (it->hash == hash && _cmp(it->val, obj)) { //obj is in the set
+         return &(it->val);
+      }
+   }
+   //obj is not in the set
+   return nullptr;
+}
+
+tplt(T*)::find(const hash_compat_t<T, Hash, KeyEq> auto& obj) {
+   ulong hash = _hash(obj);
+   list<entry>& bucket = _buckets[hash & _hashMask];
+   for (auto it = bucket.begin(); it != bucket.end(); ++it) {
+      if (it->hash == hash && _cmp(*it, obj)) { //obj is in the set
+         return &(it->val);
+      }
+   }
+   //obj is not in the set
+   return nullptr;
+}
+tplt(const T*)::find(const hash_compat_t<T, Hash, KeyEq> auto& obj) const {
+   ulong hash = _hash(obj);
+   const list<entry>& bucket = _buckets[hash & _hashMask];
+   for (auto it = bucket.begin(); it != bucket.end(); ++it) {
+      if (it->hash == hash && _cmp(it->val, obj)) { //obj is in the set
          return &(it->val);
       }
    }
