@@ -131,10 +131,10 @@ template<typename T> class mcsl::list {
       const_it end() const { return _end; }
       uint size() const { return _size; }
 
-      T& first() { return *(_begin->objptr); }
-      T& last() { return *(_end->prev->objptr); }
+      T& first() { return *_begin->objptr; }
+      T& last() { return *_end->prev->objptr; }
       const T& first() const { return *_begin; }
-      const T& last() const { return *(_end->prev); }
+      const T& last() const { return *_end->prev; }
 
       it push_back(const T& obj);
       it push_front(const T& obj);
@@ -197,7 +197,7 @@ template<typename T> mcsl::list<T>::it mcsl::list<T>::push_back(const T& obj) {
    ++_size;
    node* ptr = node::make(_end, _end->prev);
    ptr->objptr = mcsl::malloc<T>(1);
-   *(ptr->objptr) = obj;
+   *ptr->objptr = obj;
    if (_begin == _end) {
       _begin = ptr;
    }
@@ -207,7 +207,7 @@ template<typename T> mcsl::list<T>::it mcsl::list<T>::push_front(const T& obj) {
    ++_size;
    _begin = node::make(_begin, nullptr);
    _begin->objptr = mcsl::malloc<T>(1);
-   *(_begin->objptr) = obj;
+   *_begin->objptr = obj;
    return _begin;
 }
 template<typename T> mcsl::list<T>::it mcsl::list<T>::emplace_back(auto... argv) requires valid_ctor<T, decltype(argv)...> {
@@ -267,7 +267,7 @@ template<typename T> mcsl::list<T>::it mcsl::list<T>::insert(it pos, const T& ob
    ++_size;
    node* ptr = node::make(pos.ptr);
    ptr->objptr = mcsl::malloc<T>(1);
-   *(ptr->objptr) = obj;
+   *ptr->objptr = obj;
    if (pos.ptr == _begin) {
       _begin = ptr;
    }
@@ -498,7 +498,7 @@ template<typename T> mcsl::pair<typename mcsl::list<T>::node*> mcsl::list<T>::__
 }
 template<typename T> mcsl::pair<typename mcsl::list<T>::node*> mcsl::list<T>::__mergeImpl(node* lhsFirst, node* lhsLast, uint lhsLen, node* rhsFirst, node* rhsLast, uint rhsLen) {
    mcsl::pair<node*> bounds{};
-   if (*(lhsFirst->objptr) < *(rhsFirst->objptr)) {
+   if (*lhsFirst->objptr < *rhsFirst->objptr) {
       bounds.first = lhsFirst;
       lhsFirst = lhsFirst->next;
       --lhsLen;
@@ -521,7 +521,7 @@ template<typename T> mcsl::pair<typename mcsl::list<T>::node*> mcsl::list<T>::__
          __APPEND(curr, lhsFirst);
          bounds.second = lhsLast;
       } else { //neither done
-         if (*(lhsFirst->objptr) < *(rhsFirst->objptr)) {
+         if (*lhsFirst->objptr < *rhsFirst->objptr) {
             __APPEND(curr, lhsFirst);
             curr = lhsFirst;
             lhsFirst = lhsFirst->next;
@@ -556,7 +556,7 @@ template<typename T> template<mcsl::cmp_t<T> comp> mcsl::pair<typename mcsl::lis
 }
 template<typename T> template<mcsl::cmp_t<T> comp> mcsl::pair<typename mcsl::list<T>::node*> mcsl::list<T>::__mergeImpl(comp cmp, node* lhsFirst, node* lhsLast, uint lhsLen, node* rhsFirst, node* rhsLast, uint rhsLen) {
    mcsl::pair<node*> bounds{};
-   if (cmp(*(lhsFirst->objptr), *(rhsFirst->objptr))) {
+   if (cmp(*lhsFirst->objptr, *rhsFirst->objptr)) {
       bounds.first = lhsFirst;
       lhsFirst = lhsFirst->next;
       --lhsLen;
@@ -577,7 +577,7 @@ template<typename T> template<mcsl::cmp_t<T> comp> mcsl::pair<typename mcsl::lis
          __APPEND(curr, lhsFirst);
          bounds.second = lhsLast;
       } else { //neither done
-         if (cmp(*(lhsFirst->objptr), *(rhsFirst->objptr))) {
+         if (cmp(*lhsFirst->objptr, *rhsFirst->objptr)) {
             __APPEND(curr, lhsFirst);
             curr = lhsFirst;
             lhsFirst = lhsFirst->next;
