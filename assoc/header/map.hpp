@@ -23,7 +23,7 @@ class mcsl::map {
          const val_t& val() const { return entryPair.second; };
       };
    public:
-       struct it {
+      struct it {
          private:
             arr_list<list<entry>>::it _buckIt;
             list<entry>::it _entryIt;
@@ -497,12 +497,14 @@ tplt(void)::__rehashImpl(uint count) {
    //rehash
    while (i--) {
       mcsl::list<entry>& bucket = _buckets[i];
-      for (auto it = bucket.begin(); it != bucket.end(); ++it) { //check hash for each node
+      for (auto it = bucket.begin(); it != bucket.end();) { //check hash for each node
          uint newHash = it->hash & _hashMask;
+         auto tmp = it.next();
          if (newHash != i) { //move node if necessary
             auto& newBucket = _buckets[newHash];
             newBucket.splice(newBucket.end(), bucket, it);
          }
+         it = tmp;
       }
    }
    _end = it::make_end(_buckets.end() - 1);
