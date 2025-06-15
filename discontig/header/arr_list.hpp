@@ -38,7 +38,7 @@ template<typename T, uint _bufCapacity = mcsl::DEFAULT_ARR_LIST_BUF_SIZE> class 
       uint capacity() const { return _buf.size() * _bufCapacity; }
       operator bool() const { return _buf.size() && _buf[0].size(); }
 
-      it operator+(const uint i) { assume(i < size()); return it{_buf, i}; }
+      it operator+(const uint i) { assume(i < size()); return it{self, i}; }
       T& operator[](const uint i) { assume(i < size()); return _buf[i / _bufCapacity][i % _bufCapacity]; }
       T& at(const uint i) { if (i >= size()) { __throw(ErrCode::SEGFAULT, mcsl::FMT("%s of size %u accessed at index %u"), nameof(), size(), i); } if (!_buf.data()) { __throw(ErrCode::SEGFAULT, mcsl::FMT("null %s dereferenced"), nameof()); } return self[i]; }
       it begin() { return it{self, 0}; }
@@ -46,11 +46,11 @@ template<typename T, uint _bufCapacity = mcsl::DEFAULT_ARR_LIST_BUF_SIZE> class 
       T& front() { return self[0]; }
       T& back() { return self[size()-1]; }
 
-      const_it operator+(const uint i) const { assume(i < size()); return it{_buf, i}; }
+      const_it operator+(const uint i) const { assume(i < size()); return const_it{self, i}; }
       const T& operator[](const uint i) const { assume(i < size()); return _buf[i / _bufCapacity][i % _bufCapacity]; }
       const T& at(const uint i) const { if (i >= size()) { __throw(ErrCode::SEGFAULT, mcsl::FMT("%s of size %u accessed at index %u"), nameof(), size(), i); } if (!_buf.data()) { __throw(ErrCode::SEGFAULT, mcsl::FMT("null %s dereferenced"), nameof()); } return self[i]; }
-      const_it begin() const { return it{self, 0}; }
-      const_it end() const { return it{self, size()}; }
+      const_it begin() const { return const_it{self, 0}; }
+      const_it end() const { return const_it{self, size()}; }
       const T& front() const { return self[0]; }
       const T& back() const { return self[size()-1]; }
 
@@ -67,8 +67,8 @@ template<typename T, uint _bufCapacity = mcsl::DEFAULT_ARR_LIST_BUF_SIZE> class 
 #pragma region inlinesrc
 
 template<typename T, uint _bufCapacity> mcsl::arr_list<T,_bufCapacity>::arr_list(const view data):_buf{},_size{} {
-   const it end = data.end();
-   for (it i = data.begin(); i != end; ++i) {
+   const const_it end = data.end();
+   for (const_it i = data.begin(); i != end; ++i) {
       push_back(*i);
    }
 }
@@ -141,10 +141,12 @@ template<typename T, uint _bufCapacity> struct mcsl::it<T, mcsl::arr_list<T,_buf
       using span = buf_t::span;
       using view = buf_t::view;
    private:
-      buf_t& _buf;
+      buf_t* _buf;
       uint _index;
    public:
-      it(buf_t& buf, uint index = 0):_buf{buf},_index{index} {}
+      it():_buf{},_index{} {}
+      it(buf_t& buf, uint index = 0):_buf{&buf},_index{index} {}
+      operator bool() const { return _buf; }
 
       it& operator++()    { ++_index; return self; }
       it  operator++(int) { it tmp = self; ++self; return tmp; }
@@ -153,23 +155,61 @@ template<typename T, uint _bufCapacity> struct mcsl::it<T, mcsl::arr_list<T,_buf
       it& operator+=(const sint i) { _index += i; return self; }
       it& operator-=(const sint i) { _index -= i; return self; }
 
-      it operator+(const sint i) { return it{_buf, _index + i}; }
-      it operator-(const sint i) { return it{_buf, _index - i}; }
-      T& operator* () { return _buf[_index]; }
-      T* operator->() { return (T*)self; }
-      T& operator[](const sint i) { return _buf[_index + i]; }
+      it operator+(const sint i) { return it{*_buf, _index + i}; }
+      it operator-(const sint i) { return it{*_buf, _index - i}; }
+      T& operator* () { return (*_buf)[_index]; }
+      T* operator->() { return &(*_buf)[_index]; }
+      T& operator[](const sint i) { return (*_buf)[_index + i]; }
       
-      const_it operator+(const sint i) const { return it{_buf, _index + i}; }
-      const_it operator-(const sint i) const { return it{_buf, _index - i}; }
-      const T& operator* () const { return _buf[_index]; }
-      const T* operator->() const { return (T*)self; }
-      const T& operator[](const sint i) const { return _buf[_index + i]; }
+      const_it operator+(const sint i) const { return it{*_buf, _index + i}; }
+      const_it operator-(const sint i) const { return it{*_buf, _index - i}; }
+      const T& operator* () const { return (*_buf)[_index]; }
+      const T* operator->() const { return &(*_buf)[_index]; }
+      const T& operator[](const sint i) const { return (*_buf)[_index + i]; }
 
-      sint operator<=>(const_it& other) const { assume(&_buf == &other._buf); return _index - other._index; }
-      operator const_it() const { return const_it{_buf, _index}; }
-      operator T*() const { return &_buf[_index]; }
+      sint operator<=>(const_it& other) const { assume(_buf == other._buf); return _index - other._index; }
+      operator const_it() const { return const_it{*_buf, _index}; }
+      operator T*() const { return &(*_buf)[_index]; }
       operator uint () const { return _index; }
       uint operator+() const { return _index; }
+
+      bool operator==(const const_it& other) const { return _buf == other._buf && _index == other._index; }
+};
+template<typename T, uint _bufCapacity> struct mcsl::it<const T, const mcsl::arr_list<T,_bufCapacity>> {
+   public:
+      using buf_t = const arr_list<T,_bufCapacity>;
+      using view_buf_t = arr_list<const T,_bufCapacity>;
+      using const_it = buf_t::const_it;
+
+      using span = buf_t::span;
+      using view = buf_t::view;
+   private:
+      const buf_t* _buf;
+      uint _index;
+   public:
+      it():_buf{},_index{} {}
+      it(const buf_t& buf, uint index = 0):_buf{&buf},_index{index} {}
+      operator bool() const { return _buf; }
+
+      const_it& operator++()    { ++_index; return self; }
+      const_it  operator++(int) { const_it tmp = self; ++self; return tmp; }
+      const_it& operator--()    { --_index; return self; }
+      const_it  operator--(int) { const_it tmp = self; --self; return tmp; }
+      const_it& operator+=(const sint i) { _index += i; return self; }
+      const_it& operator-=(const sint i) { _index -= i; return self; }
+      
+      const_it operator+(const sint i) const { return const_it{*_buf, _index + i}; }
+      const_it operator-(const sint i) const { return const_it{*_buf, _index - i}; }
+      const T& operator* () const { return (*_buf)[_index]; }
+      const T* operator->() const { return &(*_buf)[_index]; }
+      const T& operator[](const sint i) const { return (*_buf)[_index + i]; }
+
+      sint operator<=>(const_it& other) const { assume(_buf == other._buf); return _index - other._index; }
+      operator const T*() const { return &(*_buf)[_index]; }
+      operator uint () const { return _index; }
+      uint operator+() const { return _index; }
+
+      bool operator==(const const_it& other) const { return _buf == other._buf && _index == other._index; }
 };
 
 #pragma region span
@@ -209,9 +249,9 @@ template<typename T, uint _bufCapacity> struct mcsl::span<T, mcsl::arr_list<T,_b
 };
 
 //!view
-template<typename T, uint _bufCapacity> struct mcsl::span<T, const mcsl::arr_list<T,_bufCapacity>> {
+template<typename T, uint _bufCapacity> struct mcsl::span<const T, const mcsl::arr_list<T,_bufCapacity>> {
    public:
-      using buf_t = arr_list<T,_bufCapacity>;
+      using buf_t = const arr_list<T,_bufCapacity>;
 
       using it = buf_t::it;
       using const_it = buf_t::const_it;
