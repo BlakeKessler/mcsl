@@ -79,11 +79,12 @@ template<typename T> class mcsl::list {
       };
       struct const_it {
          private:
-            node* ptr;
+            const node* ptr;
          public:
             friend class list; //apparently necessary for `~list()` for some reason
-            const_it(node* p):ptr{p} {}
-            const_it(const it p):ptr{p.ptr} {}
+            const_it():ptr{} {}
+            const_it(const node* p):ptr{p} {}
+            const_it(const it& p):ptr{p.ptr} {}
             operator bool() const { return ptr; }
 
             const T& operator*() { assume(ptr && ptr->objptr); return *ptr->objptr; }
@@ -94,9 +95,9 @@ template<typename T> class mcsl::list {
             const_it next() { return ptr->next; }
             const_it prev() { return ptr->prev; }
             const_it& operator++() { ptr = ptr->next; return self; }
-            const_it& operator++(int) { it tmp = self; ptr = ptr->next; return tmp; }
+            const_it& operator++(int) { const_it tmp = self; ptr = ptr->next; return tmp; }
             const_it& operator--() { ptr = ptr->prev; return self; }
-            const_it& operator--(int) { it tmp = self; ptr = ptr->prev; return tmp; }
+            const_it& operator--(int) { const_it tmp = self; ptr = ptr->prev; return tmp; }
 
             const_it& operator+=(slong n) {
                if (n > 0) {
@@ -108,8 +109,8 @@ template<typename T> class mcsl::list {
                return self;
             }
             const_it& operator-=(slong n) { return self += (-n); }
-            const_it operator+(slong n) { it tmp = self; tmp += n; return tmp; }
-            const_it operator-(slong n) { it tmp = self; tmp -= n; return tmp; }
+            const_it operator+(slong n) { const_it tmp = self; tmp += n; return tmp; }
+            const_it operator-(slong n) { const_it tmp = self; tmp -= n; return tmp; }
             
             bool operator==(const const_it other) const { return ptr == other.ptr; }
       };
