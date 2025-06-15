@@ -16,17 +16,7 @@ class mcsl::set {
          T val;
          ulong hash;
       };
-
-      arr_list<list<entry>> _buckets;
-      uint _hashMask;
-      uint _size;
-      float _maxLoadFactor;
-
-      Hash _hash;
-      KeyEq _eq;
-
-      void __rehashImpl(uint count);
-   public:
+public:
       struct it {
          private:
             arr_list<list<entry>>::it _buckIt;
@@ -37,7 +27,6 @@ class mcsl::set {
             it(arr_list<list<entry>>::it buckIt, list<entry>::it entryIt):_buckIt{buckIt},_entryIt{entryIt} {}
             static it make_begin(arr_list<list<entry>>::it buckIt) { return {buckIt,buckIt->begin()}; }
             static it make_end(arr_list<list<entry>>::it buckIt) { return {buckIt,buckIt->end()}; }
-            it(const it& other):_buckIt{other._buckIt},_entryIt{other._entryIt} {}
             operator bool() const { return _buckIt && _entryIt; }
 
             T& operator*() const { assume(_buckIt && _entryIt); return _entryIt->val; }
@@ -87,7 +76,7 @@ class mcsl::set {
             const_it(arr_list<list<entry>>::const_it buckIt, list<entry>::const_it entryIt):_buckIt{buckIt},_entryIt{entryIt} {}
             static const_it make_begin(arr_list<list<entry>>::const_it buckIt) { return {buckIt,buckIt->begin()}; }
             static const_it make_end(arr_list<list<entry>>::const_it buckIt) { return {buckIt,buckIt->end()}; }
-            const_it(const const_it& other):_buckIt{other._buckIt},_entryIt{other._entryIt} {}
+            const_it(const it& other):_buckIt{other._buckIt},_entryIt{other._entryIt} {}
             operator bool() const { return _buckIt && _entryIt; }
 
             const T& operator*() const { assume(_buckIt && _entryIt); return _entryIt->val; }
@@ -128,13 +117,27 @@ class mcsl::set {
             const_it operator-(slong n) const { return const_it{self} -= n; }
       };
 
+   private:
+      arr_list<list<entry>> _buckets;
+      it _end;
+      uint _hashMask;
+      uint _size;
+      float _maxLoadFactor;
+
+      Hash _hash;
+      KeyEq _eq;
+
+      void __rehashImpl(uint count);
+
+   public:
       set(uint bucketCount = DEFAULT_HASH_TABLE_BUCKET_COUNT, Hash hash = {}, KeyEq keyEq = {});
+      set(const set& other);
 
       uint size() const { return _size; }
       it begin() { return _size ? it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
       const_it begin() const { return _size ? const_it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
-      it end() { return _size ? it::make_end(_buckets.end() - 1) : it{_buckets.end(), typename list<entry>::it()}; }
-      const_it end() const { return _size ? const_it::make_end(_buckets.end() - 1) : const_it{_buckets.end(), typename list<entry>::const_it()}; }
+      it end() { return _end; }
+      const_it end() { return _end; }
 
       bool insert(const T& obj);
       bool insert(const arr_span<T&> objs);
@@ -170,12 +173,13 @@ class mcsl::set {
 #define tplt(ret_t) template<typename T, mcsl::hash_t<T> Hash, mcsl::cmp_t<T> KeyEq> ret_t mcsl::set<T, Hash, KeyEq>
 
 tplt()::set(uint bucketCount, Hash hash, KeyEq keyEq):
-_buckets(),_size(0),_maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR),_hash(hash),_eq(keyEq) {
-   bucketCount = std::bit_ceil(bucketCount);
+_buckets(),_end(),_size(0),_maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR),_hash(hash),_eq(keyEq) {
+   bucketCount = bucketCount ? std::bit_ceil(bucketCount) : DEFAULT_HASH_TABLE_BUCKET_COUNT;
    _hashMask = bucketCount - 1;
    while (_buckets.size() < bucketCount) {
       _buckets.emplace_back();
    }
+   _end = it::make_end(_buckets.end() - 1);
 }
 
 //returns whether an element was inserted
@@ -358,7 +362,8 @@ tplt(void)::__rehashImpl(uint count) {
             newBucket.splice(newBucket.end(), bucket, it);
          }
       }
-   };
+   }
+   _end = it::make_end(_buckets.end() - 1);
 }
 
 

@@ -22,16 +22,6 @@ class mcsl::map {
          const key_t& key() const { return entryPair.first; };
          const val_t& val() const { return entryPair.second; };
       };
-
-      arr_list<list<entry>> _buckets;
-      uint _hashMask;
-      uint _size;
-      float _maxLoadFactor;
-
-      Hash _hash;
-      KeyEq _eq;
-
-      void __rehashImpl(uint count);
    public:
        struct it {
          private:
@@ -40,10 +30,10 @@ class mcsl::map {
 
          public:
             friend class map;
+            it():_buckIt{},_entryIt{} {}
             it(arr_list<list<entry>>::it buckIt, list<entry>::it entryIt):_buckIt{buckIt},_entryIt{entryIt} {}
             static it make_begin(arr_list<list<entry>>::it buckIt) { return {buckIt,buckIt->begin()}; }
             static it make_end(arr_list<list<entry>>::it buckIt) { return {buckIt,buckIt->end()}; }
-            it(const it& other):_buckIt{other._buckIt},_entryIt{other._entryIt} {}
             operator bool() const { return _buckIt && _entryIt; }
 
             pair<key_t, val_t>& operator*() const { assume(_buckIt && _entryIt); return _entryIt->entryPair; }
@@ -90,10 +80,11 @@ class mcsl::map {
 
          public:
             friend class map;
+            const_it():_buckIt{},_entryIt{} {}
             const_it(arr_list<list<entry>>::const_it buckIt, list<entry>::const_it entryIt):_buckIt{buckIt},_entryIt{entryIt} {}
             static const_it make_begin(arr_list<list<entry>>::const_it buckIt) { return {buckIt,buckIt->begin()}; }
             static const_it make_end(arr_list<list<entry>>::const_it buckIt) { return {buckIt,buckIt->end()}; }
-            const_it(const const_it& other):_buckIt{other._buckIt},_entryIt{other._entryIt} {}
+            const_it(const it& other):_buckIt{other._buckIt},_entryIt{other._entryIt} {}
             operator bool() const { return _buckIt && _entryIt; }
 
             const pair<key_t, val_t>& operator*() const { assume(_buckIt && _entryIt); return _entryIt->entryPair; }
@@ -133,13 +124,27 @@ class mcsl::map {
             const_it operator+(slong n) const { return const_it{self} += n; }
             const_it operator-(slong n) const { return const_it{self} -= n; }
       };
+   private:
+      arr_list<list<entry>> _buckets;
+      it _end;
+      uint _hashMask;
+      uint _size;
+      float _maxLoadFactor;
+
+      Hash _hash;
+      KeyEq _eq;
+
+      void __rehashImpl(uint count);
+
+   public:
       map(uint bucketCount = DEFAULT_HASH_TABLE_BUCKET_COUNT, Hash hash = {}, KeyEq keyEq = {});
+      map(const map& other);
 
       uint size() const { return _size; }
       it begin() { return _size ? it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
       const_it begin() const { return _size ? const_it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
-      it end() { return _size ? it::make_end(_buckets.end() - 1) : it{_buckets.end(), typename list<entry>::it()}; }
-      const_it end() const { return _size ? const_it::make_end(_buckets.end() - 1) : const_it{_buckets.end(), typename list<entry>::const_it()}; }
+      it end() { return _end; }
+      const_it end() const { return _end; }
 
       bool insert(const key_t& key, const val_t& val);
       template<typename... key_argv_t, typename... val_argv_t> bool emplace(tuple<key_argv_t...> keyArgs, tuple<val_argv_t...> valArgs) requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...>;
@@ -180,12 +185,13 @@ class mcsl::map {
 #define tplt(ret_t) template<typename key_t, typename val_t, mcsl::hash_t<key_t> Hash, mcsl::cmp_t<key_t> KeyEq> ret_t mcsl::map<key_t, val_t, Hash, KeyEq>
 
 tplt()::map(uint bucketCount, Hash hash, KeyEq keyEq):
-_buckets(),_size(0),_maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR),_hash(hash),_eq(keyEq) {
-   bucketCount = std::bit_ceil(bucketCount);
+_buckets(),_end(),_size(0),_maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR),_hash(hash),_eq(keyEq) {
+   bucketCount = bucketCount ? std::bit_ceil(bucketCount) : DEFAULT_HASH_TABLE_BUCKET_COUNT;
    _hashMask = bucketCount - 1;
    while (_buckets.size() < bucketCount) {
       _buckets.emplace_back();
    }
+   _end = it::make_end(_buckets.end() - 1);
 }
 
 tplt(bool)::insert(const key_t& key, const val_t& val) {
@@ -339,7 +345,7 @@ tplt(val_t&)::operator[](const key_t& key) {
 }
 tplt(const val_t&)::operator[](const key_t& key) const {
    ulong hash = _hash(key);
-   list<entry>& bucket = _buckets[hash & _hashMask];
+   const list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
       if (it->hash == hash && _eq(it->key(), key)) { //obj is already in the set
          return it->val();
@@ -498,7 +504,8 @@ tplt(void)::__rehashImpl(uint count) {
             newBucket.splice(newBucket.end(), bucket, it);
          }
       }
-   };
+   }
+   _end = it::make_end(_buckets.end() - 1);
 }
 
 
