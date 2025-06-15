@@ -24,6 +24,7 @@ public:
 
          public:
             friend class set;
+            it():_buckIt(),_entryIt() {}
             it(arr_list<list<entry>>::it buckIt, list<entry>::it entryIt):_buckIt{buckIt},_entryIt{entryIt} {}
             static it make_begin(arr_list<list<entry>>::it buckIt) { return {buckIt,buckIt->begin()}; }
             static it make_end(arr_list<list<entry>>::it buckIt) { return {buckIt,buckIt->end()}; }
@@ -50,8 +51,8 @@ public:
                return self;
             }
             it& operator--(int) { it tmp = self; --self; return tmp; }
-            it next() const { return ++it{tmp};}
-            it prev() const { return --it{tmp};}
+            it next() const { return ++it{self};}
+            it prev() const { return --it{self};}
 
             it& operator+=(slong n) {
                if (n > 0) {
@@ -73,6 +74,7 @@ public:
 
          public:
             friend class set;
+            const_it():_buckIt(),_entryIt() {}
             const_it(arr_list<list<entry>>::const_it buckIt, list<entry>::const_it entryIt):_buckIt{buckIt},_entryIt{entryIt} {}
             static const_it make_begin(arr_list<list<entry>>::const_it buckIt) { return {buckIt,buckIt->begin()}; }
             static const_it make_end(arr_list<list<entry>>::const_it buckIt) { return {buckIt,buckIt->end()}; }
@@ -100,8 +102,8 @@ public:
                return self;
             }
             const_it& operator--(int) { const_it tmp = self; --self; return tmp; }
-            const_it next() const { return ++const_it{tmp};}
-            const_it prev() const { return --const_it{tmp};}
+            const_it next() const { return ++const_it{self};}
+            const_it prev() const { return --const_it{self};}
 
             const_it& operator+=(slong n) {
                if (n > 0) {
@@ -137,7 +139,7 @@ public:
       it begin() { return _size ? it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
       const_it begin() const { return _size ? const_it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
       it end() { return _end; }
-      const_it end() { return _end; }
+      const_it end() const { return _end; }
 
       bool insert(const T& obj);
       bool insert(const arr_span<T&> objs);
@@ -145,7 +147,7 @@ public:
       bool remove(const T& obj);
       bool remove(const arr_span<T&> obj);
       
-      bool insert(const hash_compat_t<T, Hash, KeyEq> auto& obj) requires valid_ctor<T, other_t> { return emplace(obj); }
+      bool insert(const hash_compat_t<T, Hash, KeyEq> auto& obj) requires valid_ctor<T, decltype(obj)> { return emplace(obj); }
       bool insert(const hash_compat_span_t<T, Hash, KeyEq> auto objs) requires valid_ctor<T, decltype(objs[0])>;
       bool remove(const hash_compat_t<T, Hash, KeyEq> auto& obj);
       bool remove(const hash_compat_span_t<T, Hash, KeyEq> auto objs);
@@ -187,7 +189,7 @@ tplt(bool)::insert(const T& obj) {
    ulong hash = _hash(obj);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _cmp(it->val, obj)) { //obj is already in the set
+      if (it->hash == hash && _eq(it->val, obj)) { //obj is already in the set
          return false;
       }
    }
@@ -225,7 +227,7 @@ tplt(bool)::emplace(auto... argv) requires valid_ctor<T, decltype(argv)...> {
    entryptr->hash = hash;
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _cmp(it->val, obj)) { //obj is already in the set
+      if (it->hash == hash && _eq(it->val, obj)) { //obj is already in the set
          std::destroy_at(&obj);
          mcsl::free(entryptr);
          return false;
@@ -244,7 +246,7 @@ tplt(bool)::remove(const T& obj) {
    ulong hash = _hash(obj);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _cmp(*it, obj)) { //obj is in the set
+      if (it->hash == hash && _eq(*it, obj)) { //obj is in the set
          bucket.erase(it);
          --_size;
          return true;
@@ -266,7 +268,7 @@ tplt(bool)::remove(const hash_compat_t<T, Hash, KeyEq> auto& obj) {
    ulong hash = _hash(obj);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _cmp(*it, obj)) { //obj is in the set
+      if (it->hash == hash && _eq(*it, obj)) { //obj is in the set
          bucket.erase(it);
          --_size;
          return true;
@@ -288,7 +290,7 @@ tplt(T*)::find(const T& obj) {
    ulong hash = _hash(obj);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _cmp(*it, obj)) { //obj is in the set
+      if (it->hash == hash && _eq(*it, obj)) { //obj is in the set
          return &(it->val);
       }
    }
@@ -299,7 +301,7 @@ tplt(const T*)::find(const T& obj) const {
    ulong hash = _hash(obj);
    const list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _cmp(it->val, obj)) { //obj is in the set
+      if (it->hash == hash && _eq(it->val, obj)) { //obj is in the set
          return &(it->val);
       }
    }
@@ -311,7 +313,7 @@ tplt(T*)::find(const hash_compat_t<T, Hash, KeyEq> auto& obj) {
    ulong hash = _hash(obj);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _cmp(*it, obj)) { //obj is in the set
+      if (it->hash == hash && _eq(*it, obj)) { //obj is in the set
          return &(it->val);
       }
    }
@@ -322,7 +324,7 @@ tplt(const T*)::find(const hash_compat_t<T, Hash, KeyEq> auto& obj) const {
    ulong hash = _hash(obj);
    const list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _cmp(it->val, obj)) { //obj is in the set
+      if (it->hash == hash && _eq(it->val, obj)) { //obj is in the set
          return &(it->val);
       }
    }
