@@ -362,9 +362,10 @@ template<typename T> mcsl::list<T>& mcsl::list<T>::unique() {
 }
 
 template<typename T> void mcsl::list<T>::splice(it pos, list& other) {
+   if (pos == begin()) { _begin = other._begin; }
    node* prev = pos.ptr->prev;
-   __APPEND(prev, other._begin);
-   __APPEND(other._end->prev, pos.ptr);
+   __SAFE_APPEND(prev, other._begin);
+   __SAFE_APPEND(other._end->prev, pos.ptr);
    _size += other._size;
 
    other._end->prev = nullptr;
@@ -372,9 +373,10 @@ template<typename T> void mcsl::list<T>::splice(it pos, list& other) {
    other._size = 0;
 }
 template<typename T> void mcsl::list<T>::splice(it pos, list&& other) {
+   if (pos == begin()) { _begin = other._begin; }
    node* prev = pos.ptr->prev;
-   __APPEND(prev, other._begin);
-   __APPEND(other._end->prev, pos.ptr);
+   __SAFE_APPEND(prev, other._begin);
+   __SAFE_APPEND(other._end->prev, pos.ptr);
    _size += other._size;
    
    it{other._end}.free();
@@ -401,12 +403,20 @@ template<typename T> void mcsl::list<T>::splice(it pos, list& other, it otherPos
    --other._size;
 }
 template<typename T> void mcsl::list<T>::splice(it pos, list& other, it begin, it end) {
+   if (begin == end) { return; }
+   assume(begin != other.end());
+   if (begin == other.begin()) {
+      other._begin = begin.ptr->next;
+   }
+   if (pos == begin()) {
+      _begin = begin.ptr;
+   }
    node* prev = pos.ptr->prev;
    node* tmp = begin.ptr->prev;
 
-   __APPEND(prev, begin.ptr);
-   __APPEND(end.ptr->prev, pos.ptr);
-   __APPEND(tmp, end.ptr);
+   __SAFE_APPEND(prev, begin.ptr);
+   __SAFE_APPEND(end.ptr->prev, pos.ptr);
+   __SAFE_APPEND(tmp, end.ptr);
 
    for (it i = begin; i != end; ++i) {
       ++_size;
