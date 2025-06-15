@@ -175,7 +175,8 @@ template<typename T> class mcsl::list {
 
 
 #pragma region inlinesrc
-#define __APPEND(first, second) first->next = second; second->prev = first
+#define __APPEND(first, second) debug_assert(first); first->next = second; second->prev = first
+#define __SAFE_APPEND(first, second) if (first) { first->next = second; } second->prev = first
 
 template<typename T> mcsl::list<T>::list():
    _end(node::make()),
@@ -382,11 +383,18 @@ template<typename T> void mcsl::list<T>::splice(it pos, list&& other) {
    other._size = 0;
 }
 template<typename T> void mcsl::list<T>::splice(it pos, list& other, it otherPos) {
+   assume(otherPos != other.end());
+   if (otherPos == other.begin()) {
+      other._begin = otherPos.ptr->next;
+   }
+   if (pos == begin()) {
+      _begin = otherPos.ptr;
+   }
    node* prev = pos.ptr->prev;
    node* tmp = otherPos.ptr->prev;
 
-   __APPEND(prev, otherPos.ptr);
-   __APPEND(tmp, otherPos.ptr->next);
+   __SAFE_APPEND(prev, otherPos.ptr);
+   __SAFE_APPEND(tmp, otherPos.ptr->next);
    __APPEND(otherPos.ptr, pos.ptr);
    
    ++_size;
