@@ -28,7 +28,7 @@ template<typename T, uint _bufCapacity = mcsl::DEFAULT_ARR_LIST_BUF_SIZE> class 
       arr_list(const view data);
       arr_list(castable_to<T> auto&&... initList);
 
-      ~arr_list() { for (uint i = 0; i < _size; ++i) { std::destroy_at(&self[i]); } free(); }
+      ~arr_list();
       void free() const;
 
       operator span() { return span{self, 0, size()}; }
@@ -81,12 +81,17 @@ template<typename T, uint _bufCapacity> mcsl::arr_list<T,_bufCapacity>::arr_list
    }
 }
 
-template<typename T, uint _bufCapacity> void mcsl::arr_list<T,_bufCapacity>::free() const {
+template<typename T, uint _bufCapacity> mcsl::arr_list<T,_bufCapacity>::~arr_list() {
    for (uint i = 0; i < _buf.size(); ++i) {
       std::destroy_n(_buf[i], _bufCapacity);
       mcsl::free(_buf[i]);
    }
+   free();
+}
+
+template<typename T, uint _bufCapacity> void mcsl::arr_list<T,_bufCapacity>::free() const {
    _buf.free();
+   const_cast<uint&>(_size) = 0;
 }
 
 template<typename T, uint _bufCapacity> T* mcsl::arr_list<T,_bufCapacity>::push_back(T&& obj) {
