@@ -16,7 +16,7 @@ class mcsl::set {
          T val;
          ulong hash;
       };
-public:
+   public:
       struct it {
          private:
             arr_list<list<entry>>::it _buckIt;
@@ -133,7 +133,10 @@ public:
 
    public:
       set(uint bucketCount = DEFAULT_HASH_TABLE_BUCKET_COUNT, Hash hash = {}, KeyEq keyEq = {});
-      set(const set& other);
+      set(const set&);
+      set(set&&);
+
+      void release();
 
       uint size() const { return _size; }
       it begin() { return _size ? it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
@@ -182,6 +185,33 @@ _buckets(),_end(),_size(0),_maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR),_hash(
       _buckets.emplace_back();
    }
    _end = it::make_end(_buckets.end() - 1);
+}
+tplt()::set(const set& other):
+   _buckets(other._buckets),
+   _end(it::make_end(_buckets.end() - 1)),
+   _hashMask(other._hashMask),
+   _size(other._size),
+   _maxLoadFactor(other._maxLoadFactor),
+   _hash(other._hash),
+   _eq(other._eq) {
+
+}
+tplt()::set(set&& other):
+   _buckets(std::move(other._buckets)),
+   _end(other._end),
+   _hashMask(other._hashMask),
+   _size(other._size),
+   _maxLoadFactor(other._maxLoadFactor),
+   _hash(other._hash),
+   _eq(other._eq) {
+      if (this != &other) {
+         other.release();
+      }
+      debug_assert(_end == it::make_end(_buckets.end() - 1));
+}
+
+tplt(void)::release() {
+   _buckets.release();
 }
 
 //returns whether an element was inserted
