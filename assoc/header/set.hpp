@@ -136,6 +136,9 @@ class mcsl::set {
       set(const set&);
       set(set&&);
 
+      set& operator=(const set& other) { return *new (this) set(other); }
+      set& operator=(set&& other) { return *new (this) set(std::forward(other)); }
+
       void release();
 
       uint size() const { return _size; }
