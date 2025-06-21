@@ -159,7 +159,8 @@ class mcsl::map {
       val_t& operator[](const key_t& key);
       const val_t& operator[](const key_t& key) const;
       bool remove(const key_t& key);
-      bool remove(const arr_span<key_t&> key);
+      bool remove(const arr_span<key_t> key);
+      bool remove(const arr_span<key_t*> key);
 
       bool insert(const hash_compat_t<key_t, Hash, KeyEq> auto& key, const val_t& val) requires valid_ctor<key_t, decltype(key)>;
       bool insert_or_assign(const hash_compat_t<key_t, Hash, KeyEq> auto& key, const val_t& val) requires valid_ctor<key_t, decltype(key)>;
@@ -167,6 +168,7 @@ class mcsl::map {
       const val_t& operator[](const hash_compat_t<key_t, Hash, KeyEq> auto& key) const requires valid_ctor<key_t, decltype(key)>;
       bool remove(const hash_compat_t<key_t, Hash, KeyEq> auto& obj);
       bool remove(const hash_compat_span_t<key_t, Hash, KeyEq> auto objs);
+      bool remove(const hash_compat_span_t<key_t*, Hash, KeyEq> auto objs);
 
       val_t* find(const key_t& key);
       const val_t* find(const key_t& key) const;
@@ -430,10 +432,17 @@ tplt(bool)::remove(const key_t& key) {
    return false;
 }
 //returns whether an element was removed
-tplt(bool)::remove(const arr_span<key_t&> keys) {
+tplt(bool)::remove(const arr_span<key_t> keys) {
    bool didRemove = false;
    for (const key_t& key : keys) {
       didRemove |= remove(key);
+   }
+   return didRemove;
+}
+tplt(bool)::remove(const arr_span<key_t*> keys) {
+   bool didRemove = false;
+   for (const key_t* keyptr : keys) {
+      didRemove |= remove(*keyptr);
    }
    return didRemove;
 }
@@ -456,6 +465,13 @@ tplt(bool)::remove(const hash_compat_span_t<key_t, Hash, KeyEq> auto keys) {
    bool didRemove = false;
    for (const key_t& key : keys) {
       didRemove |= remove(key);
+   }
+   return didRemove;
+}
+tplt(bool)::remove(const hash_compat_span_t<key_t*, Hash, KeyEq> auto keys) {
+   bool didRemove = false;
+   for (const key_t* keyptr : keys) {
+      didRemove |= remove(*keyptr);
    }
    return didRemove;
 }

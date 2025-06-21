@@ -148,15 +148,19 @@ class mcsl::set {
       const_it end() const { return _end; }
 
       bool insert(const T& obj);
-      bool insert(const arr_span<T&> objs);
+      bool insert(const arr_span<T> objs);
+      bool insert(const arr_span<T*> objs);
       bool emplace(auto... argv) requires valid_ctor<T, decltype(argv)...>;
       bool remove(const T& obj);
-      bool remove(const arr_span<T&> obj);
+      bool remove(const arr_span<T> obj);
+      bool remove(const arr_span<T*> obj);
       
       bool insert(const hash_compat_t<T, Hash, KeyEq> auto& obj) requires valid_ctor<T, decltype(obj)> { return emplace(obj); }
       bool insert(const hash_compat_span_t<T, Hash, KeyEq> auto objs) requires valid_ctor<T, decltype(objs[0])>;
+      bool insert(const hash_compat_span_t<T*, Hash, KeyEq> auto objs) requires valid_ctor<T, decltype(*objs[0])>;
       bool remove(const hash_compat_t<T, Hash, KeyEq> auto& obj);
       bool remove(const hash_compat_span_t<T, Hash, KeyEq> auto objs);
+      bool remove(const hash_compat_span_t<T*, Hash, KeyEq> auto objs);
 
       T* find(const T& obj);
       const T* find(const T& obj) const;
@@ -234,11 +238,19 @@ tplt(bool)::insert(const T& obj) {
    return true;
 }
 //returns whether an element was inserted
-tplt(bool)::insert(const arr_span<T&> objs) {
+tplt(bool)::insert(const arr_span<T> objs) {
    reserve(_size + objs.size());
    bool didInsert = false;
    for (const T& obj : objs) {
       didInsert |= insert(obj);
+   }
+   return didInsert;
+}
+tplt(bool)::insert(const arr_span<T*> objs) {
+   reserve(_size + objs.size());
+   bool didInsert = false;
+   for (const T* objptr : objs) {
+      didInsert |= insert(*objptr);
    }
    return didInsert;
 }
@@ -248,6 +260,14 @@ tplt(bool)::insert(const hash_compat_span_t<T, Hash, KeyEq> auto objs) requires 
    bool didInsert = false;
    for (const auto& obj : objs) {
       didInsert |= insert(obj);
+   }
+   return didInsert;
+}
+tplt(bool)::insert(const hash_compat_span_t<T*, Hash, KeyEq> auto objs) requires valid_ctor<T, decltype(*objs[0])> {
+   reserve(_size + objs.size());
+   bool didInsert = false;
+   for (const auto* objptr : objs) {
+      didInsert |= insert(*objptr);
    }
    return didInsert;
 }
@@ -289,10 +309,17 @@ tplt(bool)::remove(const T& obj) {
    return false;
 }
 //returns whether an element was removed
-tplt(bool)::remove(const arr_span<T&> objs) {
+tplt(bool)::remove(const arr_span<T> objs) {
    bool didRemove = false;
    for (const T& obj : objs) {
       didRemove |= remove(obj);
+   }
+   return didRemove;
+}
+tplt(bool)::remove(const arr_span<T*> objs) {
+   bool didRemove = false;
+   for (const T* objptr : objs) {
+      didRemove |= remove(*objptr);
    }
    return didRemove;
 }
@@ -315,6 +342,13 @@ tplt(bool)::remove(const hash_compat_span_t<T, Hash, KeyEq> auto objs) {
    bool didRemove = false;
    for (const auto& obj : objs) {
       didRemove |= remove(obj);
+   }
+   return didRemove;
+}
+tplt(bool)::remove(const hash_compat_span_t<T*, Hash, KeyEq> auto objs) {
+   bool didRemove = false;
+   for (const auto* objptr : objs) {
+      didRemove |= remove(*objptr);
    }
    return didRemove;
 }
