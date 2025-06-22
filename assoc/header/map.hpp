@@ -142,7 +142,7 @@ class mcsl::map {
       map(map&&);
 
       map& operator=(const map& other) { return *new (this) map(other); }
-      map& operator=(map&& other) { return *new (this) map(std::forward(other)); }
+      map& operator=(map&& other) { return *new (this) map(std::forward<map&&>(other)); }
 
       void release();
 

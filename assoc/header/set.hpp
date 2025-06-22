@@ -137,7 +137,7 @@ class mcsl::set {
       set(set&&);
 
       set& operator=(const set& other) { return *new (this) set(other); }
-      set& operator=(set&& other) { return *new (this) set(std::forward(other)); }
+      set& operator=(set&& other) { return *new (this) set(std::forward<set&&>(other)); }
 
       void release();
 
