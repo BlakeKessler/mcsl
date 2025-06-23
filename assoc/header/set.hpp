@@ -424,12 +424,14 @@ tplt(void)::__rehashImpl(uint count) {
    //rehash
    while (i--) {
       mcsl::list<entry>& bucket = _buckets[i];
-      for (auto it = bucket.begin(); it != bucket.end(); ++it) { //check hash for each node
+      for (auto it = bucket.begin(); it != bucket.end();) { //check hash for each node
          uint newHash = it->hash & _hashMask;
+         auto tmp = it.next();
          if (newHash != i) { //move node if necessary
             auto& newBucket = _buckets[newHash];
             newBucket.splice(newBucket.end(), bucket, it);
          }
+         it = tmp;
       }
    }
    _end = it::make_end(_buckets.end() - 1);
