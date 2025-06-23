@@ -121,7 +121,7 @@ class mcsl::set {
 
    private:
       arr_list<list<entry>> _buckets;
-      it _end;
+      // it _end;
       uint _hashMask;
       uint _size;
       float _maxLoadFactor;
@@ -144,8 +144,8 @@ class mcsl::set {
       uint size() const { return _size; }
       it begin() { return _size ? it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
       const_it begin() const { return _size ? const_it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
-      it end() { return _end; }
-      const_it end() const { return _end; }
+      it end() { return it::make_end(_buckets.end() - 1); }
+      const_it end() const { return const_it::make_end(_buckets.end() - 1); }
 
       bool insert(const T& obj);
       bool insert(const arr_span<T> objs);
@@ -185,17 +185,15 @@ class mcsl::set {
 #define tplt(ret_t) template<typename T, mcsl::hash_t<T> Hash, mcsl::cmp_t<T> KeyEq> ret_t mcsl::set<T, Hash, KeyEq>
 
 tplt()::set(uint bucketCount, Hash hash, KeyEq keyEq):
-_buckets(),_end(),_size(0),_maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR),_hash(hash),_eq(keyEq) {
+_buckets(),_size(0),_maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR),_hash(hash),_eq(keyEq) {
    bucketCount = bucketCount ? std::bit_ceil(bucketCount) : DEFAULT_HASH_TABLE_BUCKET_COUNT;
    _hashMask = bucketCount - 1;
    while (_buckets.size() < bucketCount) {
       _buckets.emplace_back();
    }
-   _end = it::make_end(_buckets.end() - 1);
 }
 tplt()::set(const set& other):
    _buckets(other._buckets),
-   _end(it::make_end(_buckets.end() - 1)),
    _hashMask(other._hashMask),
    _size(other._size),
    _maxLoadFactor(other._maxLoadFactor),
@@ -205,7 +203,6 @@ tplt()::set(const set& other):
 }
 tplt()::set(set&& other):
    _buckets(std::move(other._buckets)),
-   _end(other._end),
    _hashMask(other._hashMask),
    _size(other._size),
    _maxLoadFactor(other._maxLoadFactor),
@@ -214,7 +211,6 @@ tplt()::set(set&& other):
       if (this != &other) {
          other.release();
       }
-      debug_assert(_end == it::make_end(_buckets.end() - 1));
 }
 
 tplt(void)::release() {
@@ -434,7 +430,6 @@ tplt(void)::__rehashImpl(uint count) {
          it = tmp;
       }
    }
-   _end = it::make_end(_buckets.end() - 1);
 }
 
 

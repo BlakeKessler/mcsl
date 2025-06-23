@@ -126,7 +126,7 @@ class mcsl::map {
       };
    private:
       arr_list<list<entry>> _buckets;
-      it _end;
+      // it _end;
       uint _hashMask;
       uint _size;
       float _maxLoadFactor;
@@ -149,8 +149,8 @@ class mcsl::map {
       uint size() const { return _size; }
       it begin() { return _size ? it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
       const_it begin() const { return _size ? const_it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
-      it end() { return _end; }
-      const_it end() const { return _end; }
+      it end() { return it::make_end(_buckets.end() - 1); }
+      const_it end() const { return const_it::make_end(_buckets.end() - 1); }
 
       bool insert(const key_t& key, const val_t& val);
       template<typename... key_argv_t, typename... val_argv_t> bool emplace(tuple<key_argv_t...> keyArgs, tuple<val_argv_t...> valArgs) requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...>;
@@ -193,17 +193,15 @@ class mcsl::map {
 #define tplt(ret_t) template<typename key_t, typename val_t, mcsl::hash_t<key_t> Hash, mcsl::cmp_t<key_t> KeyEq> ret_t mcsl::map<key_t, val_t, Hash, KeyEq>
 
 tplt()::map(uint bucketCount, Hash hash, KeyEq keyEq):
-_buckets(),_end(),_size(0),_maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR),_hash(hash),_eq(keyEq) {
+_buckets(),_size(0),_maxLoadFactor(DEFAULT_HASH_TABLE_LOAD_FACTOR),_hash(hash),_eq(keyEq) {
    bucketCount = bucketCount ? std::bit_ceil(bucketCount) : DEFAULT_HASH_TABLE_BUCKET_COUNT;
    _hashMask = bucketCount - 1;
    while (_buckets.size() < bucketCount) {
       _buckets.emplace_back();
    }
-   _end = it::make_end(_buckets.end() - 1);
 }
 tplt()::map(const map& other):
    _buckets(other._buckets),
-   _end(it::make_end(_buckets.end() - 1)),
    _hashMask(other._hashMask),
    _size(other._size),
    _maxLoadFactor(other._maxLoadFactor),
@@ -213,7 +211,6 @@ tplt()::map(const map& other):
 }
 tplt()::map(map&& other):
    _buckets(std::move(other._buckets)),
-   _end(other._end),
    _hashMask(other._hashMask),
    _size(other._size),
    _maxLoadFactor(other._maxLoadFactor),
@@ -222,7 +219,6 @@ tplt()::map(map&& other):
       if (this != &other) {
          other.release();
       }
-      debug_assert(_end == it::make_end(_buckets.end() - 1));
 }
 
 tplt(void)::release() {
@@ -556,7 +552,6 @@ tplt(void)::__rehashImpl(uint count) {
          it = tmp;
       }
    }
-   _end = it::make_end(_buckets.end() - 1);
 }
 
 
