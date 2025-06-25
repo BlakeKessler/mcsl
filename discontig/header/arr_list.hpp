@@ -145,13 +145,17 @@ template<typename T, uint _bufCapacity> struct mcsl::it<T, mcsl::arr_list<T,_buf
 
       using span = buf_t::span;
       using view = buf_t::view;
+
+      friend struct it<T, mcsl::arr_list<const T,_bufCapacity>>;
+      friend class arr_list<T,_bufCapacity>;
+      friend class arr_list<const T,_bufCapacity>;
    private:
       buf_t* _buf;
       uint _index;
    public:
       it():_buf{},_index{} {}
       it(buf_t& buf, uint index = 0):_buf{&buf},_index{index} {}
-      operator bool() const { return _buf; }
+      operator bool() const { return _buf && _index < _buf->size(); }
 
       it& operator++()    { ++_index; return self; }
       it  operator++(int) { it tmp = self; ++self; return tmp; }
@@ -188,13 +192,17 @@ template<typename T, uint _bufCapacity> struct mcsl::it<const T, const mcsl::arr
 
       using span = buf_t::span;
       using view = buf_t::view;
+
+      friend struct it<T, mcsl::arr_list<T,_bufCapacity>>;
+      friend class arr_list<T,_bufCapacity>;
+      friend class arr_list<const T,_bufCapacity>;
    private:
       const buf_t* _buf;
       uint _index;
    public:
       it():_buf{},_index{} {}
       it(const buf_t& buf, uint index = 0):_buf{&buf},_index{index} {}
-      operator bool() const { return _buf; }
+      operator bool() const { return _buf && _index < _buf->size(); }
 
       const_it& operator++()    { ++_index; return self; }
       const_it  operator++(int) { const_it tmp = self; ++self; return tmp; }
@@ -227,6 +235,8 @@ template<typename T, uint _bufCapacity> struct mcsl::span<T, mcsl::arr_list<T,_b
       using it = buf_t::it;
       using const_it = buf_t::const_it;
       using view = buf_t::view;
+
+      friend class arr_list<T,_bufCapacity>;
    private:
       buf_t& _buf;
       uint _begin;
@@ -261,6 +271,8 @@ template<typename T, uint _bufCapacity> struct mcsl::span<const T, const mcsl::a
       using it = buf_t::it;
       using const_it = buf_t::const_it;
       using view = buf_t::view;
+
+      friend class arr_list<T,_bufCapacity>;
    private:
       buf_t& _buf;
       uint _begin;

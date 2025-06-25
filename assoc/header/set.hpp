@@ -26,8 +26,7 @@ class mcsl::set {
             friend class set;
             it():_buckIt(),_entryIt() {}
             it(arr_list<list<entry>>::it buckIt, list<entry>::it entryIt):_buckIt{buckIt},_entryIt{entryIt} {}
-            static it make_begin(arr_list<list<entry>>::it buckIt) { return {buckIt,buckIt->begin()}; }
-            static it make_end(arr_list<list<entry>>::it buckIt) { return {buckIt,buckIt->end()}; }
+            it(arr_list<list<entry>>::it buckIt):_buckIt{buckIt},_entryIt{buckIt->begin()} {}
             operator bool() const { return _buckIt && _entryIt; }
 
             T& operator*() const { assume(_buckIt && _entryIt); return _entryIt->val; }
@@ -35,18 +34,22 @@ class mcsl::set {
 
             it& operator++() {
                ++_entryIt;
-               while (_entryIt == _buckIt->end()) {
-                  ++_buckIt;
-                  _entryIt = _buckIt ? _buckIt->begin() : typename list<entry>::it();
+               if (_entryIt == _buckIt->end()) {
+                  do {
+                     ++_buckIt;
+                  } while (_buckIt && !_buckIt->size());
+                  _entryIt = _buckIt ? _buckIt->begin() : typename list<entry>::it{};
                }
                return self;
             }
             it& operator++(int) { it tmp = self; ++self; return tmp; }
             it& operator--() {
                --_entryIt;
-               while (!_entryIt) {
-                  --_buckIt;
-                  _entryIt = _buckIt ? _buckIt->end() - 1 : typename list<entry>::it();
+               if (!_entryIt) {
+                  do {
+                     --_buckIt;
+                  } while (!_buckIt->size());
+                  _entryIt = _buckIt->end();
                }
                return self;
             }
@@ -66,6 +69,10 @@ class mcsl::set {
             it& operator-=(slong n) { return self += (-n); }
             it operator+(slong n) const { return it{self} += n; }
             it operator-(slong n) const { return it{self} -= n; }
+            
+            bool operator==(const it& other) const {
+               return _buckIt == other._buckIt && _entryIt == other._entryIt;
+            }
       };
       struct const_it {
          private:
@@ -76,8 +83,7 @@ class mcsl::set {
             friend class set;
             const_it():_buckIt(),_entryIt() {}
             const_it(arr_list<list<entry>>::const_it buckIt, list<entry>::const_it entryIt):_buckIt{buckIt},_entryIt{entryIt} {}
-            static const_it make_begin(arr_list<list<entry>>::const_it buckIt) { return {buckIt,buckIt->begin()}; }
-            static const_it make_end(arr_list<list<entry>>::const_it buckIt) { return {buckIt,buckIt->end()}; }
+            const_it(arr_list<list<entry>>::const_it buckIt):_buckIt{buckIt},_entryIt{buckIt->begin()} {}
             const_it(const it& other):_buckIt{other._buckIt},_entryIt{other._entryIt} {}
             operator bool() const { return _buckIt && _entryIt; }
 
@@ -86,18 +92,22 @@ class mcsl::set {
 
             const_it& operator++() {
                ++_entryIt;
-               while (_entryIt == _buckIt->end()) {
-                  ++_buckIt;
-                  _entryIt = _buckIt ? _buckIt->begin() : typename list<entry>::const_it();
+               if (_entryIt == _buckIt->end()) {
+                  do {
+                     ++_buckIt;
+                  } while (_buckIt && !_buckIt->size());
+                  _entryIt = _buckIt ? _buckIt->begin() : typename list<entry>::it{};
                }
                return self;
             }
             const_it& operator++(int) { const_it tmp = self; ++self; return tmp; }
             const_it& operator--() {
                --_entryIt;
-               while (!_entryIt) {
-                  --_buckIt;
-                  _entryIt = _buckIt ? _buckIt->end() - 1 : typename list<entry>::const_it();
+               if (!_entryIt) {
+                  do {
+                     --_buckIt;
+                  } while (!_buckIt->size());
+                  _entryIt = _buckIt->end();
                }
                return self;
             }
@@ -117,6 +127,10 @@ class mcsl::set {
             const_it& operator-=(slong n) { return self += (-n); }
             const_it operator+(slong n) const { return const_it{self} += n; }
             const_it operator-(slong n) const { return const_it{self} -= n; }
+
+            bool operator==(const const_it& other) const {
+               return _buckIt == other._buckIt && _entryIt == other._entryIt;
+            }
       };
 
    private:
@@ -142,10 +156,10 @@ class mcsl::set {
       void release();
 
       uint size() const { return _size; }
-      it begin() { return _size ? it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
-      const_it begin() const { return _size ? const_it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
-      it end() { return it::make_end(_buckets.end() - 1); }
-      const_it end() const { return const_it::make_end(_buckets.end() - 1); }
+      it begin() { return _size ? it([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
+      const_it begin() const { return _size ? const_it([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
+      it end() { return it(_buckets.end(), {}); }
+      const_it end() const { return const_it(_buckets.end(), {}); }
 
       bool insert(const T& obj);
       bool insert(const arr_span<T> objs);

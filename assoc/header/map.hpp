@@ -32,8 +32,7 @@ class mcsl::map {
             friend class map;
             it():_buckIt{},_entryIt{} {}
             it(arr_list<list<entry>>::it buckIt, list<entry>::it entryIt):_buckIt{buckIt},_entryIt{entryIt} {}
-            static it make_begin(arr_list<list<entry>>::it buckIt) { return {buckIt,buckIt->begin()}; }
-            static it make_end(arr_list<list<entry>>::it buckIt) { return {buckIt,buckIt->end()}; }
+            it(arr_list<list<entry>>::it buckIt):_buckIt{buckIt},_entryIt{buckIt->begin()} {}
             operator bool() const { return _buckIt && _entryIt; }
 
             pair<key_t, val_t>& operator*() const { assume(_buckIt && _entryIt); return _entryIt->entryPair; }
@@ -41,18 +40,22 @@ class mcsl::map {
 
             it& operator++() {
                ++_entryIt;
-               while (_entryIt == _buckIt->end()) {
-                  ++_buckIt;
-                  _entryIt = _buckIt ? _buckIt->begin() : typename list<entry>::it();
+               if (_entryIt == _buckIt->end()) {
+                  do {
+                     ++_buckIt;
+                  } while (_buckIt && !_buckIt->size());
+                  _entryIt = _buckIt ? _buckIt->begin() : typename list<entry>::it{};
                }
                return self;
             }
             it& operator++(int) { it tmp = self; ++self; return tmp; }
             it& operator--() {
                --_entryIt;
-               while (!_entryIt) {
-                  --_buckIt;
-                  _entryIt = _buckIt ? _buckIt->end() - 1 : typename list<entry>::it();
+               if (!_entryIt) {
+                  do {
+                     --_buckIt;
+                  } while (!_buckIt->size());
+                  _entryIt = _buckIt->end();
                }
                return self;
             }
@@ -82,8 +85,7 @@ class mcsl::map {
             friend class map;
             const_it():_buckIt{},_entryIt{} {}
             const_it(arr_list<list<entry>>::const_it buckIt, list<entry>::const_it entryIt):_buckIt{buckIt},_entryIt{entryIt} {}
-            static const_it make_begin(arr_list<list<entry>>::const_it buckIt) { return {buckIt,buckIt->begin()}; }
-            static const_it make_end(arr_list<list<entry>>::const_it buckIt) { return {buckIt,buckIt->end()}; }
+            const_it(arr_list<list<entry>>::const_it buckIt):_buckIt{buckIt},_entryIt{buckIt->begin()} {}
             const_it(const it& other):_buckIt{other._buckIt},_entryIt{other._entryIt} {}
             operator bool() const { return _buckIt && _entryIt; }
 
@@ -92,18 +94,22 @@ class mcsl::map {
 
             const_it& operator++() {
                ++_entryIt;
-               while (_entryIt == _buckIt->end()) {
-                  ++_buckIt;
-                  _entryIt = _buckIt ? _buckIt->begin() : typename list<entry>::const_it();
+               if (_entryIt == _buckIt->end()) {
+                  do {
+                     ++_buckIt;
+                  } while (_buckIt && !_buckIt->size());
+                  _entryIt = _buckIt ? _buckIt->begin() : typename list<entry>::it{};
                }
                return self;
             }
             const_it& operator++(int) { const_it tmp = self; ++self; return tmp; }
             const_it& operator--() {
                --_entryIt;
-               while (!_entryIt) {
-                  --_buckIt;
-                  _entryIt = _buckIt ? _buckIt->end() - 1 : typename list<entry>::const_it();
+               if (!_entryIt) {
+                  do {
+                     --_buckIt;
+                  } while (!_buckIt->size());
+                  _entryIt = _buckIt->end();
                }
                return self;
             }
@@ -147,10 +153,10 @@ class mcsl::map {
       void release();
 
       uint size() const { return _size; }
-      it begin() { return _size ? it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
-      const_it begin() const { return _size ? const_it::make_begin([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
-      it end() { return it::make_end(_buckets.end() - 1); }
-      const_it end() const { return const_it::make_end(_buckets.end() - 1); }
+      it begin() { return _size ? it([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
+      const_it begin() const { return _size ? const_it([&]() { auto tmp = _buckets.begin(); while (!tmp->size()) { ++tmp; } return tmp; }()) : end(); }
+      it end() { return it(_buckets.end(), {}); }
+      const_it end() const { return const_it(_buckets.end(), {}); }
 
       bool insert(const key_t& key, const val_t& val);
       template<typename... key_argv_t, typename... val_argv_t> bool emplace(tuple<key_argv_t...> keyArgs, tuple<val_argv_t...> valArgs) requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...>;
