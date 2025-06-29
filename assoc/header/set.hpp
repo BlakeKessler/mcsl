@@ -390,7 +390,7 @@ tplt(T*)::find(const hash_compat_t<T, Hash, KeyEq> auto& obj) {
    ulong hash = _hash(obj);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _eq(*it, obj)) { //obj is in the set
+      if (it->hash == hash && _eq(it->val, obj)) { //obj is in the set
          return &(it->val);
       }
    }
