@@ -159,9 +159,14 @@ class mcsl::map {
       const_it end() const { return const_it(_buckets.end(), {}); }
 
       bool insert(const key_t& key, const val_t& val);
+      bool insert(key_t&& key, const val_t& val);
+      bool insert(const key_t& key, val_t&& val);
+      bool insert(key_t&& key, val_t&& val);
       template<typename... key_argv_t, typename... val_argv_t> bool emplace(tuple<key_argv_t...> keyArgs, tuple<val_argv_t...> valArgs) requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...>;
       bool insert_or_assign(const key_t& key, const val_t& val);
-      template<typename... key_argv_t, typename... val_argv_t> bool emplace_or_assign(tuple<key_argv_t...> keyArgs, tuple<val_argv_t...> valArgs) requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...>;
+      bool insert_or_assign(key_t&& key, const val_t& val);
+      bool insert_or_assign(const key_t& key, val_t&& val);
+      bool insert_or_assign(key_t&& key, val_t&& val);template<typename... key_argv_t, typename... val_argv_t> bool emplace_or_assign(tuple<key_argv_t...> keyArgs, tuple<val_argv_t...> valArgs) requires valid_ctor<key_t, key_argv_t...> && valid_ctor<val_t, val_argv_t...>;
       val_t& operator[](const key_t& key);
       const val_t& operator[](const key_t& key) const;
       bool remove(const key_t& key);
