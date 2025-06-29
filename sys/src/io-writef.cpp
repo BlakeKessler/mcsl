@@ -654,12 +654,14 @@ uint mcsl::writef(File& file, const str_slice obj, char mode, FmtArgs fmt) {
             file.write(str.slice(prev, i));
             file.write('\\');
             file.write(ch);
-            prev = ++i;
-            str.inc_end(-1);
+            prev = i + 1;
+            if (fmt.precision) {
+               str.inc_end(-1);
+            }
          };
          switch (str[i]) {
             case '\a': WRITE_ESC('a'); break;
-            case '\b': WRITE_ESC('b'); break;
+            case '\b': WRITE_ESC('b'); break; //!TODO: "\b""0" and "\b""1"
             case '\033': WRITE_ESC('e'); break;
             case '\f': WRITE_ESC('f'); break;
             case '\n': WRITE_ESC('n'); break;
@@ -670,6 +672,7 @@ uint mcsl::writef(File& file, const str_slice obj, char mode, FmtArgs fmt) {
             default: if (str[i] < 0) { TODO; } break;
          }
       }
+      file.write(str.slice(prev, str.size() - prev));
    } else {
       file.write(str);
    }
