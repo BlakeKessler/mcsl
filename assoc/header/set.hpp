@@ -162,6 +162,7 @@ class mcsl::set {
       const_it end() const { return const_it(_buckets.end(), {}); }
 
       bool insert(const T& obj);
+      bool insert(T&& obj);
       bool insert(const arr_span<T> objs);
       bool insert(const arr_span<T*> objs);
       bool emplace(auto... argv) requires valid_ctor<T, decltype(argv)...>;
@@ -247,6 +248,21 @@ tplt(bool)::insert(const T& obj) {
    }
    return true;
 }
+tplt(bool)::insert(T&& obj) {
+   ulong hash = _hash(obj);
+   list<entry>& bucket = _buckets[hash & _hashMask];
+   for (auto it = bucket.begin(); it != bucket.end(); ++it) {
+      if (it->hash == hash && _eq(it->val, obj)) { //obj is already in the set
+         return false;
+      }
+   }
+   bucket.emplace_back(obj, hash);
+   ++_size;
+   if (_size > _maxLoadFactor * _buckets.size()) {
+      rehash();
+   }
+   return true;
+}
 //returns whether an element was inserted
 tplt(bool)::insert(const arr_span<T> objs) {
    reserve(_size + objs.size());
@@ -309,7 +325,7 @@ tplt(bool)::remove(const T& obj) {
    ulong hash = _hash(obj);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _eq(*it, obj)) { //obj is in the set
+      if (it->hash == hash && _eq(it->val, obj)) { //obj is in the set
          bucket.erase(it);
          --_size;
          return true;
@@ -338,7 +354,7 @@ tplt(bool)::remove(const hash_compat_t<T, Hash, KeyEq> auto& obj) {
    ulong hash = _hash(obj);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _eq(*it, obj)) { //obj is in the set
+      if (it->hash == hash && _eq(it->val, obj)) { //obj is in the set
          bucket.erase(it);
          --_size;
          return true;
@@ -367,7 +383,7 @@ tplt(T*)::find(const T& obj) {
    ulong hash = _hash(obj);
    list<entry>& bucket = _buckets[hash & _hashMask];
    for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-      if (it->hash == hash && _eq(*it, obj)) { //obj is in the set
+      if (it->hash == hash && _eq(it->val, obj)) { //obj is in the set
          return &(it->val);
       }
    }
