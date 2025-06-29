@@ -21,6 +21,7 @@ template<typename T, uint _bufCapacity = mcsl::DEFAULT_ARR_LIST_BUF_SIZE> class 
       using const_it = mcsl::it<const T, const arr_list>;
       using span = mcsl::span<T, arr_list>;
       using view = mcsl::span<const T, const arr_list>;
+      constexpr uint buf_capacity() const { return _bufCapacity; }
 
       arr_list():_buf{},_size{} {}
       arr_list(arr_list&& other):_buf{std::move(other._buf)},_size{other._size} { if (this != &other) { other.release(); } }

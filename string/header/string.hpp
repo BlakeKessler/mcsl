@@ -59,6 +59,7 @@ mcsl::string& mcsl::string::operator+=(const str_t auto& other) {
    char* addr = end();
    const uint otherSize = other.size();
    reserve(size() + otherSize);
+   UNSAFE_RESIZE(size() + otherSize);
    //copy other
    memcpy(addr, other.begin(), otherSize);
    //return
