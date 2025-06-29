@@ -637,19 +637,48 @@ uint mcsl::writef(File& file, const str_slice obj, char mode, FmtArgs fmt) {
       mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
    }
 
-   const str_slice str = obj.slice(fmt.precision ? min(obj.size(), fmt.precision) : obj.size());
+   str_slice str = obj.slice(fmt.precision ? min(obj.size(), fmt.precision) : obj.size());
+   uint strlen = str.size();
 
-   if (!fmt.isLeftJust && fmt.minWidth > str.size()) {
-      file.write(PAD_CHAR, fmt.minWidth - str.size());
+   if (!fmt.isLeftJust && fmt.minWidth > strlen) {
+      if (fmt.altMode) {
+         TODO;
+      }
+      file.write(PAD_CHAR, fmt.minWidth - strlen);
    }
 
-   file.write(str);
+   if (fmt.altMode) { //!TODO: thoroughly test this
+      uint prev = 0;
+      for (uint i = 0; i < str.size(); ++i) {
+         const auto WRITE_ESC = [&](char ch) {
+            file.write(str.slice(prev, i));
+            file.write('\\');
+            file.write(ch);
+            prev = ++i;
+            str.inc_end(-1);
+         };
+         switch (str[i]) {
+            case '\a': WRITE_ESC('a'); break;
+            case '\b': WRITE_ESC('b'); break;
+            case '\033': WRITE_ESC('e'); break;
+            case '\f': WRITE_ESC('f'); break;
+            case '\n': WRITE_ESC('n'); break;
+            case '\r': WRITE_ESC('r'); break;
+            case '\t': WRITE_ESC('t'); break;
+            case '\v': WRITE_ESC('v'); break;
 
-   if (fmt.isLeftJust && fmt.minWidth > str.size()) {
-      file.write(PAD_CHAR, fmt.minWidth - str.size());
+            default: if (str[i] < 0) { TODO; } break;
+         }
+      }
+   } else {
+      file.write(str);
    }
 
-   return max(str.size(), fmt.minWidth);
+   if (fmt.isLeftJust && fmt.minWidth > (2 * strlen - str.size())) {
+      file.write(PAD_CHAR, fmt.minWidth - (2 * strlen - str.size()));
+   }
+
+   return max((2 * strlen - str.size()), fmt.minWidth);
 }
 
 #undef __PRINT_AS_CHARS
