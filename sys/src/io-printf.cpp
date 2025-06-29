@@ -162,7 +162,7 @@ namespace {
             }
             ++i;
             assert(str.size() > i, "%% not followed by format code", ErrCode::FS_ERR);
-            auto [mode, fmtArgs, codeLen, flags] = __parseFmtCode(str.slice(i, str.size()-i));
+            auto [mode, fmtArgs, codeLen, flags] = __parseFmtCode(str.slice(i, str.size()));
 
             // if (flags & MIN_WIDTH) {} //!TODO: figure out a good way to do this
             // if (flags & PRECISION) {} //!TODO: figure out a good way to do this
@@ -173,12 +173,12 @@ namespace {
                write(file, FMT_INTRO);
                ++charsPrinted;
                if (i <= str.size()) { //more to print
-                  return __printfImpl(file, str.slice(i, str.size() - i), charsPrinted, arg0, argv...); //tail recursion
+                  return __printfImpl(file, str.slice(i, str.size()), charsPrinted, arg0, argv...); //tail recursion
                }
             } else { //other format code
                charsPrinted += writef(file, arg0, mode, fmtArgs);
                if (i <= str.size()) { //more to print
-                  return __printfImpl(file, str.slice(i, str.size() - i), charsPrinted, argv...); //tail recursion
+                  return __printfImpl(file, str.slice(i, str.size()), charsPrinted, argv...); //tail recursion
                }
             }
             //end of format string
@@ -210,7 +210,7 @@ namespace {
             }
             ++i;
             if (i < str.size()) { //more to print
-               return __printfImpl(file, str.slice(i, str.size() - i), charsPrinted);
+               return __printfImpl(file, str.slice(i, str.size()), charsPrinted);
             } else { //end of format string
                return charsPrinted;
             }

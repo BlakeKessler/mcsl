@@ -77,9 +77,10 @@ template<typename T> constexpr const mcsl::arr_span<T> mcsl::contig_base<T>::spa
    assume(size <= obj.size());
    return {const_cast<T*>(obj.begin()), size};
 }
-template<typename T> constexpr const mcsl::arr_span<T> mcsl::contig_base<T>::span(this const auto&& obj, uint begin, uint size) {
-   assume(begin + size <= obj.size());
-   return {const_cast<T*>(obj.begin()) + begin, size};
+template<typename T> constexpr const mcsl::arr_span<T> mcsl::contig_base<T>::span(this const auto&& obj, uint begin, uint end) {
+   assume(begin <= end);
+   assume(end <= obj.size());
+   return {const_cast<T*>(obj.begin()) + begin, end - begin};
 }
 template<typename T> constexpr mcsl::arr_span<T> mcsl::contig_base<T>::span(this auto&& obj) {
    return arr_span<T>::make(obj.begin(), obj.size());
@@ -88,9 +89,10 @@ template<typename T> constexpr mcsl::arr_span<T> mcsl::contig_base<T>::span(this
    assume(size <= obj.size());
    return arr_span<T>::make(obj.begin(), size);
 }
-template<typename T> constexpr mcsl::arr_span<T> mcsl::contig_base<T>::span(this auto&& obj, uint begin, uint size) {
-   assume(begin + size <= obj.size());
-   return arr_span<T>::make(obj.begin() + begin, size);
+template<typename T> constexpr mcsl::arr_span<T> mcsl::contig_base<T>::span(this auto&& obj, uint begin, uint end) {
+   assume(begin <= end);
+   assume(end <= obj.size());
+   return arr_span<T>::make(obj.begin() + begin, end - begin);
 }
 
 #pragma endregion inlinesrc

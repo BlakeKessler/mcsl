@@ -24,10 +24,10 @@ struct mcsl::str_base : public contig_base<char_t> {
 
    constexpr const str_slice slice(this const auto&& obj);
    constexpr const str_slice slice(this const auto&& obj, uint size);
-   constexpr const str_slice slice(this const auto&& obj, uint begin, uint size);
+   constexpr const str_slice slice(this const auto&& obj, uint begin, uint end);
    constexpr str_slice slice(this auto&& obj);
    constexpr str_slice slice(this auto&& obj, uint begin);
-   constexpr str_slice slice(this auto&& obj, uint size, uint begin);
+   constexpr str_slice slice(this auto&& obj, uint begin, uint end);
    
    //strlen
    constexpr uint strlen(this auto&& obj) {

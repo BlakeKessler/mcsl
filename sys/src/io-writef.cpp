@@ -651,7 +651,7 @@ uint mcsl::writef(File& file, const str_slice obj, char mode, FmtArgs fmt) {
       uint prev = 0;
       for (uint i = 0; i < str.size(); ++i) {
          const auto WRITE_ESC = [&](char ch) {
-            file.write(str.slice(prev, i-prev));
+            file.write(str.slice(prev, i));
             file.write('\\');
             file.write(ch);
             prev = i + 1;
@@ -675,7 +675,7 @@ uint mcsl::writef(File& file, const str_slice obj, char mode, FmtArgs fmt) {
             default: if (str[i] < 0) { TODO; } break;
          }
       }
-      file.write(str.slice(prev, str.size() - prev));
+      file.write(str.slice(prev, str.size()));
    } else {
       file.write(str);
    }

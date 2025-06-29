@@ -40,10 +40,10 @@ template<typename T> struct mcsl::contig_base {
 
    constexpr const arr_span<T> span(this const auto&& obj);
    constexpr const arr_span<T> span(this const auto&& obj, uint size);
-   constexpr const arr_span<T> span(this const auto&& obj, uint begin, uint size);
+   constexpr const arr_span<T> span(this const auto&& obj, uint begin, uint end);
    constexpr arr_span<T> span(this auto&& obj);
    constexpr arr_span<T> span(this auto&& obj, uint size);
-   constexpr arr_span<T> span(this auto&& obj, uint begin, uint size);
+   constexpr arr_span<T> span(this auto&& obj, uint begin, uint end);
 };
 
 // #include "str_slice.hpp"

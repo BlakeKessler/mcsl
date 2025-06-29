@@ -82,9 +82,10 @@ template<typename char_t> constexpr const mcsl::str_slice mcsl::str_base<char_t>
    assume(size <= obj.size());
    return {obj.begin(), size};
 }
-template<typename char_t> constexpr const mcsl::str_slice mcsl::str_base<char_t>::slice(this const auto&& obj, uint begin, uint size) {
-   assume(begin + size <= obj.size());
-   return {obj.begin() + begin, size};
+template<typename char_t> constexpr const mcsl::str_slice mcsl::str_base<char_t>::slice(this const auto&& obj, uint begin, uint end) {
+   assume(begin <= end);
+   assume(end <= obj.size());
+   return {obj.begin() + begin, end - begin};
 }
 template<typename char_t> constexpr mcsl::str_slice mcsl::str_base<char_t>::slice(this auto&& obj) {
    return str_slice::make(obj.begin(), obj.size());
@@ -93,9 +94,10 @@ template<typename char_t> constexpr mcsl::str_slice mcsl::str_base<char_t>::slic
    assume(size <= obj.size());
    return str_slice::make(obj.begin(), size);
 }
-template<typename char_t> constexpr mcsl::str_slice mcsl::str_base<char_t>::slice(this auto&& obj, uint begin, uint size) {
-   assume(begin + size <= obj.size());
-   return str_slice::make(obj.begin() + begin, size);
+template<typename char_t> constexpr mcsl::str_slice mcsl::str_base<char_t>::slice(this auto&& obj, uint begin, uint end) {
+   assume(begin <= end);
+   assume(end <= obj.size());
+   return str_slice::make(obj.begin() + begin, end - begin);
 }
 
 
