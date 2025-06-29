@@ -56,9 +56,9 @@ class mcsl::string : public mcsl::str_base<char> {
 
 //!concatenate other onto the end of this
 mcsl::string& mcsl::string::operator+=(const str_t auto& other) {
-   char* addr = end();
    const uint otherSize = other.size();
    reserve(size() + otherSize);
+   char* addr = end();
    UNSAFE_RESIZE(size() + otherSize);
    //copy other
    memcpy(addr, other.begin(), otherSize);
