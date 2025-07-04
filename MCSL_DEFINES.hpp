@@ -145,6 +145,14 @@ namespace mcsl {
    constexpr char FMT_RADIX_INTRO = ',';
    constexpr char FMT_VAR_FIELD = '*';
    constexpr uint DEFAULT_FLT_PREC = 6;
+
+   //FNV constants - [source](https://datatracker.ietf.org/doc/html/draft-eastlake-fnv-35#name-fnv-constants)
+   constexpr uint32 FNV_PRIME_32 = 0x1000193;
+   constexpr uint64 FNV_PRIME_64 = 0x100000001B3;
+   constexpr uint128 FNV_PRIME_128 = ((uint128)0x1000000) << 64 | 0x13B;
+   constexpr uint32 FNV_OFFSET_32 = 0x811C9DC5;
+   constexpr uint64 FNV_OFFSET_64 = 0xCBF29CE484222325;
+   constexpr uint128 FNV_OFFSET_128 = ((uint128)0x6C62272E07BB0142) << 64 | 0x62B821756295C58D;
 };
 
 //bitmask literal
