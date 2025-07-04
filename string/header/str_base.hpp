@@ -8,6 +8,7 @@
 #include "dyn_arr.hpp"
 #include "math.hpp"
 #include "mem.hpp"
+#include "hash.hpp"
 
 //!IMPLEMENTATION GUIDE:
 //!   consider null-termination
@@ -110,19 +111,9 @@ struct mcsl::str_base : public contig_base<char_t> {
 template<mcsl::str_t str_t> struct std::hash<str_t> {
    using is_transparent = void;
 
-   uword __impl(const char* str, const uint size) const noexcept { //FNV HASH
-      uword hash = 0;
-      for (uint i = size; i;) {
-         --i;
-         hash = (hash << 8) + (uint8)(str[i]);
-         // hash = (hash << 8) + (byte)(str[i]);
-      }
-      return hash;
-   }
-
-   template<mcsl::str_t other_t> inline uword operator()(const other_t& str) const noexcept { return __impl(str.begin(), str.size()); }
-   inline uword operator()(const std::string_view str) const noexcept { return __impl(str.begin(), str.size()); }
-   inline uword operator()(const std::string& str) const noexcept { return __impl(str.begin(), str.size()); }
+   template<mcsl::str_t other_t> inline uword operator()(const other_t& str) const noexcept { return mcsl::hash_algos::rapid(str.begin(), str.size()); }
+   inline uword operator()(const std::string_view str) const noexcept { return mcsl::hash_algos::rapid(str.begin(), str.size()); }
+   inline uword operator()(const std::string& str) const noexcept { return mcsl::hash_algos::rapid(str.data(), str.size()); }
 };
 //equality checking
 template<mcsl::str_t str_t> struct std::equal_to<str_t> {
