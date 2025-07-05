@@ -7,8 +7,6 @@
 // #include "throw.hpp"
 #include "concepts.hpp"
 
-//!TODO: so-called "pessimizing" moves
-
 namespace mcsl {
    template<uint _capacity> struct uint_n;
    template<float_t T> struct Float;
