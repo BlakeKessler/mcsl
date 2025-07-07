@@ -156,7 +156,7 @@ namespace mcsl {
 };
 
 //bitmask literal
-constexpr unsigned long long operator"" _m(const unsigned long long x) {
+constexpr unsigned long long operator""_m(const unsigned long long x) {
    return x ? 1LU << (x - 1) : 0;
 }
 
