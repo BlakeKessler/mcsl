@@ -240,10 +240,14 @@
    //exponent
    sint exp = (radixPt && radixPt < mantProcessEnd) ? radixPt - mantProcessEnd + 1: 0;
    if (it + 2 < end && it[0] == EXP_NOTAT[0] && it[1] == EXP_NOTAT[1]) { //Middle-C style
-      exp += str_to_sint(it + 2, end, radix);
+      auto tmp = str_to_sint(it + 2, end, 10);
+      exp += tmp.val;
+      it += tmp.len + 2;
    }
    else if (it + 1 < end && ((radix < 0xE && (it[0] | CASE_BIT) == 'e') || (it[0] | CASE_BIT) == 'p')) { //C-style
-      exp += str_to_sint(it + 1, end, radix);
+      auto tmp = str_to_sint(it + 1, end, radix);
+      exp += tmp.val;
+      it += tmp.len + 1;
    }
    val *= std::pow((flext)radix, exp);
 
@@ -324,7 +328,9 @@
    sint exp = 0;
    if (it + 1 < end) {
       if ((radix < 0xE && (*it | CASE_BIT) == 'e') || (*it | CASE_BIT) == 'p') {
-         exp += str_to_sint(it + 1, end, 10);
+         auto tmp = str_to_sint(it + 1, end, 10);
+         exp += tmp.val;
+         it += tmp.len + 1;
       }
    }
    if (radix == 10) {
