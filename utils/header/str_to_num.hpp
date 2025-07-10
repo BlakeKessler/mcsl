@@ -4,21 +4,31 @@
 
 #include "MCSL.hpp"
 
-namespace mcsl {
-   [[gnu::pure ]] constexpr  ulong str_to_uint(const char* str, const uint strlen, uint radix = 0);
-   [[gnu::pure ]] constexpr  slong str_to_sint(const char* str, const uint strlen, uint radix = 0);
-   [[gnu::pure ]] constexpr flong str_to_real(const char* str, const uint strlen, uint radix = 0);
-   [[gnu::pure ]] constexpr flong c_float_lit_str_to_real(const char* str, const uint strlen, uint radix = 0);
+#include "pair.hpp"
 
-   [[gnu::pure ]] constexpr  ulong str_to_uint(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_uint(begin, end-begin, radix); } else { return 0; }} }
-   [[gnu::pure ]] constexpr  slong str_to_sint(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_sint(begin, end-begin, radix); } else { return 0; }} }
-   [[gnu::pure ]] constexpr flong str_to_real(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_real(begin, end-begin, radix); } else { return NaN; }} }
-   [[gnu::pure ]] constexpr flong c_float_lit_str_to_real(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_real(begin, end-begin, radix); } else { return NaN; }} }
+namespace mcsl {
+   namespace _ {
+      #define val_t(T) struct T { T##long val; uint len; operator T##long() const { return val; } operator pair<T##long, uint>() const { return {val, len}; }}
+      val_t(u);
+      val_t(s);
+      val_t(f);
+      #undef val_t
+   };
+
+   [[gnu::pure]] constexpr _::u str_to_uint(const char* str, const uint strlen, uint radix = 0);
+   [[gnu::pure]] constexpr _::s str_to_sint(const char* str, const uint strlen, uint radix = 0);
+   [[gnu::pure]] constexpr _::f str_to_real(const char* str, const uint strlen, uint radix = 0);
+   [[gnu::pure]] constexpr _::f c_float_lit_str_to_real(const char* str, const uint strlen, uint radix = 0);
+
+   [[gnu::pure]] constexpr _::u str_to_uint(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_uint(begin, end-begin, radix); } else { return {0, 0}; }} }
+   [[gnu::pure]] constexpr _::s str_to_sint(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_sint(begin, end-begin, radix); } else { return {0, 0}; }} }
+   [[gnu::pure]] constexpr _::f str_to_real(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_real(begin, end-begin, radix); } else { return {NaN, 0}; }} }
+   [[gnu::pure]] constexpr _::f c_float_lit_str_to_real(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_real(begin, end-begin, radix); } else { return {NaN, 0}; }} }
 
    [[gnu::const, gnu::always_inline]] constexpr sint8 digit_to_uint(const char ch);
    [[gnu::const]] constexpr inline bool is_digit(const char ch, const uint radix = 10) { return (uint8)digit_to_uint(ch) < radix;}
-   [[gnu::pure ]] constexpr bool is_uint(const char* str, const uint strlen, const uint radix = 10);
-   [[gnu::pure ]] constexpr bool is_uint(const char* begin, const char* end, const uint radix = 10) { if (begin < end) { return is_uint(begin, end-begin, radix); } else { return false; }}
+   [[gnu::pure]] constexpr bool is_uint(const char* str, const uint strlen, const uint radix = 10);
+   [[gnu::pure]] constexpr bool is_uint(const char* begin, const char* end, const uint radix = 10) { if (begin < end) { return is_uint(begin, end-begin, radix); } else { return false; }}
 }
 
 #include "../src/str_to_num.cpp"

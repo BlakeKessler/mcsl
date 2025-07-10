@@ -15,7 +15,7 @@
 //!convert string to unsigned integer
 //!legal radices: {0, 2, ... , 36}
 //!when radix is 0, base is deduced from contents of string
-[[gnu::pure]] constexpr ulong mcsl::str_to_uint(const char* str, const uint strlen, uint radix) {
+[[gnu::pure]] constexpr mcsl::_::u mcsl::str_to_uint(const char* str, const uint strlen, uint radix) {
    assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    uint i = 0;
@@ -64,21 +64,37 @@
 
       val += digit;
    }
-   return val;
+
+   return {
+      .val = val,
+      .len = i
+   };
 }
 
 //!convert string to signed integer
 //!legal radices: {0, 2, ... , 36}
 //!when radix is 0, base is deduced from contents of string
-[[gnu::pure]] constexpr slong mcsl::str_to_sint(const char* str, const uint strlen, uint radix) {
+[[gnu::pure]] constexpr mcsl::_::s mcsl::str_to_sint(const char* str, const uint strlen, uint radix) {
    assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    if (str[0] == '-') {
-      return -str_to_uint(str+1, strlen-1, radix);
+      auto tmp = str_to_uint(str+1, strlen-1, radix);
+      return {
+         .val = -(slong)tmp.val,
+         .len = tmp.len + 1
+      };
    } else if (str[0] == '+') {
-      return str_to_uint(str+1, strlen-1, radix);
+      auto tmp = str_to_uint(str+1, strlen-1, radix);
+      return {
+         .val = (slong)tmp.val,
+         .len = tmp.len + 1
+      };
    } else {
-      return str_to_uint(str, strlen, radix);
+      auto tmp = str_to_uint(str, strlen, radix);
+      return {
+         .val = (slong)tmp.val,
+         .len = tmp.len
+      };
    }
 }
 
@@ -145,7 +161,7 @@
 //!convert string to floating point number
 //!legal radices: {0, 2, 8, 10, 16}
 //!when radix is 0, base is deduced from contents of string
-[[gnu::pure]] constexpr flong mcsl::str_to_real(const char* str, const uint strlen, uint radix) {
+[[gnu::pure]] constexpr mcsl::_::f mcsl::str_to_real(const char* str, const uint strlen, uint radix) {
    assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    //deduce sign, radix, and starting index
@@ -232,7 +248,10 @@
    val *= std::pow((flext)radix, exp);
 
    //return
-   return (flong)val;
+   return {
+      .val = (flong)val,
+      .len = (uint)(it - str)
+   };
 }
 
 
@@ -242,7 +261,7 @@
 //!NOTE: slightly imprecise
 //!TODO: fix inf, nan, signan
 //!TODO: apostrophes?
-[[gnu::pure]] constexpr flong mcsl::c_float_lit_str_to_real(const char* str, const uint strlen, uint radix) {
+[[gnu::pure]] constexpr mcsl::_::f mcsl::c_float_lit_str_to_real(const char* str, const uint strlen, uint radix) {
    //https://dl.acm.org/doi/pdf/10.1145/93548.93559?download=false
    //https://dl.acm.org/doi/pdf/10.1145/93548.93557?download=false
    //https://www.netlib.org/fp/
@@ -315,7 +334,10 @@
    }
 
    //return
-	return isNegative ? -val : val;
+   return {
+      .val = (flong)(isNegative ? -val : val),
+      .len = (uint)(it - str)
+   };
 }
 
 #endif //MCSL_STR_TO_NUM_CPP
