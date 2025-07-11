@@ -10,6 +10,8 @@ namespace mcsl {
       uint64 rapidMicro(const void* key, uint len, uint64 seed = 0);
       uint64 rapidNano(const void* key, uint len, uint64 seed = 0);
 
+      uint64 rapid_mix(uint64 lhs, uint64 rhs);
+
       //MurmurHash
       uint32 murmur32(const void* key, uint len, uint32 seed = 0);
       uint128 murmur128(const void* key, uint len, uint32 seed = 0);

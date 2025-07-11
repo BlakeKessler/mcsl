@@ -5,6 +5,8 @@
 #include "MCSL.hpp"
 
 #include <tuple>
+#include "hash.hpp"
+#include <functional>
 
 #pragma region inlinesrc
 #pragma GCC diagnostic push
@@ -25,5 +27,21 @@ namespace mcsl { //!TODO: actually implement mcsl::tuple properly
    template<typename... Ts> constexpr tuple<Ts...> make_tuple(Ts&&... argv) { return std::make_tuple(std::forward<Ts>(argv)...); }
 }
 #pragma GCC diagnostic pop
+
+namespace {
+   template<uint index, typename... Ts> uint64 __hash(const mcsl::tuple<Ts...>& obj, uint64 val) {
+      if constexpr (index < sizeof...(Ts)) {
+         return __hash<index + 1, Ts...>(obj, mcsl::hash_algos::rapid_mix(val, std::hash<>(std::get<index, mcsl::tuple<Ts...>>(obj))));
+      } else {
+         return val;
+      }
+   }
+};
+
+template<typename... Ts> struct std::hash<mcsl::tuple<Ts...>> {
+   static uint64 operator()(const mcsl::tuple<Ts...>& obj) {
+      return __hash<0, Ts...>(obj, 0);
+   }
+};
 
 #endif //MCSL_TUPLE_HPP

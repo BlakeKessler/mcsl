@@ -54,7 +54,7 @@ namespace { //anonymous namespace with MCSL implementations of rapidhash helper 
    //rapid_mum replaced by use of uint128 (more obvious meaning and equal or superior codegen)
 
    //mix 64-bit integers
-   [[gnu::always_inline]] inline constexpr uint64 rapid_mix(uint64 lhs, uint64 rhs) noexcept {
+   [[gnu::always_inline]] inline constexpr uint64 __rapid_mix(uint64 lhs, uint64 rhs) noexcept {
       uint128 prod = (uint128)(lhs) * (uint128)(rhs);
       uint64* ptr = std::bit_cast<uint64*>(&prod);
       return ptr[0] ^ ptr[1];
@@ -80,10 +80,14 @@ namespace { //anonymous namespace with MCSL implementations of rapidhash helper 
    }
 };
 
+uint64 mcsl::hash_algos::rapid_mix(uint64 lhs, uint64 rhs) {
+   return __rapid_mix(lhs, rhs);
+}
+
 //MCSL implementation of rapidhash_internal with RAPIDHASH_COMPACT and RAPIDHASH_FAST defined
 /*inline constexpr*/ uint64 mcsl::hash_algos::rapid(const void* key, uint len, uint64 seed) {
    const uint8* curr = (const uint8*)key;
-   seed ^= rapid_mix(seed ^ RAPID_SECRET[2], RAPID_SECRET[1]);
+   seed ^= __rapid_mix(seed ^ RAPID_SECRET[2], RAPID_SECRET[1]);
    uint64 a = 0;
    uint64 b = 0;
    uint i = len;
@@ -110,15 +114,15 @@ namespace { //anonymous namespace with MCSL implementations of rapidhash helper 
       uint64 seed6 = seed;
       if (i > 112) {
          #define seed0 seed
-         #define MIX(n) seed##n = rapid_mix(rapid_read64(curr + (n * 16)) ^ RAPID_SECRET[n], rapid_read64(curr + (n * 16 + 8)) ^ seed )
+         #define MIX(n) seed##n = __rapid_mix(rapid_read64(curr + (n * 16)) ^ RAPID_SECRET[n], rapid_read64(curr + (n * 16 + 8)) ^ seed )
          do {
-            MIX(0); // seed  = rapid_mix(rapid_read64(curr     ) ^ RAPID_SECRET[0], rapid_read64(curr + 8  ) ^ seed );
-            MIX(1); // seed1 = rapid_mix(rapid_read64(curr + 16) ^ RAPID_SECRET[1], rapid_read64(curr + 24 ) ^ seed1);
-            MIX(2); // seed2 = rapid_mix(rapid_read64(curr + 32) ^ RAPID_SECRET[2], rapid_read64(curr + 40 ) ^ seed2);
-            MIX(3); // seed3 = rapid_mix(rapid_read64(curr + 48) ^ RAPID_SECRET[3], rapid_read64(curr + 56 ) ^ seed3);
-            MIX(4); // seed4 = rapid_mix(rapid_read64(curr + 64) ^ RAPID_SECRET[4], rapid_read64(curr + 72 ) ^ seed4);
-            MIX(5); // seed5 = rapid_mix(rapid_read64(curr + 80) ^ RAPID_SECRET[5], rapid_read64(curr + 88 ) ^ seed5);
-            MIX(6); // seed6 = rapid_mix(rapid_read64(curr + 96) ^ RAPID_SECRET[6], rapid_read64(curr + 104) ^ seed6);
+            MIX(0); // seed  = __rapid_mix(rapid_read64(curr     ) ^ RAPID_SECRET[0], rapid_read64(curr + 8  ) ^ seed );
+            MIX(1); // seed1 = __rapid_mix(rapid_read64(curr + 16) ^ RAPID_SECRET[1], rapid_read64(curr + 24 ) ^ seed1);
+            MIX(2); // seed2 = __rapid_mix(rapid_read64(curr + 32) ^ RAPID_SECRET[2], rapid_read64(curr + 40 ) ^ seed2);
+            MIX(3); // seed3 = __rapid_mix(rapid_read64(curr + 48) ^ RAPID_SECRET[3], rapid_read64(curr + 56 ) ^ seed3);
+            MIX(4); // seed4 = __rapid_mix(rapid_read64(curr + 64) ^ RAPID_SECRET[4], rapid_read64(curr + 72 ) ^ seed4);
+            MIX(5); // seed5 = __rapid_mix(rapid_read64(curr + 80) ^ RAPID_SECRET[5], rapid_read64(curr + 88 ) ^ seed5);
+            MIX(6); // seed6 = __rapid_mix(rapid_read64(curr + 96) ^ RAPID_SECRET[6], rapid_read64(curr + 104) ^ seed6);
             curr += 112;
             i -= 112;
          } while (i > 112);
@@ -134,23 +138,23 @@ namespace { //anonymous namespace with MCSL implementations of rapidhash helper 
 
       #define ITERATION(n, expr) \
       if (i > (16 * (n + 1))) { \
-         seed = rapid_mix(rapid_read64(curr) ^ RAPID_SECRET[2 - ((n >> 1) & 1)], rapid_read64(curr + (16 * n + 8)) ^ seed); \
+         seed = __rapid_mix(rapid_read64(curr) ^ RAPID_SECRET[2 - ((n >> 1) & 1)], rapid_read64(curr + (16 * n + 8)) ^ seed); \
          expr \
       }
       ITERATION(0, ITERATION(1, ITERATION(2, ITERATION(3, ITERATION(4, ITERATION(5,))))))
       #undef ITERATION
       // if (i > 16) {
-      //    seed = rapid_mix(rapid_read64(curr) ^ RAPID_SECRET[2], rapid_read64(curr + 8) ^ seed);
+      //    seed = __rapid_mix(rapid_read64(curr) ^ RAPID_SECRET[2], rapid_read64(curr + 8) ^ seed);
       //    if (i > 32) {
-      //       seed = rapid_mix(rapid_read64(curr + 16) ^ RAPID_SECRET[2], rapid_read64(curr + 24) ^ seed);
+      //       seed = __rapid_mix(rapid_read64(curr + 16) ^ RAPID_SECRET[2], rapid_read64(curr + 24) ^ seed);
       //       if (i > 48) {
-      //          seed = rapid_mix(rapid_read64(curr + 32) ^ RAPID_SECRET[1], rapid_read64(curr + 40) ^ seed);
+      //          seed = __rapid_mix(rapid_read64(curr + 32) ^ RAPID_SECRET[1], rapid_read64(curr + 40) ^ seed);
       //          if (i > 64) {
-      //             seed = rapid_mix(rapid_read64(curr + 48) ^ RAPID_SECRET[1], rapid_read64(curr + 56) ^ seed);
+      //             seed = __rapid_mix(rapid_read64(curr + 48) ^ RAPID_SECRET[1], rapid_read64(curr + 56) ^ seed);
       //             if (i > 80) {
-      //                seed = rapid_mix(rapid_read64(curr + 64) ^ RAPID_SECRET[2], rapid_read64(curr + 72) ^ seed);
+      //                seed = __rapid_mix(rapid_read64(curr + 64) ^ RAPID_SECRET[2], rapid_read64(curr + 72) ^ seed);
       //                if (i > 96) {
-      //                   seed = rapid_mix(rapid_read64(curr + 80) ^ RAPID_SECRET[1], rapid_read64(curr + 88) ^ seed);
+      //                   seed = __rapid_mix(rapid_read64(curr + 80) ^ RAPID_SECRET[1], rapid_read64(curr + 88) ^ seed);
       //                }
       //             }
       //          }
@@ -167,7 +171,7 @@ namespace { //anonymous namespace with MCSL implementations of rapidhash helper 
    uint64* ptr = std::bit_cast<uint64*>(&prod);
    a = ptr[0];
    b = ptr[1];
-   return rapid_mix(a ^ RAPID_SECRET[7], b ^ RAPID_SECRET[1] ^ i);
+   return __rapid_mix(a ^ RAPID_SECRET[7], b ^ RAPID_SECRET[1] ^ i);
 }
 
 #endif //MCSL_RAPIDHASH_CPP
