@@ -172,15 +172,15 @@
 //!legal radices: {0, 2, 8, 10, 16}
 //!when radix is 0, base is deduced from contents of string
 //!TODO: nan, inf
-[[gnu::pure]] constexpr mcsl::_::f mcsl::str_to_real(const char* str, const uint strlen, uint radix) {
+[[gnu::pure]] constexpr mcsl::_::f mcsl::str_to_real(const char* str, const char* end, uint radix) {
    using namespace _;
-   assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
+   assert(str && end && str < end, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    //deduce sign, radix, and starting index
    bool isNegative = str[0] == '-';
    const char* it = str + (isNegative || str[0] == '+');
 
-   if (strlen >= (2U + isNegative) && *it == '0') {
+   if ((end - str) >= (2U + isNegative) && *it == '0') {
       if (radix == 0) {
          switch(*++it) {
             case 'b': case 'B': radix =  2; ++it; break;
@@ -202,8 +202,6 @@
    } else if (radix == 0) { radix = 10; }
 
    const uint maxMantDigits = (uint)(LDBL_MANT_DIG / std::log2((float)radix));
-   
-   const char* const end = str + strlen;
 
    uint overPrecDigits = 0;
 
@@ -265,20 +263,20 @@
 //!NOTE: slightly imprecise
 //!TODO: fix inf, nan, signan
 //!TODO: apostrophes?
-[[gnu::pure]] constexpr mcsl::_::f mcsl::c_float_lit_str_to_real(const char* str, const uint strlen, uint radix) {
+[[gnu::pure]] constexpr mcsl::_::f mcsl::c_float_lit_str_to_real(const char* str, const char* end, uint radix) {
    //https://dl.acm.org/doi/pdf/10.1145/93548.93559?download=false
    //https://dl.acm.org/doi/pdf/10.1145/93548.93557?download=false
    //https://www.netlib.org/fp/
    
    using namespace _;
 
-   assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
+   assert(str && end && str < end, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    //deduce sign, radix, and starting index
    bool isNegative = str[0] == '-';
    const char* it = str + (isNegative || str[0] == '+');
 
-   if (strlen >= (2U + isNegative) && *it == '0') {
+   if ((end - str) >= (2U + isNegative) && *it == '0') {
       if (radix == 0) {
          if ((*++it | CASE_BIT) == 'x') {
             radix = 16;
@@ -298,8 +296,6 @@
 
    const uint maxMantDigits = radix == 10 ? 18 : 15;
    static_assert(sizeof(flext) >= 10);
-   
-   const char* const end = str + strlen;
 
    uint overPrecDigits = 0;
 
@@ -352,9 +348,9 @@
 //!legal radices: {0, 2, 8, 10, 16}
 //!when radix is 0, base is deduced from contents of string
 //!TODO: nan, inf
-[[gnu::pure]] constexpr mcsl::_::n mcsl::str_to_num(const char* str, const uint strlen, uint radix) {
+[[gnu::pure]] constexpr mcsl::_::n mcsl::str_to_num(const char* str, const char* end, uint radix) {
    using namespace _;
-   assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
+   assert(str && end && str < end, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    bool isSigned = false;
    bool isReal = false;
@@ -364,7 +360,7 @@
    isSigned = isNegative || str[0] == '+';
    const char* it = str + isSigned;
 
-   if (strlen >= (2U + isNegative) && *it == '0') {
+   if ((end - str) >= (2U + isNegative) && *it == '0') {
       if (radix == 0) {
          switch(*++it) {
             case 'b': case 'B': radix =  2; ++it; break;
@@ -386,8 +382,6 @@
    } else if (radix == 0) { radix = 10; }
 
    const uint maxMantDigits = (uint)(LDBL_MANT_DIG / std::log2((float)radix));
-   
-   const char* const end = str + strlen;
 
    uint overPrecDigits = 0;
 
