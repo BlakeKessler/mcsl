@@ -31,7 +31,7 @@ namespace mcsl { //!TODO: actually implement mcsl::tuple properly
 namespace {
    template<uint index, typename... Ts> uint64 __hash(const mcsl::tuple<Ts...>& obj, uint64 val) {
       if constexpr (index < sizeof...(Ts)) {
-         return __hash<index + 1, Ts...>(obj, mcsl::hash_algos::rapid_mix(val, std::hash<>(std::get<index, mcsl::tuple<Ts...>>(obj))));
+         return __hash<index + 1, Ts...>(obj, mcsl::hash_algos::rapid_mix(val, std::hash<decltype(std::get<index, mcsl::tuple<Ts...>>(obj))>(std::get<index, mcsl::tuple<Ts...>>(obj))));
       } else {
          return val;
       }
