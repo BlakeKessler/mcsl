@@ -348,4 +348,126 @@
    };
 }
 
+//!convert string to number
+//!legal radices: {0, 2, 8, 10, 16}
+//!when radix is 0, base is deduced from contents of string
+//!TODO: nan, inf
+[[gnu::pure]] constexpr mcsl::_::n mcsl::str_to_num(const char* str, const uint strlen, uint radix) {
+   using namespace _;
+   assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
+
+   bool isSigned = false;
+   bool isReal = false;
+
+   //deduce sign, radix, and starting index
+   bool isNegative = str[0] == '-';
+   isSigned = isNegative || str[0] == '+';
+   const char* it = str + isSigned;
+
+   if (strlen >= (2U + isNegative) && *it == '0') {
+      if (radix == 0) {
+         switch(*++it) {
+            case 'b': case 'B': radix =  2; ++it; break;
+            case 'o': case 'O': radix =  8; ++it; break;
+            case 'd': case 'D': radix = 10; ++it; break;
+            case 'x': case 'X': radix = 16; ++it; break;
+            
+            default : radix = 10; break;
+         }
+      } else {
+         ++it;
+         switch(radix) {
+            case  2: it += ((*it | CASE_BIT) == 'b'); break;
+            case  8: it += ((*it | CASE_BIT) == 'o'); break;
+            case 10: it += ((*it | CASE_BIT) == 'd'); break;
+            case 16: it += ((*it | CASE_BIT) == 'x'); break;
+         }
+      }
+   } else if (radix == 0) { radix = 10; }
+
+   const uint maxMantDigits = (uint)(LDBL_MANT_DIG / std::log2((float)radix));
+   
+   const char* const end = str + strlen;
+
+   uint overPrecDigits = 0;
+
+   //before radix point
+   u wholePt = __str_to_uint_impl(it, min(end - it, maxMantDigits), radix, 0);
+   it += wholePt.len;
+   if (it < end && is_digit(*it, radix)) { [[unlikely]];
+      //!TODO: support ints that would not fit in floats
+      isReal = true;
+      do {
+         ++overPrecDigits;
+         ++it;
+      } while (it < end && is_digit(*it, radix));
+   }
+   //after radix point
+   u fracPt;
+   bool hasRadixPt = it < end && *it == '.';
+   if (hasRadixPt) { [[likely]];
+      isReal = true;
+      ++it;
+      fracPt = __str_to_uint_impl(it, min(end - it, maxMantDigits - wholePt.len), radix, wholePt.val);
+      it += fracPt.len;
+      while (it < end && is_digit(*it, radix)) { [[unlikely]];
+         ++it;
+      }
+   } else {
+      fracPt = {.val = wholePt.val, .len = 0};
+   }
+
+   //exponent
+   flext val;
+   sint exp;
+   if (it + 2 < end && it[0] == EXP_NOTAT[0] && it[1] == EXP_NOTAT[1]) { //Middle-C style
+      val = fracPt.val;
+      exp = overPrecDigits - fracPt.len;
+
+      it += 2;
+      auto tmp = str_to_sint(it, end, radix);
+      exp += tmp.val;
+      it += tmp.len;
+      isReal = true;
+   }
+   else if (it + 1 < end && radix == 10 && (it[0] | CASE_BIT) == 'e') { //decimal float
+      val = fracPt.val;
+      exp = overPrecDigits - fracPt.len;
+
+      ++it;
+      auto tmp = str_to_sint(it, end, radix);
+      exp += tmp.val;
+      it += tmp.len;
+      isReal = true;
+   }
+   else if (it + 1 < end && (it[0] | CASE_BIT) == 'p') { //IEEE hex float
+      val = fracPt.val;
+      exp = overPrecDigits - fracPt.len;
+
+      ++it;
+      auto tmp = str_to_sint(it, end, 10);
+      val = ldexp(val, tmp.val);
+      it += tmp.len;
+      isReal = true;
+   } else if (isReal) {
+      val = fracPt.val;
+      exp = overPrecDigits - fracPt.len;
+   }
+
+   //return an integer if appropriatee
+   if (!isReal) {
+      if (isSigned) { //sint
+         return n{(slong)(isNegative ? -wholePt.val : wholePt.val), (uint)(it - str)};
+      } else { //uint
+         return n{(ulong)wholePt.val, (uint)(it - str)};
+      }
+   }
+
+   //finish calculating exponent
+   val *= pow((flext)radix, exp);
+
+   //return float
+   return n{(flong)val, (uint)(it - str)};
+}
+
 #endif //MCSL_STR_TO_NUM_CPP

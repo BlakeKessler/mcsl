@@ -45,10 +45,13 @@ using sptr  = intptr_t;
 using sword = slong;
 
 //!FIXED-WIDTH FLOATING-POINT TYPES
+// using float16 = _Float16;
+// using float32 = _Float32;
+// using float64 = _Float64;
 // using float16  = std::float16_t;
 using float32  = float;
 using float64  = double;
-// using float80  = long double;
+using float80  = long double;
 // using float128 = std::float128_t;
 
 // using half   = float16;

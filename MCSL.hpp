@@ -11,6 +11,20 @@ namespace mcsl {
    template<uint _capacity> struct uint_n;
    template<float_t T> struct Float;
 
+   enum class NumType : uint8 {
+      null = 0,
+      UINT,
+      SINT,
+      REAL
+   };
+   // struct num8;
+   // struct num16;
+   struct num32;
+   struct num64;
+   // struct num128;
+   using num = num32;
+   using nlong = num64;
+
    template<typename first_t, typename second_t = first_t> struct pair;
    // template<typename... Ts> struct tuple;
    struct range;

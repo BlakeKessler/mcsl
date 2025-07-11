@@ -4,6 +4,7 @@
 
 #include "MCSL.hpp"
 
+#include "num.hpp"
 #include "pair.hpp"
 
 namespace mcsl {
@@ -12,6 +13,7 @@ namespace mcsl {
       val_t(u);
       val_t(s);
       val_t(f);
+      val_t(n);
       #undef val_t
 
       [[gnu::pure]] constexpr u __str_to_uint_impl(const char* str, const uint strlen, const uint radix, ulong val);
@@ -22,11 +24,13 @@ namespace mcsl {
    [[gnu::pure]] constexpr _::s str_to_sint(const char* str, const uint strlen, uint radix = 0);
    [[gnu::pure]] constexpr _::f str_to_real(const char* str, const uint strlen, uint radix = 0);
    [[gnu::pure]] constexpr _::f c_float_lit_str_to_real(const char* str, const uint strlen, uint radix = 0);
+   [[gnu::pure]] constexpr _::n str_to_num(const char* str, const uint strlen, uint radix = 0);
 
    [[gnu::pure]] constexpr _::u str_to_uint(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_uint(begin, end-begin, radix); } else { return {0, 0}; }} }
    [[gnu::pure]] constexpr _::s str_to_sint(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_sint(begin, end-begin, radix); } else { return {0, 0}; }} }
    [[gnu::pure]] constexpr _::f str_to_real(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_real(begin, end-begin, radix); } else { return {NaN, 0}; }} }
-   [[gnu::pure]] constexpr _::f c_float_lit_str_to_real(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_real(begin, end-begin, radix); } else { return {NaN, 0}; }} }
+   [[gnu::pure]] constexpr _::f c_float_lit_str_to_real(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return c_float_lit_str_to_real(begin, end-begin, radix); } else { return {NaN, 0}; }} }
+   [[gnu::pure]] constexpr _::n str_to_num(const char* begin, const char* end, uint radix = 0) { { if (begin < end) { return str_to_num(begin, end-begin, radix); } else { return {{}, 0}; }} }
 
    [[gnu::const, gnu::always_inline]] constexpr sint8 digit_to_uint(const char ch);
    [[gnu::const]] constexpr inline bool is_digit(const char ch, const uint radix = 10) { return (uint8)digit_to_uint(ch) < radix; }
