@@ -7,10 +7,35 @@
 #include "assert.hpp"
 #include "type_traits.hpp"
 
-#include <cmath>
+#include "math.hpp"
 #include "throw.hpp"
 
 //!TODO: add template parameters for radix, only deduce when radix == 0
+
+[[gnu::pure]] constexpr mcsl::_::u mcsl::_::__str_to_uint_impl(const char* str, const uint strlen, const uint radix, ulong val) {
+   uint i = 0;
+   while (i < strlen) {
+      //parse digit
+      uint8 digit = (uint8)digit_to_uint(str[i]);
+      //check digit - NOTE: consolidates check for validity using integer underflow
+      if (digit >= radix) { [[unlikely]] break; }
+
+      //push digit - NOTE: manually inlines mcsl::MUL (multiplication with carry)
+      uoverlong tmp = (uoverlong)val * (uoverlong)radix;
+      val = (ulong)tmp;
+      if ((ulong)(tmp >> (sizeof(ulong) * 8))) { [[unlikely]] //check for overflow
+         __throw(ErrCode::STRTOINT, mcsl::FMT("unsigned integer overflow at index %u"), i);
+      }
+
+      val += digit;
+      ++i;
+   }
+
+   return {
+      .val = val,
+      .len = i
+   };
+}
 
 //!convert string to unsigned integer
 //!legal radices: {0, 2, ... , 36}
@@ -24,8 +49,8 @@
    if (strlen >= 2 && str[0] == '0') {
       if (radix == 0) {
          switch(str[1]) {
-            case 'b': case 'B': radix = 2;  i = 2; break;
-            case 'o': case 'O': radix = 8;  i = 2; break;
+            case 'b': case 'B': radix =  2; i = 2; break;
+            case 'o': case 'O': radix =  8; i = 2; break;
             case 'd': case 'D': radix = 10; i = 2; break;
             case 'x': case 'X': radix = 16; i = 2; break;
             
@@ -43,31 +68,16 @@
    } else if (radix == 0) { radix = 10; }
 
    //check radix
-   if (radix < 2 || radix > 36) {
+   if (radix < 2 || radix > 36) { [[unlikely]];
       __throw(ErrCode::STRTOINT, mcsl::FMT("radix for mcsl::str_to_uint() must be between 2 and 36 (not %u)"), radix);
    }
 
    //parse integer
-   ulong val = 0;
-   for (; i < strlen; ++i) {
-      //parse digit
-      uint8 digit = (uint8)digit_to_uint(str[i]);
-      //check digit - NOTE: consolidates check for validity using integer underflow
-      if (digit >= radix) { [[unlikely]] break; }
-
-      //push digit - NOTE: manually inlines mcsl::MUL (multiplication with carry)
-      uoverlong tmp = (uoverlong)val * (uoverlong)radix;
-      val = (ulong)tmp;
-      if ((ulong)(tmp >> (sizeof(ulong) * 8))) { [[unlikely]] //check for overflow
-         __throw(ErrCode::STRTOINT, mcsl::FMT("unsigned integer overflow at index %u"), i);
-      }
-
-      val += digit;
-   }
+   auto res = _::__str_to_uint_impl(str + i, strlen - i, radix, 0);
 
    return {
-      .val = val,
-      .len = i
+      .val = res.val,
+      .len = i + res.len
    };
 }
 
@@ -161,18 +171,20 @@
 //!convert string to floating point number
 //!legal radices: {0, 2, 8, 10, 16}
 //!when radix is 0, base is deduced from contents of string
+//!TODO: nan, inf
 [[gnu::pure]] constexpr mcsl::_::f mcsl::str_to_real(const char* str, const uint strlen, uint radix) {
+   using namespace _;
    assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    //deduce sign, radix, and starting index
    bool isNegative = str[0] == '-';
-   const char* it = str + isNegative;
+   const char* it = str + (isNegative || str[0] == '+');
 
    if (strlen >= (2U + isNegative) && *it == '0') {
       if (radix == 0) {
          switch(*++it) {
-            case 'b': case 'B': radix = 2;  ++it; break;
-            case 'o': case 'O': radix = 8;  ++it; break;
+            case 'b': case 'B': radix =  2; ++it; break;
+            case 'o': case 'O': radix =  8; ++it; break;
             case 'd': case 'D': radix = 10; ++it; break;
             case 'x': case 'X': radix = 16; ++it; break;
             
@@ -191,68 +203,56 @@
 
    const uint maxMantDigits = (uint)(LDBL_MANT_DIG / std::log2((float)radix));
    
-   //calculate bounds of fields
    const char* const end = str + strlen;
-   const char* const mantStart = it;
-   const char* mantEnd = end;
-   const char* radixPt = nullptr;
 
-	while (it < end) {
-      if (!is_digit(*it, radix)) {
-         if (*it == '.' && !radixPt) {
-            radixPt = it;
-         } else {
-            mantEnd = it;
-            break;
-         }
-      }
+   uint overPrecDigits = 0;
 
+   //before radix point
+   u wholePt = __str_to_uint_impl(it, min(end - it, maxMantDigits), radix, 0);
+   it += wholePt.len;
+   while (it < end && is_digit(*it, radix)) { [[unlikely]];
+      ++overPrecDigits;
       ++it;
    }
-
-   //bounds
-   const char* mantProcessEnd = mantStart + maxMantDigits;
-   if (radixPt && radixPt <= mantProcessEnd) {
-      ++mantProcessEnd;
-   }
-   if (mantProcessEnd > mantEnd) {
-      mantProcessEnd = mantEnd;
-   }
-
-   //mantissa
-   flext val;
-   {
-      ulong tmp = 0;
-      const char* mantIt = mantStart;
-      if (radixPt < mantProcessEnd) {
-         while (mantIt < radixPt) {
-            tmp = tmp * radix + digit_to_uint(*mantIt++);
-         }
-         ++mantIt;
+   //after radix point
+   u fracPt;
+   bool hasRadixPt = it < end && *it == '.';
+   if (hasRadixPt) { [[likely]];
+      ++it;
+      fracPt = __str_to_uint_impl(it, min(end - it, maxMantDigits - wholePt.len), radix, wholePt.val);
+      it += fracPt.len;
+      while (it < end && is_digit(*it, radix)) { [[unlikely]];
+         ++it;
       }
-      while (mantIt < mantProcessEnd) {
-         tmp = tmp * radix + digit_to_uint(*mantIt++);
-      }
-      val = tmp;
-      val = isNegative ? -val : val;
+   } else {
+      fracPt = {.val = wholePt.val, .len = 0};
    }
 
    //exponent
-   sint exp = (radixPt && radixPt < mantProcessEnd) ? radixPt - mantProcessEnd + 1: 0;
+   flext val = fracPt.val;
+   sint exp = overPrecDigits - fracPt.len;
    if (it + 2 < end && it[0] == EXP_NOTAT[0] && it[1] == EXP_NOTAT[1]) { //Middle-C style
-      auto tmp = str_to_sint(it + 2, end, 10);
+      it += 2;
+      auto tmp = str_to_sint(it, end, radix);
       exp += tmp.val;
-      it += tmp.len + 2;
+      it += tmp.len;
    }
-   else if (it + 1 < end && ((radix < 0xE && (it[0] | CASE_BIT) == 'e') || (it[0] | CASE_BIT) == 'p')) { //C-style
-      auto tmp = str_to_sint(it + 1, end, radix);
+   else if (it + 1 < end && radix == 10 && (it[0] | CASE_BIT) == 'e') { //decimal float
+      ++it;
+      auto tmp = str_to_sint(it, end, radix);
       exp += tmp.val;
-      it += tmp.len + 1;
+      it += tmp.len;
    }
-   val *= std::pow((flext)radix, exp);
+   else if (it + 1 < end && (it[0] | CASE_BIT) == 'p') { //IEEE hex float
+      ++it;
+      auto tmp = str_to_sint(it, end, 10);
+      val = ldexp(val, tmp.val);
+      it += tmp.len;
+   }
+   val *= pow((flext)radix, exp);
 
-   //return
-   return {
+   //return value
+   return f{
       .val = (flong)val,
       .len = (uint)(it - str)
    };
@@ -270,6 +270,8 @@
    //https://dl.acm.org/doi/pdf/10.1145/93548.93557?download=false
    //https://www.netlib.org/fp/
    
+   using namespace _;
+
    assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
 
    //deduce sign, radix, and starting index
@@ -297,51 +299,51 @@
    const uint maxMantDigits = radix == 10 ? 18 : 15;
    static_assert(sizeof(flext) >= 10);
    
-	//calculate bounds of fields
-   const char* end = str + strlen;
-   const char* mantStart = it;
-   const char* mantEnd = end;
-   const char* radixPt = nullptr;
+   const char* const end = str + strlen;
 
-	while (it < end) {
-      if (!is_digit(*it, radix)) {
-         if (*it == '.' && !radixPt) {
-            radixPt = it;
-         } else {
-            mantEnd = it;
-            break;
-         }
-      }
+   uint overPrecDigits = 0;
 
+   //before radix point
+   u wholePt = __str_to_uint_impl(it, min(end - it, maxMantDigits), radix, 0);
+   it += wholePt.len;
+   while (it < end && is_digit(*it, radix)) { [[unlikely]];
+      ++overPrecDigits;
       ++it;
    }
-
-   //calculate value
-   flext val = str_to_uint(mantStart, maxMantDigits, radix);
-   if (mantStart + maxMantDigits < (radixPt ? radixPt : mantEnd)) {
-      val *= std::pow(radix, (radixPt ? radixPt : mantEnd) - mantStart - maxMantDigits);
-   }
-   if (radixPt && radixPt + 1 < mantStart + maxMantDigits) {
-      ulong mantFrac = str_to_uint(radixPt + 1, mantEnd, radix);
-      val += mantFrac * std::pow(radix, radixPt + 1 - mantEnd);
-   }
-   sint exp = 0;
-   if (it + 1 < end) {
-      if ((radix < 0xE && (*it | CASE_BIT) == 'e') || (*it | CASE_BIT) == 'p') {
-         auto tmp = str_to_sint(it + 1, end, 10);
-         exp += tmp.val;
-         it += tmp.len + 1;
+   //after radix point
+   u fracPt;
+   bool hasRadixPt = it < end && *it == '.';
+   if (hasRadixPt) { [[likely]];
+      ++it;
+      fracPt = __str_to_uint_impl(it, min(end - it, maxMantDigits - wholePt.len), radix, wholePt.val);
+      it += fracPt.len;
+      while (it < end && is_digit(*it, radix)) { [[unlikely]];
+         ++it;
       }
-   }
-   if (radix == 10) {
-      val *= std::pow(10.0, exp);
    } else {
-      val *= std::pow(2, exp);
+      fracPt = {.val = wholePt.val, .len = 0};
    }
 
-   //return
-   return {
-      .val = (flong)(isNegative ? -val : val),
+   //exponent
+   flext val = fracPt.val;
+   sint exp = overPrecDigits - fracPt.len;
+   if (it + 1 < end && radix == 10 && (it[0] | CASE_BIT) == 'e') { //decimal float
+      ++it;
+      auto tmp = str_to_sint(it, end, radix);
+      exp += tmp.val;
+      it += tmp.len;
+   }
+   else if (it + 1 < end && radix == 16 && (it[0] | CASE_BIT) == 'p') { //IEEE hex float
+      ++it;
+      auto tmp = str_to_sint(it, end, 10);
+      val = ldexp(val, tmp.val);
+      it += tmp.len;
+   }
+   val *= pow((flext)radix, exp);
+   
+   //return value
+   return f{
+      .val = (flong)val,
       .len = (uint)(it - str)
    };
 }
