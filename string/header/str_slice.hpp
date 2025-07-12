@@ -75,35 +75,67 @@ constexpr const mcsl::str_slice mcsl::str_slice::make_from_cstr(const char* buf)
 
 //slicing
 #include "str_slice.hpp"
-template<typename char_t> constexpr const mcsl::str_slice mcsl::str_base<char_t>::slice(this const auto&& obj) {
-   return {obj.begin(), obj.size()};
+template<typename char_t> constexpr const mcsl::str_slice mcsl::str_base<char_t>::slice(this const auto& obj) {
+   return {(char_t*)obj.begin(), obj.size()};
 }
-template<typename char_t> constexpr const mcsl::str_slice mcsl::str_base<char_t>::slice(this const auto&& obj, uint size) {
+template<typename char_t> constexpr const mcsl::str_slice mcsl::str_base<char_t>::slice(this const auto& obj, uint size) {
    assume(size <= obj.size());
-   return {obj.begin(), size};
+   return {(char_t*)obj.begin(), size};
 }
-template<typename char_t> constexpr const mcsl::str_slice mcsl::str_base<char_t>::slice(this const auto&& obj, uint begin, uint end) {
+template<typename char_t> constexpr const mcsl::str_slice mcsl::str_base<char_t>::slice(this const auto& obj, uint begin, uint end) {
    assume(begin <= end);
    assume(end <= obj.size());
-   return {obj.begin() + begin, end - begin};
+   return {(char_t*)obj.begin() + begin, end - begin};
 }
-template<typename char_t> constexpr mcsl::str_slice mcsl::str_base<char_t>::slice(this auto&& obj) {
+template<typename char_t> constexpr mcsl::str_slice mcsl::str_base<char_t>::slice(this auto& obj) {
    return str_slice::make(obj.begin(), obj.size());
 }
-template<typename char_t> constexpr mcsl::str_slice mcsl::str_base<char_t>::slice(this auto&& obj, uint size) {
+template<typename char_t> constexpr mcsl::str_slice mcsl::str_base<char_t>::slice(this auto& obj, uint size) {
    assume(size <= obj.size());
    return str_slice::make(obj.begin(), size);
 }
-template<typename char_t> constexpr mcsl::str_slice mcsl::str_base<char_t>::slice(this auto&& obj, uint begin, uint end) {
+template<typename char_t> constexpr mcsl::str_slice mcsl::str_base<char_t>::slice(this auto& obj, uint begin, uint end) {
    assume(begin <= end);
    assume(end <= obj.size());
    return str_slice::make(obj.begin() + begin, end - begin);
 }
 
 
+template<typename char_t> constexpr mcsl::str_base<char_t>::operator const str_slice(this const auto& obj) {
+   return obj.slice();
+}
+// template<typename char_t> constexpr mcsl::str_base<char_t>::operator str_slice(this auto& obj) {
+//    return obj.slice();
+// }
+
+
 // #include "throw.hpp"
 
 
 #pragma endregion inlinesrc
+
+//default string hashing implementation
+namespace {
+   using namespace mcsl;
+   struct __strhash {
+      using is_transparent = void;
+
+      inline uint64 operator()(const str_slice str) const noexcept { return hash_algos::rapid(str.begin(), str.size()); }
+      inline uint64 operator()(const std::string_view str) const noexcept { return hash_algos::rapid(str.begin(), str.size()); }
+      inline uint64 operator()(const std::string& str) const noexcept { return hash_algos::rapid(str.data(), str.size()); }
+
+      inline uint64 operator()(const str_slice str, uint64 seed) const noexcept { return hash_algos::rapid_mix(operator()(str), seed); }
+      inline uint64 operator()(const std::string_view str, uint64 seed) const noexcept { return hash_algos::rapid_mix(operator()(str), seed); }
+      inline uint64 operator()(const std::string& str, uint64 seed) const noexcept { return hash_algos::rapid_mix(operator()(str), seed); }
+   };
+};
+template<mcsl::str_t str_t> struct mcsl::hash<str_t> : public __strhash {};
+template <mcsl::str_t str_t> struct std::hash<str_t> : public mcsl::hash<str_t> {};
+//equality checking
+template<mcsl::str_t str_t> struct std::equal_to<str_t> {
+   using is_transparent = void;
+
+   template<mcsl::str_t other_t> inline bool operator()(const str_t& lhs, const other_t& rhs) const noexcept { return lhs == rhs; }
+};
 
 #endif //MCSL_STR_SLICE_HPP

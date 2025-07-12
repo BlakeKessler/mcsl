@@ -28,19 +28,23 @@ namespace mcsl { //!TODO: actually implement mcsl::tuple properly
 }
 #pragma GCC diagnostic pop
 
+//default hash implementation for tuples
 namespace {
    template<uint index, typename... Ts> uint64 __hash(const mcsl::tuple<Ts...>& obj, uint64 val) {
       if constexpr (index < sizeof...(Ts)) {
-         return __hash<index + 1, Ts...>(obj, mcsl::hash_algos::rapid_mix(val, std::hash<decltype(std::get<index, mcsl::tuple<Ts...>>(obj))>(std::get<index, mcsl::tuple<Ts...>>(obj))));
+         const auto& elem = std::get<index, decltype(obj)>(obj);
+         return mcsl::hash<decltype(elem)>::operator()(__hash<index + 1, Ts...>(elem), val);
       } else {
          return val;
       }
    }
 };
-
-template<typename... Ts> struct std::hash<mcsl::tuple<Ts...>> {
+template<typename... Ts> struct mcsl::hash<mcsl::tuple<Ts...>> {
    static uint64 operator()(const mcsl::tuple<Ts...>& obj) {
-      return __hash<0, Ts...>(obj, 0);
+      return operator()(obj, 0);
+   }
+   static uint64 operator()(const mcsl::tuple<Ts...>& obj, uint64 seed) {
+      return __hash<0, Ts...>(obj, seed);
    }
 };
 

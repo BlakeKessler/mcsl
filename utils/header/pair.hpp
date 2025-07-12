@@ -19,9 +19,13 @@ template<typename first_t, typename second_t> struct [[clang::trivial_abi]] mcsl
    constexpr pair(const first_t& a, const second_t& b):first{a},second{b} {}
 };
 
-template<typename first_t, typename second_t> struct std::hash<mcsl::pair<first_t, second_t>> {
+//default hash implementation for pairs
+template<typename first_t, typename second_t> struct mcsl::hash<mcsl::pair<first_t, second_t>> {
    static uint64 operator()(const mcsl::pair<first_t, second_t>& obj) {
-      return mcsl::hash_algos::rapid_mix(std::hash<first_t>()(obj.first), std::hash<second_t>()(obj.second));
+      return mcsl::hash_algos::rapid_mix(mcsl::hash<first_t>()(obj.first), mcsl::hash<second_t>()(obj.second));
+   }
+   static uint64 operator()(const mcsl::pair<first_t, second_t>& obj, uint64 seed) {
+      return mcsl::hash_algos::rapid_mix(operator()(obj), seed);
    }
 };
 

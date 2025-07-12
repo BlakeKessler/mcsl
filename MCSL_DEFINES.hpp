@@ -87,6 +87,8 @@ using wchar = wchar_t;
 #define MCSL_ALL_NUM_T    MCSL_ALL_INT_T, MCSL_ALL_FLOAT_T
 #define MCSL_ALL_CHAR_T   char, wchar, char8, char16, char32
 
+#define MCSL_LT_64_INT_T uint8, uint16, uint32, sint8, sint16, sint32
+
 #define MCSL_CFLOAT_ABBREVIATIONS FLT, DBL, LDBL
 
 //enums
@@ -156,6 +158,9 @@ namespace mcsl {
    constexpr uint32 FNV_OFFSET_32 = 0x811C9DC5;
    constexpr uint64 FNV_OFFSET_64 = 0xCBF29CE484222325;
    constexpr uint128 FNV_OFFSET_128 = ((uint128)0x6C62272E07BB0142) << 64 | 0x62B821756295C58D;
+
+   //default rapidhash rhs
+   constexpr uint64 RAPIDHASH_RHS_DEFAULT = 0x9E3779B97F4A7C15; //taken from [example code from Martin Leitner-Ankerl](https://godbolt.org/z/b36Kr8oYj)
 };
 
 //bitmask literal

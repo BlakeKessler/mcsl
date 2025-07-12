@@ -11,7 +11,7 @@
 #include "tuple.hpp"
 #include <bit>
 
-template<typename key_t, typename val_t, mcsl::hash_t<key_t> Hash = std::hash<key_t>, mcsl::cmp_t<key_t> KeyEq = std::equal_to<key_t>>
+template<typename key_t, typename val_t, mcsl::hash_t<key_t> Hash = mcsl::hash<key_t>, mcsl::cmp_t<key_t> KeyEq = std::equal_to<key_t>>
 class mcsl::map {
    private:
       struct entry {

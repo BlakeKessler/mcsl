@@ -9,7 +9,7 @@
 #include "math.hpp"
 #include <bit>
 
-template<typename T, mcsl::hash_t<T> Hash = std::hash<T>, mcsl::cmp_t<T> KeyEq = std::equal_to<T>>
+template<typename T, mcsl::hash_t<T> Hash = mcsl::hash<T>, mcsl::cmp_t<T> KeyEq = std::equal_to<T>>
 class mcsl::set {
    private:
       struct entry {

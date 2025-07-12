@@ -23,15 +23,15 @@ struct mcsl::str_base : public contig_base<char_t> {
    static constexpr const char _nameof[] = "str_base";
    constexpr static const auto& nameof() { return _nameof; }
 
-   constexpr const str_slice slice(this const auto&& obj);
-   constexpr const str_slice slice(this const auto&& obj, uint size);
-   constexpr const str_slice slice(this const auto&& obj, uint begin, uint end);
-   constexpr str_slice slice(this auto&& obj);
-   constexpr str_slice slice(this auto&& obj, uint begin);
-   constexpr str_slice slice(this auto&& obj, uint begin, uint end);
+   constexpr const str_slice slice(this const auto& obj);
+   constexpr const str_slice slice(this const auto& obj, uint size);
+   constexpr const str_slice slice(this const auto& obj, uint begin, uint end);
+   constexpr str_slice slice(this auto& obj);
+   constexpr str_slice slice(this auto& obj, uint begin);
+   constexpr str_slice slice(this auto& obj, uint begin, uint end);
    
    //strlen
-   constexpr uint strlen(this auto&& obj) {
+   constexpr uint strlen(this const auto& obj) {
       for (uint i = 0; i < obj.size(); ++i) {
          if (!obj[i]) {
             return i;
@@ -41,7 +41,7 @@ struct mcsl::str_base : public contig_base<char_t> {
    }
 
    //repeat declaration of pointer arithmatic operator because C++ templates are weird
-   [[gnu::pure]] inline constexpr auto operator+(this auto&& obj, const uint i) -> decltype(auto)   { assume(i < obj.size()); return obj.begin() + i; }
+   [[gnu::pure]] inline constexpr auto operator+(this auto& obj, const uint i) -> decltype(auto)   { assume(i < obj.size()); return obj.begin() + i; }
    
    //operations
    template<str_t strT> strT copy(this const auto& obj);
@@ -50,13 +50,13 @@ struct mcsl::str_base : public contig_base<char_t> {
    template<str_t strT> auto operator+(this const auto& obj, const strT& other);
    
    // str_t& operator*=(const uint i);
-   template<str_t strT> strT operator*(this auto&& obj, const uint i);
+   template<str_t strT> strT operator*(this auto& obj, const uint i);
    
-   template<str_t strT> strT&& alter(this auto&& obj, char (*const transformer)(const char));
+   template<str_t strT> strT&& alter(this auto& obj, char (*const transformer)(const char));
    template<str_t strT> strT altered(this const auto& obj, char (*const transformer)(const char));
    
-   inline auto&& to_upper(this auto&& obj) { return obj.alter(mcsl::to_upper); }
-   inline auto&& to_lower(this auto&& obj) { return obj.alter(mcsl::to_lower); }
+   inline auto&& to_upper(this auto& obj) { return obj.alter(mcsl::to_upper); }
+   inline auto&& to_lower(this auto& obj) { return obj.alter(mcsl::to_lower); }
    inline auto as_upper(this const auto& obj) { return obj.altered(mcsl::to_upper); }
    inline auto as_lower(this const auto& obj) { return obj.altered(mcsl::to_lower); }
 
@@ -102,24 +102,12 @@ struct mcsl::str_base : public contig_base<char_t> {
       const uint len = mcsl::min(s.size(), other.size());
       return mcsl::memcmp(s.begin(), other.begin(), len);
    }
+
+
+   constexpr operator const str_slice(this const auto& obj);
+   // constexpr operator str_slice(this auto& obj);
 };
 
-
-
-
-//hashing
-template<mcsl::str_t str_t> struct std::hash<str_t> {
-   using is_transparent = void;
-
-   template<mcsl::str_t other_t> inline uword operator()(const other_t& str) const noexcept { return mcsl::hash_algos::rapid(str.begin(), str.size()); }
-   inline uword operator()(const std::string_view str) const noexcept { return mcsl::hash_algos::rapid(str.begin(), str.size()); }
-   inline uword operator()(const std::string& str) const noexcept { return mcsl::hash_algos::rapid(str.data(), str.size()); }
-};
-//equality checking
-template<mcsl::str_t str_t> struct std::equal_to<str_t> {
-   using is_transparent = void;
-
-   template<mcsl::str_t other_t> inline bool operator()(const str_t& lhs, const other_t& rhs) const noexcept { return lhs == rhs; }
-};
+#include "str_slice.hpp"
 
 #endif //MCSL_STR_BASE_HPP

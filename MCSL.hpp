@@ -8,6 +8,8 @@
 #include "concepts.hpp"
 
 namespace mcsl {
+   template<typename T> struct hash;
+   
    template<uint _capacity> struct uint_n;
    template<float_t T> struct Float;
 
