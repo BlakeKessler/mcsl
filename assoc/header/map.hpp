@@ -33,7 +33,7 @@ class mcsl::map {
             it():_buckIt{},_entryIt{} {}
             it(arr_list<list<entry>>::it buckIt, list<entry>::it entryIt):_buckIt{buckIt},_entryIt{entryIt} {}
             it(arr_list<list<entry>>::it buckIt):_buckIt{buckIt},_entryIt{buckIt->begin()} {}
-            operator bool() const { return _buckIt && _entryIt; }
+            explicit operator bool() const { return _buckIt && _entryIt; }
 
             pair<key_t, val_t>& operator*() const { assume(_buckIt && _entryIt); return _entryIt->entryPair; }
             pair<key_t, val_t>* operator->() const { assume(_buckIt && _entryIt); return &_entryIt->entryPair; }
@@ -75,6 +75,8 @@ class mcsl::map {
             it& operator-=(slong n) { return self += (-n); }
             it operator+(slong n) const { return it{self} += n; }
             it operator-(slong n) const { return it{self} -= n; }
+
+            bool operator==(it other) const { return _buckIt == other._buckIt && _entryIt == other._entryIt; }
       };
       struct const_it {
          private:
@@ -87,7 +89,7 @@ class mcsl::map {
             const_it(arr_list<list<entry>>::const_it buckIt, list<entry>::const_it entryIt):_buckIt{buckIt},_entryIt{entryIt} {}
             const_it(arr_list<list<entry>>::const_it buckIt):_buckIt{buckIt},_entryIt{buckIt->begin()} {}
             const_it(const it& other):_buckIt{other._buckIt},_entryIt{other._entryIt} {}
-            operator bool() const { return _buckIt && _entryIt; }
+            explicit operator bool() const { return _buckIt && _entryIt; }
 
             const pair<key_t, val_t>& operator*() const { assume(_buckIt && _entryIt); return _entryIt->entryPair; }
             const pair<key_t, val_t>* operator->() const { assume(_buckIt && _entryIt); return &_entryIt->entryPair; }
@@ -129,6 +131,8 @@ class mcsl::map {
             const_it& operator-=(slong n) { return self += (-n); }
             const_it operator+(slong n) const { return const_it{self} += n; }
             const_it operator-(slong n) const { return const_it{self} -= n; }
+
+            bool operator==(const_it other) const { return _buckIt == other._buckIt && _entryIt == other._entryIt; }
       };
    private:
       arr_list<list<entry>> _buckets;

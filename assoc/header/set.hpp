@@ -27,7 +27,7 @@ class mcsl::set {
             it():_buckIt(),_entryIt() {}
             it(arr_list<list<entry>>::it buckIt, list<entry>::it entryIt):_buckIt{buckIt},_entryIt{entryIt} {}
             it(arr_list<list<entry>>::it buckIt):_buckIt{buckIt},_entryIt{buckIt->begin()} {}
-            operator bool() const { return _buckIt && _entryIt; }
+            explicit operator bool() const { return _buckIt && _entryIt; }
 
             T& operator*() const { assume(_buckIt && _entryIt); return _entryIt->val; }
             T* operator->() const { assume(_buckIt && _entryIt); return &_entryIt->val; }
@@ -85,7 +85,7 @@ class mcsl::set {
             const_it(arr_list<list<entry>>::const_it buckIt, list<entry>::const_it entryIt):_buckIt{buckIt},_entryIt{entryIt} {}
             const_it(arr_list<list<entry>>::const_it buckIt):_buckIt{buckIt},_entryIt{buckIt->begin()} {}
             const_it(const it& other):_buckIt{other._buckIt},_entryIt{other._entryIt} {}
-            operator bool() const { return _buckIt && _entryIt; }
+            explicit operator bool() const { return _buckIt && _entryIt; }
 
             const T& operator*() const { assume(_buckIt && _entryIt); return _entryIt->val; }
             const T* operator->() const { assume(_buckIt && _entryIt); return &_entryIt->val; }
