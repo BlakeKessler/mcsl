@@ -141,14 +141,14 @@ template<typename T> T mcsl::dyn_arr<T>::pop_back() {
 template<typename T> T* mcsl::dyn_arr<T>::emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...> {
    assume(i < _size);
 
-   return new (begin() + i) T{args...};
+   return new (begin() + i) T{std::forward<decltype(args)>(args)...};
 }
 //!construct in place at back of array
 template<typename T> T* mcsl::dyn_arr<T>::emplace_back(auto&&... args) requires valid_ctor<T, decltype(args)...> {
    if (_size >= _capacity) {
       reserve(_size ? std::bit_floor(_size) << 1 : 1);
    }
-   return new (begin() + _size++) T{args...};
+   return new (begin() + _size++) T{std::forward<decltype(args)>(args)...};
 }
 
 #pragma endregion src

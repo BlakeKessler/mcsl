@@ -111,9 +111,9 @@ namespace mcsl {
    inline void flush() { stdout.flush(); stderr.flush(); }
 
    //!standard formatted IO
-   inline uint printf(const str_slice fmt, const auto&... argv) { return stdout.printf(fmt, argv...); }
-   inline uint err_printf(const str_slice fmt, const auto&... argv) { return stderr.printf(fmt, argv...); }
-   inline uint scanf(const str_slice fmt, auto*... argv) { return stdin.scanf(fmt, argv...); }
+   inline uint printf(const str_slice fmt, const auto&... argv) { return stdout.printf(fmt, std::forward<decltype(argv)>(argv)...); }
+   inline uint err_printf(const str_slice fmt, const auto&... argv) { return stderr.printf(fmt, std::forward<decltype(argv)>(argv)...); }
+   inline uint scanf(const str_slice fmt, auto*... argv) { return stdin.scanf(fmt, std::forward<decltype(argv)>(argv)...); }
 
    //!standard unformatted output
    inline File& write(const ubyte c) { return stdout.write(c); }

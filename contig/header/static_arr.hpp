@@ -47,7 +47,7 @@ namespace mcsl {
 //!construct in place
 template<typename T,uint _size> constexpr T* mcsl::static_arr<T,_size>::emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...> {
    assume(i < _size);
-   return new (begin() + i) T{args...};
+   return new (begin() + i) T{std::forward<decltype(args)>(args)...};
 }
 
 #pragma endregion src

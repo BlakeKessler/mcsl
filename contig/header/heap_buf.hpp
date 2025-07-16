@@ -88,12 +88,12 @@ template<typename T, uint _capacity> T mcsl::heap_buf<T,_capacity>::pop_back() {
 template<typename T, uint _capacity> T* mcsl::heap_buf<T,_capacity>::emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...> {
    assume(i < _size);
 
-   return new (begin() + i) T{args...};
+   return new (begin() + i) T{std::forward<decltype(args)>(args)...};
 }
 template<typename T, uint _capacity> T* mcsl::heap_buf<T,_capacity>::emplace_back(auto&&... args) requires valid_ctor<T, decltype(args)...> {
    assume(_size < _capacity);
    
-   return new (begin() + (_size++)) T{args...};
+   return new (begin() + (_size++)) T{std::forward<decltype(args)>(args)...};
 }
 
 

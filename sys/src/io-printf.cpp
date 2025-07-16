@@ -173,12 +173,12 @@ namespace {
                write(file, FMT_INTRO);
                ++charsPrinted;
                if (i <= str.size()) { //more to print
-                  return __printfImpl(file, str.slice(i, str.size()), charsPrinted, arg0, argv...); //tail recursion
+                  return __printfImpl(file, str.slice(i, str.size()), charsPrinted, arg0, std::forward<decltype(argv)>(argv)...); //tail recursion
                }
             } else { //other format code
                charsPrinted += writef(file, arg0, mode, fmtArgs);
                if (i <= str.size()) { //more to print
-                  return __printfImpl(file, str.slice(i, str.size()), charsPrinted, argv...); //tail recursion
+                  return __printfImpl(file, str.slice(i, str.size()), charsPrinted, std::forward<decltype(argv)>(argv)...); //tail recursion
                }
             }
             //end of format string
@@ -226,7 +226,7 @@ namespace {
 };
 
 uint mcsl::File::printf(const str_slice fmt, const auto&... argv) {
-   return __printfImpl(self, fmt, 0, argv...);
+   return __printfImpl(self, fmt, 0, std::forward<decltype(argv)>(argv)...);
 }
 
 #endif //FS_PRINTF_CPP

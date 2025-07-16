@@ -48,7 +48,7 @@ template <typename T> class [[clang::trivial_abi]] mcsl::arr_span : public conti
 //!construct in place
 template<typename T> constexpr T* mcsl::arr_span<T>::emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...> {
    assume(i < _size);
-   return new (begin() + i) T{args...};
+   return new (begin() + i) T{std::forward<decltype(args)>(args)...};
 }
 
 template<typename T> constexpr const mcsl::arr_span<T> mcsl::arr_span<T>::make(const T* buf, const uint size) {

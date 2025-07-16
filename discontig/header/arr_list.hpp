@@ -120,7 +120,7 @@ template<typename T, uint _bufCapacity> T* mcsl::arr_list<T,_bufCapacity>::push_
    if (+tmp % _bufCapacity == 0) {
       _buf.push_back(mcsl::calloc<T>(_bufCapacity));
    }
-   return &(*tmp = obj);
+   return new (tmp) T(std::forward<decltype(obj)>(obj));
 }
 template<typename T, uint _bufCapacity> T* mcsl::arr_list<T,_bufCapacity>::push_back(const T& obj) {
    it tmp = end();
@@ -128,12 +128,12 @@ template<typename T, uint _bufCapacity> T* mcsl::arr_list<T,_bufCapacity>::push_
    if (+tmp % _bufCapacity == 0) {
       _buf.push_back(mcsl::calloc<T>(_bufCapacity));
    }
-   return &(*tmp = obj);
+   return new (tmp) T(obj);
 }
 
 template<typename T, uint _bufCapacity> T* mcsl::arr_list<T,_bufCapacity>::emplace(const uint i, auto&&... initList) requires valid_ctor<T, decltype(initList)...> {
    assume(i < size());
-   return new (_buf[i / _bufCapacity] + (i % _bufCapacity)) T{initList...};
+   return new (_buf[i / _bufCapacity] + (i % _bufCapacity)) T{std::forward<decltype(initList)>(initList)...};
 }
 template<typename T, uint _bufCapacity> T* mcsl::arr_list<T,_bufCapacity>::emplace_back(auto&&... initList) requires valid_ctor<T, decltype(initList)...> {
    it tmp = end();
@@ -141,7 +141,7 @@ template<typename T, uint _bufCapacity> T* mcsl::arr_list<T,_bufCapacity>::empla
    if (+tmp % _bufCapacity == 0) {
       _buf.push_back(mcsl::calloc<T>(_bufCapacity));
    }
-   return emplace(+tmp, initList...);
+   return emplace(+tmp, std::forward<decltype(initList)>(initList)...);
 }
 
 template<typename T, uint _bufCapacity> T mcsl::arr_list<T,_bufCapacity>::pop_back() {

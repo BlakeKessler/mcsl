@@ -112,7 +112,7 @@ requires (!requires{other.first_index();}):
 template<typename T> constexpr T* mcsl::dyn_arr_span<T>::emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...> {
    assume(i < _size);
 
-   return new (begin() + i) T{args...};
+   return new (begin() + i) T{std::forward<decltype(args)>(args)...};
 }
 
 #pragma endregion src
