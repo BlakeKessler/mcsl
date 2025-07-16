@@ -25,8 +25,8 @@ template<typename T, uint _bufCapacity = mcsl::DEFAULT_ARR_LIST_BUF_SIZE> class 
 
       arr_list():_buf{},_size{} {}
       arr_list(arr_list&& other):_buf{std::move(other._buf)},_size{other._size} { if (this != &other) { other.release(); } }
-      arr_list(const arr_list& other): arr_list{view{other}} {}
       arr_list(const view data);
+      arr_list(const arr_list& other): arr_list{view{other}} {}
       arr_list(castable_to<T> auto&&... initList);
 
       ~arr_list();
@@ -37,7 +37,7 @@ template<typename T, uint _bufCapacity = mcsl::DEFAULT_ARR_LIST_BUF_SIZE> class 
 
       uint size() const { return _size; }
       uint capacity() const { return _buf.size() * _bufCapacity; }
-      operator bool() const { return _buf.size() && _buf[0].size(); }
+      explicit operator bool() const { return _buf.size() && _buf[0].size(); }
 
       it operator+(const uint i) { return it{self, i}; }
       T& operator[](const uint i) { assume(i < size()); return _buf[i / _bufCapacity][i % _bufCapacity]; }
@@ -83,10 +83,29 @@ template<typename T, uint _bufCapacity> mcsl::arr_list<T,_bufCapacity>::arr_list
 }
 
 template<typename T, uint _bufCapacity> mcsl::arr_list<T,_bufCapacity>::~arr_list() {
-   for (uint i = 0; i < _buf.size(); ++i) {
-      std::destroy_n(_buf[i], _bufCapacity);
-      mcsl::free(_buf[i]);
+   if (_buf) {
+      for (uint i = 0; i < _size; ++i) {
+         std::destroy_at(&(self[i]));
+      }
+      for (uint i = 0; i < _buf.size(); ++i) {
+         mcsl::free(_buf[i]);
+      }
    }
+
+   // for (uint i = 0; i < _buf.size(); ++i) {
+   //    std::destroy_n(_buf[i], _bufCapacity);
+   //    mcsl::free(_buf[i]);
+   // }
+
+   // if (_buf.size()) {
+   //    for (uint i = _buf.size() - 1; i--;) {
+   //       std::destroy_n(_buf[i], _bufCapacity);
+   //       mcsl::free(_buf[i]);
+   //    }
+   //    std::destroy_n(_buf.back(), _size % _bufCapacity);
+   //    mcsl::free(_buf.back());
+   // }
+   
    free();
 }
 
@@ -156,7 +175,7 @@ template<typename T, uint _bufCapacity> struct mcsl::it<T, mcsl::arr_list<T,_buf
    public:
       it():_buf{},_index{} {}
       it(buf_t& buf, uint index = 0):_buf{&buf},_index{index} {}
-      operator bool() const { return _buf && _index < _buf->size(); }
+      explicit operator bool() const { return _buf && _index < _buf->size(); }
 
       it& operator++()    { ++_index; return self; }
       it  operator++(int) { it tmp = self; ++self; return tmp; }
@@ -203,7 +222,7 @@ template<typename T, uint _bufCapacity> struct mcsl::it<const T, const mcsl::arr
    public:
       it():_buf{},_index{} {}
       it(const buf_t& buf, uint index = 0):_buf{&buf},_index{index} {}
-      operator bool() const { return _buf && _index < _buf->size(); }
+      explicit operator bool() const { return _buf && _index < _buf->size(); }
 
       const_it& operator++()    { ++_index; return self; }
       const_it  operator++(int) { const_it tmp = self; ++self; return tmp; }

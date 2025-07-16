@@ -50,7 +50,7 @@ template<typename T> class mcsl::list {
             friend class list; //apparently necessary for `~list()` for some reason
             it():ptr{} {}
             it(node* p):ptr{p} {}
-            operator bool() const { return ptr; }
+            explicit operator bool() const { return ptr; }
 
             T& operator*() const { assume(ptr && ptr->objptr); return *ptr->objptr; }
             T* operator->() const { assume(ptr && ptr->objptr); return ptr->objptr; }
@@ -85,7 +85,7 @@ template<typename T> class mcsl::list {
             const_it():ptr{} {}
             const_it(const node* p):ptr{p} {}
             const_it(const it& p):ptr{p.ptr} {}
-            operator bool() const { return ptr; }
+            explicit operator bool() const { return ptr; }
 
             const T& operator*() { assume(ptr && ptr->objptr); return *ptr->objptr; }
             const T* operator->() { assume(ptr && ptr->objptr); return ptr->objptr; }
@@ -127,6 +127,12 @@ template<typename T> class mcsl::list {
    public:
       list();
       ~list();
+
+      void release() {
+         _end = nullptr;
+         _begin = nullptr;
+         _size = 0;
+      }
 
       it begin() { return _begin; }
       it end() { return _end; }
@@ -185,16 +191,16 @@ template<typename T> mcsl::list<T>::list():
 }
 template<typename T> mcsl::list<T>::~list() {
    node* i = _begin;
-   while (i != _end) { //while instead of do-while to protect against double-deletion
+   auto e = _end;
+   it{e}.free_end();
+   _end = nullptr;
+   _begin = nullptr;
+   _size = 0;
+   while (i != e) { //while instead of do-while to protect against double-deletion
       it tmp = i;
       i = i->next;
       tmp.free();
    }
-   it{_end}.free_end();
-   
-   _begin = nullptr;
-   _end = nullptr;
-   _size = 0;
 }
 
 template<typename T> mcsl::list<T>::it mcsl::list<T>::push_back(const T& obj) {
