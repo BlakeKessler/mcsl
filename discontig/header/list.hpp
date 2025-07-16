@@ -126,6 +126,8 @@ template<typename T> class mcsl::list {
       template<cmp_t<T> comp> static pair<node*> __mergeImpl(comp cmp, node* lhsFirst, node* lhsLast, uint lhsLen, node* rhsFirst, node* rhsLast, uint rhsLen);
    public:
       list();
+      list(const list& other);
+      list(list&& other);
       ~list();
 
       void release() {
@@ -189,6 +191,23 @@ template<typename T> mcsl::list<T>::list():
    _begin(_end),
    _size(0) {
 }
+template<typename T> mcsl::list<T>::list(const list& other):
+   _end(node::make()),
+   _begin(_end),
+   _size(0) {
+      for (const T& elem : other) {
+         push_back(elem);
+      }
+}
+template<typename T> mcsl::list<T>::list(list&& other):
+   _end(other._end),
+   _begin(other._begin),
+   _size(other._size) {
+      if (this != &other) {
+         other.release();
+      }
+}
+
 template<typename T> mcsl::list<T>::~list() {
    node* i = _begin;
    auto e = _end;
