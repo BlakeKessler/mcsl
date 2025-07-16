@@ -21,9 +21,9 @@ namespace mcsl {
    #pragma GCC diagnostic pop
 };
 
-#define assert(...)\
-   if constexpr (__VA_ARG_COUNT__(__VA_ARGS__) == 1) { mcsl::__assert(__VA_ARGS__ __VA_OPT__(,) #__VA_ARGS__); }\
-   else { mcsl::__assert(__VA_ARGS__); }\
+#define assert(expr, ...)\
+   if constexpr (__VA_ARG_COUNT__((bool)(expr) __VA_OPT__(,) __VA_ARGS__) == 1) { mcsl::__assert((bool)(expr), __VA_ARGS__ __VA_OPT__(,) #expr __VA_OPT__(", ") #__VA_ARGS__); }\
+   else { mcsl::__assert((bool)(expr) __VA_OPT__(,) __VA_ARGS__); }\
    void(0)
 
 #ifndef NDEBUG
