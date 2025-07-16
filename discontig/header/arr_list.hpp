@@ -39,7 +39,7 @@ template<typename T, uint _bufCapacity = mcsl::DEFAULT_ARR_LIST_BUF_SIZE> class 
       uint capacity() const { return _buf.size() * _bufCapacity; }
       operator bool() const { return _buf.size() && _buf[0].size(); }
 
-      it operator+(const uint i) { assume(i < size()); return it{self, i}; }
+      it operator+(const uint i) { return it{self, i}; }
       T& operator[](const uint i) { assume(i < size()); return _buf[i / _bufCapacity][i % _bufCapacity]; }
       T& at(const uint i) { if (i >= size()) { __throw(ErrCode::SEGFAULT, mcsl::FMT("%s of size %u accessed at index %u"), nameof(), size(), i); } if (!_buf.data()) { __throw(ErrCode::SEGFAULT, mcsl::FMT("null %s dereferenced"), nameof()); } return self[i]; }
       it begin() { return it{self, 0}; }
@@ -47,7 +47,7 @@ template<typename T, uint _bufCapacity = mcsl::DEFAULT_ARR_LIST_BUF_SIZE> class 
       T& front() { return self[0]; }
       T& back() { return self[size()-1]; }
 
-      const_it operator+(const uint i) const { assume(i < size()); return const_it{self, i}; }
+      const_it operator+(const uint i) const { return const_it{self, i}; }
       const T& operator[](const uint i) const { assume(i < size()); return _buf[i / _bufCapacity][i % _bufCapacity]; }
       const T& at(const uint i) const { if (i >= size()) { __throw(ErrCode::SEGFAULT, mcsl::FMT("%s of size %u accessed at index %u"), nameof(), size(), i); } if (!_buf.data()) { __throw(ErrCode::SEGFAULT, mcsl::FMT("null %s dereferenced"), nameof()); } return self[i]; }
       const_it begin() const { return const_it{self, 0}; }
@@ -245,7 +245,7 @@ template<typename T, uint _bufCapacity> struct mcsl::span<T, mcsl::arr_list<T,_b
    public:
       span(buf_t& buf): span{buf, buf.size()} {}
       span(buf_t& buf, uint end): span{buf, 0, end} {}
-      span(buf_t& buf, uint begin, uint end):_buf{buf},_begin{begin},_end{end} { assume(_begin >= _end && _end <= _buf.size()); }
+      span(buf_t& buf, uint begin, uint end):_buf{buf},_begin{begin},_end{end} { assume(_begin <= _end && _end <= _buf.size()); }
 
       uint size() const { return _end - _begin; }
 
@@ -281,7 +281,7 @@ template<typename T, uint _bufCapacity> struct mcsl::span<const T, const mcsl::a
    public:
       span(buf_t& buf): span{buf, buf.size()} {}
       span(buf_t& buf, uint end): span{buf, 0, end} {}
-      span(buf_t& buf, uint begin, uint end):_buf{buf},_begin{begin},_end{end} { assume(_begin >= _end && _end <= _buf.size()); }
+      span(buf_t& buf, uint begin, uint end):_buf{buf},_begin{begin},_end{end} { assume(_begin <= _end && _end <= _buf.size()); }
 
       uint size() const { return _end - _begin; }
       
