@@ -11,6 +11,12 @@
 #include "raw_str.hpp"
 #include "hw.hpp"
 
+namespace mcsl {
+   template<typename T> concept Printable = requires (File file, T obj, char mode, FmtArgs fmt) {
+      { writef(file, obj, mode, fmt) } -> uint_t;
+   };
+};
+
 class mcsl::Path : public mcsl::cstr { //base type is implementation-defined
    private:
       static constexpr char _nameof[] = "Path";
@@ -91,7 +97,7 @@ class mcsl::File {
       str_slice readln(str_slice dest, const char nl = '\n');
       string readln(const char nl = '\n');
 
-      uint printf(const str_slice fmt, const auto&... argv);
+      uint printf(const str_slice fmt, const Printable auto&... argv);
       uint scanf(const str_slice fmt, auto*... argv);
 
       operator FILE*() { return _file; }
@@ -111,8 +117,8 @@ namespace mcsl {
    inline void flush() { stdout.flush(); stderr.flush(); }
 
    //!standard formatted IO
-   inline uint printf(const str_slice fmt, const auto&... argv) { return stdout.printf(fmt, std::forward<decltype(argv)>(argv)...); }
-   inline uint err_printf(const str_slice fmt, const auto&... argv) { return stderr.printf(fmt, std::forward<decltype(argv)>(argv)...); }
+   inline uint printf(const str_slice fmt, const Printable auto&... argv) { return stdout.printf(fmt, std::forward<decltype(argv)>(argv)...); }
+   inline uint err_printf(const str_slice fmt, const Printable auto&... argv) { return stderr.printf(fmt, std::forward<decltype(argv)>(argv)...); }
    inline uint scanf(const str_slice fmt, auto*... argv) { return stdin.scanf(fmt, std::forward<decltype(argv)>(argv)...); }
 
    //!standard unformatted output

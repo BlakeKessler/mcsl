@@ -225,7 +225,7 @@ namespace {
    #pragma GCC diagnostic pop
 };
 
-uint mcsl::File::printf(const str_slice fmt, const auto&... argv) {
+uint mcsl::File::printf(const str_slice fmt, const Printable auto&... argv) {
    return __printfImpl(self, fmt, 0, std::forward<decltype(argv)>(argv)...);
 }
 
