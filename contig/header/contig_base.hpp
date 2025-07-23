@@ -27,7 +27,7 @@ template<typename T> struct mcsl::contig_base {
    //element access
    [[gnu::pure]] constexpr T* const* ptr_to_buf(this auto&& obj)   { return obj.ptr_to_buf(); }
    [[gnu::pure]] constexpr T* data(this auto&& obj)   { return obj.data(); }
-   [[gnu::pure]] constexpr T* begin(this auto&& obj)   { return obj.begin(); }
+   [[gnu::pure]] constexpr iterator_t<T> auto begin(this auto&& obj)   { return obj.begin(); }
 
    [[gnu::pure]] inline constexpr auto operator+(this auto&& obj, const uint i) -> decltype(auto)   { assume(i < obj.size()); return obj.begin() + i; }
    [[gnu::pure]] inline constexpr auto operator[](this auto&& obj, const uint i) -> decltype(auto)   { return *(obj + i); }

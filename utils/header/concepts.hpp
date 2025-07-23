@@ -175,16 +175,29 @@ namespace mcsl {
    #pragma endregion selectors
    
    #pragma region containers
-   template<typename arr_t, typename T> concept contig_container_t = requires(arr_t a) {
+   template<typename it_t, typename T> concept iterator_t = requires (it_t it, sint n) {
+      { *it } -> castable_to<T&>;
+
+      { ++it } -> is_t<it_t&>;
+      { --it } -> is_t<it_t&>;
+      { it++ } -> is_t<it_t>;
+      { it-- } -> is_t<it_t>;
+      
+      { it + n } -> is_t<it_t>;
+      { it - n } -> is_t<it_t>;
+      { it += n } -> is_t<it_t&>;
+      { it -= n } -> is_t<it_t&>;
+   };
+
+   template<typename arr_t, typename T> concept container_t = requires(arr_t a) {
+      { a.begin() } -> iterator_t<T>;
+      { a.end() } -> same_t<decltype(a.begin())>;
       { a.size()  } -> int_t;
-      { a.data()  } -> same_t<T*>;
-      { a.begin() } -> same_t<T*>;
-      { a.end()   } -> same_t<T*>;
-      { a[0]      } -> same_t<T&>;
    };
-   template<typename T> concept container_t = requires(T a) {
-      { a.begin() } -> same_t<decltype(a.end())>;
-   };
+   template<typename arr_t, typename T> concept contig_container_t = requires(arr_t a, uint i) {
+      { a[i]      } -> castable_to<T&>;
+      { a.data()  } -> iterator_t<T>;
+   } && container_t<arr_t, T>;
 
    template<typename arr_t, typename T> concept contig_t = contig_container_t<arr_t, T> && arr_t::is_contig;
 
@@ -193,6 +206,7 @@ namespace mcsl {
    template<typename set_t, typename T> concept assoc_t = requires (set_t set, T obj) {
       { set.contains(obj) } -> same_t<bool>;
    } && set_t::is_assoc;
+   
    #pragma endregion containers
 
    #pragma region utils
