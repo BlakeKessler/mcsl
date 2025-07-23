@@ -48,6 +48,8 @@ namespace mcsl {
    template<typename T> class dyn_arr;
    template<typename T> class arr_span;
    template<typename T> class dyn_arr_span;
+   template<typename T, uint dim, uint... dims> class md_span;
+   template<typename T, uint dim, uint... dims> class md_static_arr;
 
    template<typename char_t> struct str_base;
    class string;
