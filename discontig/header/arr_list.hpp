@@ -202,6 +202,7 @@ template<typename T, uint _bufCapacity> struct mcsl::it<T, mcsl::arr_list<T,_buf
       operator uint () const { return _index; }
       uint operator+() const { return _index; }
 
+      bool operator==(const it& other) const { return _buf == other._buf && _index == other._index; }
       bool operator==(const const_it& other) const { return _buf == other._buf && _index == other._index; }
 };
 template<typename T, uint _bufCapacity> struct mcsl::it<const T, const mcsl::arr_list<T,_bufCapacity>> {
