@@ -42,7 +42,15 @@ namespace mcsl {
 #include <functional>
 template<typename T> struct mcsl::hash {
    static uint64 operator()(const T& obj) {
-      return std::hash<T>()(obj);
+      if constexpr(requires(std::hash<T> h) { { h(obj) } -> int_t; }) {
+         return std::hash<T>()(obj);
+      } else if constexpr(requires { {obj.hash()} -> int_t; }) {
+         return obj.hash();
+      } else if constexpr(requires { {obj.hash } -> int_t; }) {
+         return obj.hash;
+      } else {
+         static_assert(false);
+      }
    }
    static uint64 operator()(const T& obj, uint64 seed) {
       return hash_algos::rapid_mix(operator()(obj), seed);
