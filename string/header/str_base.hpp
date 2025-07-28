@@ -106,6 +106,9 @@ struct mcsl::str_base : public contig_base<char_t> {
 
    constexpr operator const str_slice(this const auto& obj);
    // constexpr operator str_slice(this auto& obj);
+
+   constexpr uint64 hash(this const auto& obj);
+   constexpr uint64 hash(this const auto& obj, uint64 seed);
 };
 
 #include "str_slice.hpp"

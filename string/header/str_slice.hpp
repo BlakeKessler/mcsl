@@ -46,6 +46,10 @@ class [[clang::trivial_abi]] mcsl::str_slice : public str_base<char> {
       [[gnu::pure]] constexpr const char* const* ptr_to_buf() const { return &_buf; }
       [[gnu::pure]] constexpr const char* data() const { return _buf; }
       [[gnu::pure]] constexpr const char* begin() const { return _buf; }
+
+      //hashing
+      constexpr uint64 hash() const { return hash_algos::rapid(_buf, _size); }
+      constexpr uint64 hash(uint64 seed) const { return hash_algos::rapid_mix(hash(), seed); }
 };
 
 
@@ -119,14 +123,15 @@ namespace {
    using namespace mcsl;
    struct __strhash {
       using is_transparent = void;
+      using T = str_slice;
 
-      inline uint64 operator()(const str_slice str) const noexcept { return hash_algos::rapid(str.begin(), str.size()); }
-      inline uint64 operator()(const std::string_view str) const noexcept { return hash_algos::rapid(str.begin(), str.size()); }
-      inline uint64 operator()(const std::string& str) const noexcept { return hash_algos::rapid(str.data(), str.size()); }
+      inline uint64 operator()(const T str) const noexcept { return str.hash(); }
+      inline uint64 operator()(const std::string_view str) const noexcept { return T::make(str.begin(), str.size()).hash(); }
+      inline uint64 operator()(const std::string& str) const noexcept { return T::make(str.data(), str.size()).hash(); }
 
-      inline uint64 operator()(const str_slice str, uint64 seed) const noexcept { return hash_algos::rapid_mix(operator()(str), seed); }
-      inline uint64 operator()(const std::string_view str, uint64 seed) const noexcept { return hash_algos::rapid_mix(operator()(str), seed); }
-      inline uint64 operator()(const std::string& str, uint64 seed) const noexcept { return hash_algos::rapid_mix(operator()(str), seed); }
+      inline uint64 operator()(const T str, uint64 seed) const noexcept { return str.hash(seed); }
+      inline uint64 operator()(const std::string_view str, uint64 seed) const noexcept { return T::make(str.begin(), str.size()).hash(seed); }
+      inline uint64 operator()(const std::string& str, uint64 seed) const noexcept { return T::make(str.data(), str.size()).hash(seed); }
    };
 };
 template<mcsl::str_t str_t> struct mcsl::hash<str_t> : public __strhash {};
@@ -137,5 +142,8 @@ template<mcsl::str_t str_t> struct std::equal_to<str_t> {
 
    template<mcsl::str_t other_t> inline bool operator()(const str_t& lhs, const other_t& rhs) const noexcept { return lhs == rhs; }
 };
+
+template<typename char_t> constexpr uint64 mcsl::str_base<char_t>::hash(this const auto& obj) { return ((str_slice)obj).hash(); }
+template<typename char_t> constexpr uint64 mcsl::str_base<char_t>::hash(this const auto& obj, uint64 seed) { return ((str_slice)obj).hash(seed); }
 
 #endif //MCSL_STR_SLICE_HPP
