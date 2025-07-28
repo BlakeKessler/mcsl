@@ -6,11 +6,11 @@
 namespace mcsl {
    namespace hash_algos {
       //rapidhash
-      uint64 rapid(const void* key, uint len, uint64 seed = 0);
-      uint64 rapidMicro(const void* key, uint len, uint64 seed = 0);
-      uint64 rapidNano(const void* key, uint len, uint64 seed = 0);
+      uint64 rapid(const void* key, uint len, uint64 seed = RAPIDHASH_RHS_DEFAULT);
+      uint64 rapidMicro(const void* key, uint len, uint64 seed = RAPIDHASH_RHS_DEFAULT);
+      uint64 rapidNano(const void* key, uint len, uint64 seed = RAPIDHASH_RHS_DEFAULT);
 
-      uint64 rapid_mix(uint64 lhs, uint64 rhs);
+      uint64 rapid_mix(uint64 lhs, uint64 rhs = RAPIDHASH_RHS_DEFAULT);
 
       //MurmurHash
       uint32 murmur32(const void* key, uint len, uint32 seed = 0);
