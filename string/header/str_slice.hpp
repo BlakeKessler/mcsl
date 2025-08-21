@@ -74,7 +74,11 @@ constexpr const mcsl::str_slice mcsl::str_slice::make(const str_t auto& other, c
    return make(other.begin() + begin, size);
 }
 constexpr const mcsl::str_slice mcsl::str_slice::make_from_cstr(const char* buf) {
-   return make(buf, std::strlen(buf));
+   uint len = 0;
+   while (buf[len] != '\0') {
+      ++len;
+   }
+   return make(buf, len);
 }
 
 //slicing
