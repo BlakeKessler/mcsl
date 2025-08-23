@@ -18,6 +18,11 @@ template <typename T> class mcsl::array : public contig_base<T> {
       // const uint _size;
 
       static constexpr const raw_str _nameof = "array";
+
+      void CTOR_PUSH(T val) {
+         _buf[_size] = val;
+         ++_size;
+      }
    public:
       static constexpr const auto& nameof() { return _nameof; }
 
@@ -70,12 +75,8 @@ template<typename T> mcsl::array<T>::array(const T* buf, const uint size):
 }
 //!constructor from initialzier list
 template<typename T> mcsl::array<T>::array(castable_to<T> auto&&... initList):
-   _buf(mcsl::malloc<T>(sizeof...(initList))),_size(sizeof...(initList)) {
-      T* tmp = const_cast<T*>(std::data(std::initializer_list<T>{initList...}));
-
-      for (uint i = 0; i < _size; ++i) {
-         _buf[i] = tmp[i];
-      }
+   _buf(mcsl::malloc<T>(sizeof...(initList))),_size(0) {
+      (CTOR_PUSH(initList), ...);
    }
 //!move constructor
 template<typename T> mcsl::array<T>::array(array&& other):

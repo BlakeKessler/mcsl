@@ -75,11 +75,7 @@ template<typename T, uint _bufCapacity> mcsl::arr_list<T,_bufCapacity>::arr_list
 }
 
 template<typename T, uint _bufCapacity> mcsl::arr_list<T,_bufCapacity>::arr_list(castable_to<T> auto&&... initList):_buf{},_size{} {
-   T* tmp = const_cast<T*>(std::data(std::initializer_list<T>{initList...}));
-
-   for (uint i = 0; i < _size; ++i) {
-      push_back(tmp[i]);
-   }
+   (push_back(initList), ...);
 }
 
 template<typename T, uint _bufCapacity> mcsl::arr_list<T,_bufCapacity>::~arr_list() {

@@ -15,6 +15,11 @@ template<typename T, uint _capacity> class mcsl::heap_buf : public mcsl::contig_
       uint _size;
 
       static constexpr const char _nameof[] = "heap_buf";
+
+      void CTOR_PUSH(T val) {
+         _buf[_size] = val;
+         ++_size;
+      }
    public:
       static constexpr const auto& nameof() { return _nameof; }
       
@@ -59,14 +64,9 @@ template<typename T, uint _capacity> mcsl::heap_buf<T,_capacity>::heap_buf(const
 }
 template<typename T, uint _capacity> mcsl::heap_buf<T,_capacity>::heap_buf(castable_to<T> auto&&... initList):
    _buf(mcsl::malloc<T>(_capacity)),
-   _size(sizeof...(initList)) {
-      assert(_size <= _capacity, __OVERSIZED_INIT_LIST_MSG, ErrCode::SEGFAULT);
-
-      T* tmp = const_cast<T*>(std::data(std::initializer_list<T>{initList...}));
-
-      for (uint i = 0; i < _size; ++i) {
-         _buf[i] = tmp[i];
-      }
+   _size(0) {
+      assert(sizeof...(initList) <= _capacity, __OVERSIZED_INIT_LIST_MSG, ErrCode::SEGFAULT);
+      (CTOR_PUSH(initList), ...);
 }
 
 template<typename T, uint _capacity> T* mcsl::heap_buf<T,_capacity>::push_back(T&& obj) {

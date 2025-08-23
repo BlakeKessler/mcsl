@@ -22,6 +22,11 @@ template <typename T> class mcsl::dyn_arr : public contig_base<T> {
 
       // static constexpr const raw_str _nameof = "dyn_arr";
       static constexpr const char _nameof[] = "dyn_arr";
+
+      void CTOR_PUSH(T val) {
+         _buf[_size] = val;
+         ++_size;
+      }
       dyn_arr(const uint size, const uint capacity);
    public:
       static constexpr const auto& nameof() { return _nameof; }
@@ -82,12 +87,9 @@ template<typename T> mcsl::dyn_arr<T>::dyn_arr(const uint capacity):
 }
 //!constructor from initializer list
 template<typename T> mcsl::dyn_arr<T>::dyn_arr(castable_to<T> auto&&... initList):
-   dyn_arr(sizeof...(initList), sizeof...(initList)) {
-      const T* tmp = std::data(std::initializer_list<T>{initList...});
-
-      for (uint i = 0; i < _size; ++i) {
-         _buf[i] = tmp[i];
-      }
+   _capacity(std::bit_ceil(sizeof...(initList))), _size(0),
+   _buf(mcsl::malloc<T>(_capacity)) {
+      (CTOR_PUSH(initList), ...);
 }
 //!move constructor
 template<typename T> mcsl::dyn_arr<T>::dyn_arr(dyn_arr&& other):
