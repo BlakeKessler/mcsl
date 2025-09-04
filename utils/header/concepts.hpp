@@ -26,19 +26,19 @@ namespace mcsl {
    template<typename T> concept num_t = int_t<T> || float_t<T>;
    template<typename T> concept ptr_t = std::is_pointer<T>::value;
 
-   template<typename ...Ts> concept any_num_t   = (  num_t<Ts> || ...);
-   template<typename ...Ts> concept any_float_t = (float_t<Ts> || ...);
-   template<typename ...Ts> concept any_int_t   = (  int_t<Ts> || ...);
-   template<typename ...Ts> concept any_uint_t  = ( uint_t<Ts> || ...);
-   template<typename ...Ts> concept any_sint_t  = ( sint_t<Ts> || ...);
-   template<typename ...Ts> concept any_ptr_t   = (  ptr_t<Ts> || ...);
+   template<typename... Ts> concept any_num_t   = (  num_t<Ts> || ...);
+   template<typename... Ts> concept any_float_t = (float_t<Ts> || ...);
+   template<typename... Ts> concept any_int_t   = (  int_t<Ts> || ...);
+   template<typename... Ts> concept any_uint_t  = ( uint_t<Ts> || ...);
+   template<typename... Ts> concept any_sint_t  = ( sint_t<Ts> || ...);
+   template<typename... Ts> concept any_ptr_t   = (  ptr_t<Ts> || ...);
 
-   template<typename ...Ts> concept all_num_t   = (  num_t<Ts> && ...);
-   template<typename ...Ts> concept all_float_t = (float_t<Ts> && ...);
-   template<typename ...Ts> concept all_int_t   = (  int_t<Ts> && ...);
-   template<typename ...Ts> concept all_uint_t  = ( uint_t<Ts> && ...);
-   template<typename ...Ts> concept all_sint_t  = ( sint_t<Ts> && ...);
-   template<typename ...Ts> concept all_ptr_t   = (  ptr_t<Ts> && ...);
+   template<typename... Ts> concept all_num_t   = (  num_t<Ts> && ...);
+   template<typename... Ts> concept all_float_t = (float_t<Ts> && ...);
+   template<typename... Ts> concept all_int_t   = (  int_t<Ts> && ...);
+   template<typename... Ts> concept all_uint_t  = ( uint_t<Ts> && ...);
+   template<typename... Ts> concept all_sint_t  = ( sint_t<Ts> && ...);
+   template<typename... Ts> concept all_ptr_t   = (  ptr_t<Ts> && ...);
    #pragma endregion checks
 
    #pragma region type_traits
@@ -95,9 +95,9 @@ namespace mcsl {
 
    namespace { //implement largest_[a-z]+_t
       namespace { //num
-         template<typename T = void, typename ...Ts> struct __LARGEST_NUM;
+         template<typename T = void, typename... Ts> struct __LARGEST_NUM;
          template<> struct __LARGEST_NUM<void> { using type = void; };
-         template<typename T, typename ...Ts> struct __LARGEST_NUM {
+         template<typename T, typename... Ts> struct __LARGEST_NUM {
             using type = select<num_t<T>,
                select<sizeof...(Ts) != 0, //T is an num
                   larger_t<T, typename __LARGEST_NUM<Ts...>::type>,
@@ -108,9 +108,9 @@ namespace mcsl {
          };
       };
       namespace { //float
-         template<typename T = void, typename ...Ts> struct __LARGEST_FLOAT;
+         template<typename T = void, typename... Ts> struct __LARGEST_FLOAT;
          template<> struct __LARGEST_FLOAT<void> { using type = void; };
-         template<typename T, typename ...Ts> struct __LARGEST_FLOAT {
+         template<typename T, typename... Ts> struct __LARGEST_FLOAT {
             using type = select<float_t<T>,
                select<sizeof...(Ts) != 0, //T is a float
                   larger_t<T, typename __LARGEST_FLOAT<Ts...>::type>,
@@ -121,9 +121,9 @@ namespace mcsl {
          };
       };
       namespace { //int
-         template<typename T = void, typename ...Ts> struct __LARGEST_INT;
+         template<typename T = void, typename... Ts> struct __LARGEST_INT;
          template<> struct __LARGEST_INT<void> { using type = void; };
-         template<typename T, typename ...Ts> struct __LARGEST_INT {
+         template<typename T, typename... Ts> struct __LARGEST_INT {
             using type = select<int_t<T>,
                select<sizeof...(Ts) != 0, //T is an int
                   larger_t<T, typename __LARGEST_INT<Ts...>::type>,
@@ -134,9 +134,9 @@ namespace mcsl {
          };
       };
       namespace { //uint
-         template<typename T = void, typename ...Ts> struct __LARGEST_UINT;
+         template<typename T = void, typename... Ts> struct __LARGEST_UINT;
          template<> struct __LARGEST_UINT<void> { using type = void; };
-         template<typename T, typename ...Ts> struct __LARGEST_UINT {
+         template<typename T, typename... Ts> struct __LARGEST_UINT {
             using type = select<uint_t<T>,
                select<sizeof...(Ts) != 0, //T is an uint
                   larger_t<T, typename __LARGEST_UINT<Ts...>::type>,
@@ -147,9 +147,9 @@ namespace mcsl {
          };
       };
       namespace { //sint
-         template<typename T = void, typename ...Ts> struct __LARGEST_SINT;
+         template<typename T = void, typename... Ts> struct __LARGEST_SINT;
          template<> struct __LARGEST_SINT<void> { using type = void; };
-         template<typename T, typename ...Ts> struct __LARGEST_SINT {
+         template<typename T, typename... Ts> struct __LARGEST_SINT {
             using type = select<sint_t<T>,
                select<sizeof...(Ts) != 0, //T is an sint
                   larger_t<T, typename __LARGEST_SINT<Ts...>::type>,
@@ -161,11 +161,11 @@ namespace mcsl {
       };
    };
    
-   template<typename ...Ts> using largest_num_t   = __LARGEST_NUM<Ts...>::type;
-   template<typename ...Ts> using largest_float_t = __LARGEST_FLOAT<Ts...>::type;
-   template<typename ...Ts> using largest_int_t   = __LARGEST_INT<Ts...>::type;
-   template<typename ...Ts> using largest_uint_t  = __LARGEST_UINT<Ts...>::type;
-   template<typename ...Ts> using largest_sint_t  = __LARGEST_SINT<Ts...>::type;
+   template<typename... Ts> using largest_num_t   = __LARGEST_NUM<Ts...>::type;
+   template<typename... Ts> using largest_float_t = __LARGEST_FLOAT<Ts...>::type;
+   template<typename... Ts> using largest_int_t   = __LARGEST_INT<Ts...>::type;
+   template<typename... Ts> using largest_uint_t  = __LARGEST_UINT<Ts...>::type;
+   template<typename... Ts> using largest_sint_t  = __LARGEST_SINT<Ts...>::type;
 
    template<num_t ...Ts> using most_precise_t = select<any_float_t<Ts...>,
       largest_float_t<Ts...>, //has a floating type -> largest floating type
@@ -221,12 +221,12 @@ namespace mcsl {
    template<typename other_t, typename T, typename hashFunc_t, typename keyEqFunc_t> concept hash_compat_t = hash_t<hashFunc_t, T> && cmp_t<keyEqFunc_t, T> && hash_t<hashFunc_t, other_t> && cmp_t<keyEqFunc_t, T, other_t>;
    template<typename span_t, typename T, typename hashFunc_t, typename keyEqFunc_t> concept hash_compat_span_t = requires (span_t span) { requires hash_compat_t<decltype(span[0]), T, hashFunc_t, keyEqFunc_t>; requires same_t<span_t, arr_span<decay<decltype(span[0])>>>; };
 
-   template<typename func_t, typename ...Args> concept callable_t = requires (func_t f, Args... args) {
+   template<typename func_t, typename... Args> concept callable_t = requires (func_t f, Args... args) {
       f(args...);
    };
 
-   template<typename T, typename ...Args> concept valid_ctor = requires (Args... args) {
-      T(args...); //T{args...};
+   template<typename T, typename... Args> concept valid_ctor = requires (Args... args) {
+      T(std::forward<Args>(args)...); //T{args...};
    };
    
    #pragma endregion utils
