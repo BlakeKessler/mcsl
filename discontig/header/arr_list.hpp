@@ -61,7 +61,8 @@ template<typename T, uint _bufCapacity = mcsl::DEFAULT_ARR_LIST_BUF_SIZE> class 
       T* push_back(const T&);
       T* emplace(const uint i, auto&&... initList) requires valid_ctor<T, decltype(initList)...>;
       T* emplace_back(auto&&... initList) requires valid_ctor<T, decltype(initList)...>;
-      T pop_back();
+      void pop_back();
+      [[nodiscard]] T pop_and_get_back();
 };
 
 
@@ -140,13 +141,16 @@ template<typename T, uint _bufCapacity> T* mcsl::arr_list<T,_bufCapacity>::empla
    return emplace(+tmp, std::forward<decltype(initList)>(initList)...);
 }
 
-template<typename T, uint _bufCapacity> T mcsl::arr_list<T,_bufCapacity>::pop_back() {
-   T poppedElem = back();
+template<typename T, uint _bufCapacity> void mcsl::arr_list<T,_bufCapacity>::pop_back() {
    std::destroy_at(&back());
    if (--_size % _bufCapacity == 0) {
       mcsl::free(_buf[_size / _bufCapacity]);
       _buf[_size / _bufCapacity] = nullptr;
    }
+}
+template<typename T, uint _bufCapacity> [[nodiscard]] T mcsl::arr_list<T,_bufCapacity>::pop_and_get_back() {
+   T poppedElem = back();
+   pop_back();
    return poppedElem;
 }
 

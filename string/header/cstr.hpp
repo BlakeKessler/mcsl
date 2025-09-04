@@ -44,7 +44,7 @@ class mcsl::cstr : public str_base<char> {
       inline bool reserve_exact(const uint newSize) { return _buf.reserve_exact(newSize + 1); }
       char* release() { return _buf.release(); }
       char* push_back(const char ch) { __resize(); _buf.back() = ch; return _buf.push_back('\0'); }
-      char pop_back() { __resize(); const char tmp = back(); _buf.pop_back(); _buf.back() = '\0'; return tmp; }
+      [[nodiscard]] char pop_and_get_back() { __resize(); const char tmp = back(); _buf.pop_back(); _buf.back() = '\0'; return tmp; }
 
 
       cstr& operator+=(const str_t auto& other);

@@ -45,7 +45,7 @@ class mcsl::string : public mcsl::str_base<char> {
       bool reserve_exact(const uint newSize) { return _buf.reserve_exact(newSize); }
       char* release() { return _buf.release(); }
       char* push_back(char obj) { return _buf.push_back(obj); }
-      char pop_back() { return _buf.pop_back(); }
+      [[nodiscard]] char pop_and_get_back() { return _buf.pop_and_get_back(); }
 
       string& operator+=(const str_t auto& other);
       string& operator*=(const uint repeatCount);

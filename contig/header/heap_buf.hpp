@@ -48,7 +48,8 @@ template<typename T, uint _capacity> class mcsl::heap_buf : public mcsl::contig_
       //modifiers
       T* push_back(T&& obj);
       T* push_back(const T& obj);
-      T pop_back();
+      void pop_back();
+      [[nodiscard]] T pop_and_get_back();
       T* emplace(const uint i, auto&&... args) requires valid_ctor<T, decltype(args)...>;
       T* emplace_back(auto&&... args) requires valid_ctor<T, decltype(args)...>;
 };
@@ -79,7 +80,11 @@ template<typename T, uint _capacity> T* mcsl::heap_buf<T,_capacity>::push_back(c
 
    return new (begin() + (_size++)) T{std::forward<decltype(obj)>(obj)};
 }
-template<typename T, uint _capacity> T mcsl::heap_buf<T,_capacity>::pop_back() {
+template<typename T, uint _capacity> void mcsl::heap_buf<T,_capacity>::pop_back() {
+   assume(_size);
+   std::destroy_at(_buf + --_size);
+}
+template<typename T, uint _capacity> [[nodiscard]] T mcsl::heap_buf<T,_capacity>::pop_and_get_back() {
    assume(_size);
    T tmp = _buf[--_size];
    std::destroy_at(self.end());
