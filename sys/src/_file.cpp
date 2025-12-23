@@ -110,5 +110,29 @@ void mcsl::_File::globalSetup() {
    return;
 }
 
+void mcsl::_File::globalCleanup() {
+   //iterate over open files
+   int*        it = g.inUse;
+   int* const end = g.inUse + g.inUseLen;
+   Errno err;
+   for (; it != end; ++it) {
+      _File* file = g.fileBuf + *it;
+
+      //close file
+      err = file->close();
+      if ((bool)err) {
+         TODO;
+      }
+   }
+
+   //unmap global file state memory
+   sint res = munmap(g.data.data(), g.data.size());
+   if (res) {
+      TODO;
+   }
+   
+   // return
+   return;
+}
 
 #endif //MCSL__FILE_CPP
