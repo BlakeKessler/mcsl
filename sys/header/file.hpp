@@ -102,7 +102,7 @@ struct mcsl::_File {
 
       static struct {
          bool isInit;
-         sint pageSize;
+         uint pageSize;
          arr_span<ubyte> data;
 
          mcsl::arr_span<_File> fileBuf;

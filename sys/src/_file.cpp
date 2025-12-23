@@ -85,25 +85,27 @@ void mcsl::_File::globalSetup() {
    if (ptr == MAP_FAILED) {
       TODO; //actual error handling
    }
-   
-   //save info
-   g.data = {ptr, (uint)dataSize};
-   g.pageSize = pageSize;
-   
-   g.inUse = (sint*)ptr;
-   g.inUseLen = 0;
-   g.avail = (sint*)ptr;
-   g.availLen = entries;
-
-   g.fileBuf = {(_File*)ptr + fmanLen, (uint)entries};
 
    //initialize avail buffer
-   for (int i = 0; i < entries; ++i) {
-      g.avail[i] = i;
+   sint* avail = (sint*)ptr;
+   for (sint i = 0; i < entries; ++i) {
+      avail[i] = i;
    }
+   
+   //save info and mark initialization as successful
+   g = {
+      .isInit = true,
+      .pageSize = pageSize,
+      .data = {ptr, (uint)dataSize},
+      
+      .fileBuf = {(_File*)((ubyte*)ptr + fmanLen), (uint)entries},
 
-   //mark initialization as successful
-   g.isInit = true;
+      .inUse = avail,
+      .inUseLen = 0,
+      .avail = avail,
+      .availLen = entries,
+   };
+
    //return
    return;
 }
