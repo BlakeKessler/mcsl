@@ -98,6 +98,7 @@ using wchar = wchar_t;
 //enums
 namespace mcsl {
    enum class Errno : sint {
+      NO_ERR = 0,
       UNSPEC = -1,
 
       ASSERT_FAIL = 134, //the lowest errno not used by glibc

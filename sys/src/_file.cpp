@@ -120,7 +120,7 @@ void mcsl::_File::globalCleanup() {
 
       //close file
       err = file->close();
-      if ((bool)err) {
+      if (+err) {
          TODO;
       }
    }
