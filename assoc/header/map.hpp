@@ -397,7 +397,7 @@ tplt(const val_t&)::operator[](const key_t& key) const {
          return it->val();
       }
    }
-   mcsl::__throw(ErrCode::SEGFAULT, FMT("key not in map"));
+   mcsl::__throw(Errno::SEGFAULT, FMT("key not in map"));
 }
 tplt(val_t&)::operator[](const hash_compat_t<key_t, Hash, KeyEq> auto& key) requires valid_ctor<key_t, decltype(key)> {
    ulong hash = _hash(key);
@@ -425,7 +425,7 @@ tplt(const val_t&)::operator[](const hash_compat_t<key_t, Hash, KeyEq> auto& key
          return it->val();
       }
    }
-   mcsl::__throw(ErrCode::SEGFAULT, FMT("key not in map"));
+   mcsl::__throw(Errno::SEGFAULT, FMT("key not in map"));
 }
 
 //returns whether an element was removed

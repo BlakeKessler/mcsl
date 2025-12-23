@@ -33,7 +33,7 @@ mcsl::File::File(const Path fileName, const char* mode, arr_span<ubyte> buf, boo
    _endIndex{0},
    _ownsBuf{ownsBuf} {
       if (!_file) {
-         __throw(ErrCode::FS_ERR, mcsl::FMT("bad file: %s"), fileName.slice());
+         __throw(Errno::FS_ERR, mcsl::FMT("bad file: %s"), fileName.slice());
       }
       std::setvbuf(_file, nullptr, _IONBF, 0);
 }
@@ -135,7 +135,7 @@ mcsl::str_slice mcsl::File::readln(str_slice dest, const char nl) {
       }
       dest[i++] = ch;
    }
-   __throw(ErrCode::SEGFAULT, mcsl::FMT("buffer overflow in File::readln"));
+   __throw(Errno::SEGFAULT, mcsl::FMT("buffer overflow in File::readln"));
 }
 
 mcsl::string mcsl::File::readln(const char nl) {

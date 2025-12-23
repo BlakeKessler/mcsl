@@ -24,7 +24,7 @@
       uoverlong tmp = (uoverlong)val * (uoverlong)radix;
       val = (ulong)tmp;
       if ((ulong)(tmp >> (sizeof(ulong) * 8))) { [[unlikely]] //check for overflow
-         __throw(ErrCode::STRTOINT, mcsl::FMT("unsigned integer overflow at index %u"), i);
+         __throw(Errno::STRTOINT, mcsl::FMT("unsigned integer overflow at index %u"), i);
       }
 
       val += digit;
@@ -41,7 +41,7 @@
 //!legal radices: {0, 2, ... , 36}
 //!when radix is 0, base is deduced from contents of string
 [[gnu::pure]] constexpr mcsl::_::u mcsl::str_to_uint(const char* str, const uint strlen, uint radix) {
-   assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
+   assert(str && strlen, __PARSE_NULL_STR_MSG, Errno::SEGFAULT);
 
    uint i = 0;
 
@@ -69,7 +69,7 @@
 
    //check radix
    if (radix < 2 || radix > 36) { [[unlikely]];
-      __throw(ErrCode::STRTOINT, mcsl::FMT("radix for mcsl::str_to_uint() must be between 2 and 36 (not %u)"), radix);
+      __throw(Errno::STRTOINT, mcsl::FMT("radix for mcsl::str_to_uint() must be between 2 and 36 (not %u)"), radix);
    }
 
    //parse integer
@@ -85,7 +85,7 @@
 //!legal radices: {0, 2, ... , 36}
 //!when radix is 0, base is deduced from contents of string
 [[gnu::pure]] constexpr mcsl::_::s mcsl::str_to_sint(const char* str, const uint strlen, uint radix) {
-   assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
+   assert(str && strlen, __PARSE_NULL_STR_MSG, Errno::SEGFAULT);
 
    if (str[0] == '-') {
       auto tmp = str_to_uint(str+1, strlen-1, radix);
@@ -153,12 +153,12 @@
       
       default: [[unlikely]] return -1;
    }
-   // __throw(ErrCode::STRTOINT, mcsl::FMT("%c (ASCII: %u) is not a valid base-36 digit"), ch, (uint)ch);
+   // __throw(Errno::STRTOINT, mcsl::FMT("%c (ASCII: %u) is not a valid base-36 digit"), ch, (uint)ch);
 }
 
 //!returns whether or not an entire string is digits for the specifed base
 [[gnu::pure]] constexpr bool mcsl::is_uint(const char* str, const uint strlen, const uint radix) {
-   assert(str && strlen, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
+   assert(str && strlen, __PARSE_NULL_STR_MSG, Errno::SEGFAULT);
 
    for (uint i = 0; i < strlen; ++i) {
       if (!is_digit(str[i], radix)) {
@@ -174,7 +174,7 @@
 //!TODO: nan, inf
 [[gnu::pure]] constexpr mcsl::_::f mcsl::str_to_real(const char* str, const char* end, uint radix) {
    using namespace _;
-   assert(str && end && str < end, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
+   assert(str && end && str < end, __PARSE_NULL_STR_MSG, Errno::SEGFAULT);
 
    //deduce sign, radix, and starting index
    bool isNegative = str[0] == '-';
@@ -270,7 +270,7 @@
    
    using namespace _;
 
-   assert(str && end && str < end, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
+   assert(str && end && str < end, __PARSE_NULL_STR_MSG, Errno::SEGFAULT);
 
    //deduce sign, radix, and starting index
    bool isNegative = str[0] == '-';
@@ -350,7 +350,7 @@
 //!TODO: nan, inf
 [[gnu::pure]] constexpr mcsl::_::n mcsl::str_to_num(const char* str, const char* end, uint radix) {
    using namespace _;
-   assert(str && end && str < end, __PARSE_NULL_STR_MSG, ErrCode::SEGFAULT);
+   assert(str && end && str < end, __PARSE_NULL_STR_MSG, Errno::SEGFAULT);
 
    bool isSigned = false;
    bool isReal = false;

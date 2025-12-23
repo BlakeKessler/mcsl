@@ -19,10 +19,10 @@ template <typename T> class [[clang::trivial_abi]] mcsl::arr_span : public conti
 
       constexpr arr_span():_buf{},_size{} {}
       constexpr arr_span(T* buf, const uint size):_buf{buf},_size{size} { assume(!_size || _buf); }
-      constexpr arr_span(T* begin, T* end):arr_span{begin, end-begin} { assert(begin <= end, __END_BEFORE_BEGIN_MSG, ErrCode::SEGFAULT); }
+      constexpr arr_span(T* begin, T* end):arr_span{begin, end-begin} { assert(begin <= end, __END_BEFORE_BEGIN_MSG, Errno::SEGFAULT); }
       constexpr arr_span(const contig_t<T> auto& other):arr_span{other.begin(), other.size()} {}
-      constexpr arr_span(const contig_t<T> auto& other, const uint size):arr_span{other.begin(), size} { assert(size <= other.size(), __OVERSIZED_SPAN_MSG, ErrCode::SEGFAULT); }
-      constexpr arr_span(const contig_t<T> auto& other, const uint begin, const uint size):arr_span{other.begin()+begin, size} { assert((begin+size) <= other.size(), __OVERSIZED_SPAN_MSG, ErrCode::SEGFAULT); }
+      constexpr arr_span(const contig_t<T> auto& other, const uint size):arr_span{other.begin(), size} { assert(size <= other.size(), __OVERSIZED_SPAN_MSG, Errno::SEGFAULT); }
+      constexpr arr_span(const contig_t<T> auto& other, const uint begin, const uint size):arr_span{other.begin()+begin, size} { assert((begin+size) <= other.size(), __OVERSIZED_SPAN_MSG, Errno::SEGFAULT); }
 
       static constexpr const arr_span make(const T* str, const uint size);
       static constexpr const arr_span make(const T* begin, const T* end);

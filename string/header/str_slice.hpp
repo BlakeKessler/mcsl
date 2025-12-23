@@ -19,7 +19,7 @@ class [[clang::trivial_abi]] mcsl::str_slice : public str_base<char> {
       //constructors
       constexpr str_slice(): _buf(),_size() {}
       constexpr str_slice(char* str, const uint size):_buf(str),_size(size) {}
-      constexpr str_slice(char* begin, char* end):_buf(begin),_size(end-begin) { assert(begin <= end, __END_BEFORE_BEGIN_MSG, ErrCode::SEGFAULT); }
+      constexpr str_slice(char* begin, char* end):_buf(begin),_size(end-begin) { assert(begin <= end, __END_BEFORE_BEGIN_MSG, Errno::SEGFAULT); }
       constexpr str_slice(str_t auto& other): str_slice(other, other.size()) {}
       constexpr str_slice(str_t auto& other, const uint size): str_slice(other.begin(),size) { assert(other.size() >= size, __OVERSIZED_SPAN_MSG); }
       constexpr str_slice(str_t auto& other, const uint begin, const uint size): str_slice(other.begin() + begin, size) { assert(other.size() >= (begin + size), __OVERSIZED_SPAN_MSG); }

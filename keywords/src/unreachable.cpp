@@ -13,7 +13,7 @@
       hasReached = true;
       mcsl::flush();
    }
-   mcsl::__throw(ErrCode::UNREACHABLE_REACHED, mcsl::FMT("%s:%u(%u): %s"), FMT(loc.file_name()), loc.line(), loc.column(), FMT(loc.function_name()));
+   mcsl::__throw(Errno::UNREACHABLE_REACHED, mcsl::FMT("%s:%u(%u): %s"), FMT(loc.file_name()), loc.line(), loc.column(), FMT(loc.function_name()));
    std::unreachable();
 }
 

@@ -81,9 +81,9 @@ namespace {
             __PRINT_AS_CHARS
          [[fallthrough]];
          case 's':
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c) for type"), mode);
+            mcsl::__throw(mcsl::Errno::FS_ERR, mcsl::FMT("invalid format code (%%%c) for type"), mode);
          default:
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
+            mcsl::__throw(mcsl::Errno::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
          case 'e': case 'f': case 'g':
             return mcsl::writef(file, (mcsl::to_float_t<T>)num, mode, fmt);
          case 'i': return mcsl::writef(file, (mcsl::to_sint_t<T>)num, mode, fmt);
@@ -101,7 +101,7 @@ namespace {
       //check radix
       switch (fmt.radix) {
          default:
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("unsupported radix for printing unsigned integers: %u"), fmt.radix);
+            mcsl::__throw(mcsl::Errno::FS_ERR, mcsl::FMT("unsupported radix for printing unsigned integers: %u"), fmt.radix);
          case 2: case 8: case 10: case 16:
             break;
       }
@@ -168,9 +168,9 @@ namespace {
             __PRINT_AS_CHARS
          [[fallthrough]];
          case 's':
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
+            mcsl::__throw(mcsl::Errno::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
          default:
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
+            mcsl::__throw(mcsl::Errno::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
          case 'e': case 'f': case 'g':
             return mcsl::writef(file, (mcsl::to_float_t<T>)num, mode, fmt);
          case 'i': 
@@ -188,7 +188,7 @@ namespace {
       //check radix
       switch (fmt.radix) {
          default:
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("unsupported radix for printing unsigned integers: %u"), fmt.radix);
+            mcsl::__throw(mcsl::Errno::FS_ERR, mcsl::FMT("unsupported radix for printing unsigned integers: %u"), fmt.radix);
          case 2: case 8: case 10: case 16:
             break;
       }
@@ -255,9 +255,9 @@ namespace {
    template<mcsl::float_t T> uint writefImpl(mcsl::File& file, T num, char mode, mcsl::FmtArgs& fmt) {
       switch (mode | mcsl::CASE_BIT) {
          case 'c': case 's': case 'i': case 'u':
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
+            mcsl::__throw(mcsl::Errno::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
          default:
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
+            mcsl::__throw(mcsl::Errno::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
          case 'e': case 'f': case 'g':
             fmt.radix = fmt.radix ? fmt.radix : mcsl::DEFAULT_FLOAT_RADIX;
             break;
@@ -273,7 +273,7 @@ namespace {
       //check radix
       switch (fmt.radix) {
          default:
-            mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("unsupported radix for printing floating-point numbers: %u"), fmt.radix);
+            mcsl::__throw(mcsl::Errno::FS_ERR, mcsl::FMT("unsupported radix for printing floating-point numbers: %u"), fmt.radix);
          case 2: case 8: case 10: case 16:
             break;
       }
@@ -530,7 +530,7 @@ MCSL_MAP(_writefImpl, MCSL_ALL_NUM_T)
 
 uint mcsl::writef(File& file, const void* obj, char mode, FmtArgs fmt) {
    if ((mode | CASE_BIT) == 's') {
-      __throw(ErrCode::FS_ERR, FMT("invalid format code for type `void*` (%%%c) - \033[1;36mNOTE:\033[22;39m if you are trying to print a `char*` as a string, pass it as a `mcsl::str_slice`"), mode);
+      __throw(Errno::FS_ERR, FMT("invalid format code for type `void*` (%%%c) - \033[1;36mNOTE:\033[22;39m if you are trying to print a `char*` as a string, pass it as a `mcsl::str_slice`"), mode);
    }
    return writef(file, (uptr)obj, mode, fmt);
 }
@@ -544,7 +544,7 @@ uint mcsl::writef(File& file, const char ch, char mode, FmtArgs fmt) { //!TODO: 
       case 'e': case 'f': case 'g':
          return writef(file, (float)ch, mode, fmt);
       default:
-         __throw(ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
+         __throw(Errno::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
       case 'c': case 's':
          break;
    }
@@ -570,16 +570,16 @@ uint mcsl::writef(File& file, const char ch, char mode, FmtArgs fmt) { //!TODO: 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 uint mcsl::writef(File& file, const wchar ch, char mode, FmtArgs fmt) {
-   __throw(ErrCode::FS_ERR, FMT("printing `wchar`s is not yet supported"));
+   __throw(Errno::FS_ERR, FMT("printing `wchar`s is not yet supported"));
 }
 uint mcsl::writef(File& file, const char8 ch, char mode, FmtArgs fmt) {
-   __throw(ErrCode::FS_ERR, FMT("printing `char8`s is not yet supported"));
+   __throw(Errno::FS_ERR, FMT("printing `char8`s is not yet supported"));
 }
 uint mcsl::writef(File& file, const char16 ch, char mode, FmtArgs fmt) {
-   __throw(ErrCode::FS_ERR, FMT("printing `char16`s is not yet supported"));
+   __throw(Errno::FS_ERR, FMT("printing `char16`s is not yet supported"));
 }
 uint mcsl::writef(File& file, const char32 ch, char mode, FmtArgs fmt) {
-   __throw(ErrCode::FS_ERR, FMT("printing `char32`s is not yet supported"));
+   __throw(Errno::FS_ERR, FMT("printing `char32`s is not yet supported"));
 }
 #pragma GCC diagnostic pop
 
@@ -612,7 +612,7 @@ uint mcsl::writef(File& file, const bool obj, char mode, FmtArgs fmt) {
          break;
       
       default:
-         mcsl::__throw(ErrCode::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
+         mcsl::__throw(Errno::FS_ERR, mcsl::FMT("invalid format code (%%%c)"), mode);
    }
 
    //right-justified padding
@@ -634,7 +634,7 @@ uint mcsl::writef(File& file, const bool obj, char mode, FmtArgs fmt) {
 
 uint mcsl::writef(File& file, const str_slice obj, char mode, FmtArgs fmt) {
    if ((mode | CASE_BIT) != 's') {
-      mcsl::__throw(mcsl::ErrCode::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
+      mcsl::__throw(mcsl::Errno::FS_ERR, mcsl::FMT("invalid format code for type (%%%c)"), mode);
    }
 
    str_slice str = obj.slice(fmt.precision ? min(obj.size(), fmt.precision) : obj.size());

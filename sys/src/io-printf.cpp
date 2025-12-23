@@ -33,7 +33,7 @@ namespace {
       bool usedDefaultPrec = true;
       do {
          if (i >= str.size()) {
-            __throw(ErrCode::FS_ERR, FMT("un-terminated format code"));
+            __throw(Errno::FS_ERR, FMT("un-terminated format code"));
          }
          switch (str[i]) {
             case 'f': case 'F':
@@ -70,7 +70,7 @@ namespace {
                break;
             
             default:
-               __throw(ErrCode::FS_ERR, FMT("invalid format"));
+               __throw(Errno::FS_ERR, FMT("invalid format"));
          }
       } while (!mode);
 
@@ -136,15 +136,15 @@ namespace {
                break;
 
             case FMT_INTRO: 
-               __throw(ErrCode::FS_ERR, FMT("invalid format (%% may not have arguments)"));
+               __throw(Errno::FS_ERR, FMT("invalid format (%% may not have arguments)"));
             default:
-               __throw(ErrCode::FS_ERR, FMT("invalid format"));
+               __throw(Errno::FS_ERR, FMT("invalid format"));
          }
       }
       #pragma GCC diagnostic pop
 
       if (flags & flags) { //warn the user that variable fields are not yet supported
-         __throw(ErrCode::FS_ERR, FMT("WARNING: printf does not yet support variable format fields - if are printing variable-length strings, use an str_slice"));
+         __throw(Errno::FS_ERR, FMT("WARNING: printf does not yet support variable format fields - if are printing variable-length strings, use an str_slice"));
       }
 
       return {mode, args, i, flags};
@@ -161,7 +161,7 @@ namespace {
                charsPrinted += i;
             }
             ++i;
-            assert(str.size() > i, "%% not followed by format code", ErrCode::FS_ERR);
+            assert(str.size() > i, "%% not followed by format code", Errno::FS_ERR);
             auto [mode, fmtArgs, codeLen, flags] = __parseFmtCode(str.slice(i, str.size()));
 
             // if (flags & MIN_WIDTH) {} //!TODO: figure out a good way to do this
@@ -201,12 +201,12 @@ namespace {
             write(file, str.slice(i));
             charsPrinted += i;
             ++i;
-            assert(str.size() > i, "%% not followed by format code", ErrCode::FS_ERR);
+            assert(str.size() > i, "%% not followed by format code", Errno::FS_ERR);
             if (str[i] == FMT_INTRO) { //%%
                write(file, FMT_INTRO);
                ++charsPrinted;
             } else { //other format code
-               __throw(ErrCode::FS_ERR, FMT("printf: more consuming format codes than arguments"));
+               __throw(Errno::FS_ERR, FMT("printf: more consuming format codes than arguments"));
             }
             ++i;
             if (i < str.size()) { //more to print

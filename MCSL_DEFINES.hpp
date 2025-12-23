@@ -8,6 +8,10 @@
 #include <stdfloat>
 #include <utility>
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 //self
 #define self (*this)
 
@@ -93,13 +97,15 @@ using wchar = wchar_t;
 
 //enums
 namespace mcsl {
-   enum class ErrCode {
-      UNSPEC = 0,
-      ASSERT_FAIL,
+   enum class Errno : sint {
+      UNSPEC = -1,
+
+      ASSERT_FAIL = 134, //the lowest errno not used by glibc
       DEBUG_ASSERT_FAIL,
       ASSUMPTION_FAIL,
       UNREACHABLE_REACHED,
       TODO_CODE,
+
       SEGFAULT,
       ALLOC_FAIL,
       INT_OVERFLOW,
@@ -108,7 +114,7 @@ namespace mcsl {
 
       FS_ERR,
    };
-   constexpr auto operator+(const ErrCode code) { return std::to_underlying(code); }
+   constexpr auto operator+(const Errno code) { return std::to_underlying(code); }
 }
 
 //simple integer macros
@@ -133,7 +139,11 @@ namespace mcsl {
    constexpr const uint DEFAULT_HASH_TABLE_BUCKET_COUNT = 16;
    constexpr const float DEFAULT_HASH_TABLE_LOAD_FACTOR = 1.0;
 
-   //IO parameters
+   //low-level IO parameters
+   constexpr uint FILE_MAGIC_NUM = 0x58A7E1D8;
+   constexpr uint FILE_BUF_PAGES = 1; //number of pages allocated for the global file buffer
+
+   //high-level IO parameters
    constexpr uint DEFAULT_INT_RADIX = 10;
    constexpr uint DEFAULT_FLOAT_RADIX = 10;
    constexpr uint DEFAULT_RAW_RADIX = 16;

@@ -41,7 +41,7 @@ template<typename T, uint _bufCapacity = mcsl::DEFAULT_ARR_LIST_BUF_SIZE> class 
 
       it operator+(const uint i) { return it{self, i}; }
       T& operator[](const uint i) { assume(i < size()); return _buf[i / _bufCapacity][i % _bufCapacity]; }
-      T& at(const uint i) { if (i >= size()) { __throw(ErrCode::SEGFAULT, mcsl::FMT("%s of size %u accessed at index %u"), nameof(), size(), i); } if (!_buf.data()) { __throw(ErrCode::SEGFAULT, mcsl::FMT("null %s dereferenced"), nameof()); } return self[i]; }
+      T& at(const uint i) { if (i >= size()) { __throw(Errno::SEGFAULT, mcsl::FMT("%s of size %u accessed at index %u"), nameof(), size(), i); } if (!_buf.data()) { __throw(Errno::SEGFAULT, mcsl::FMT("null %s dereferenced"), nameof()); } return self[i]; }
       it begin() { return it{self, 0}; }
       it end() { return it{self, size()}; }
       T& front() { return self[0]; }
@@ -49,7 +49,7 @@ template<typename T, uint _bufCapacity = mcsl::DEFAULT_ARR_LIST_BUF_SIZE> class 
 
       const_it operator+(const uint i) const { return const_it{self, i}; }
       const T& operator[](const uint i) const { assume(i < size()); return _buf[i / _bufCapacity][i % _bufCapacity]; }
-      const T& at(const uint i) const { if (i >= size()) { __throw(ErrCode::SEGFAULT, mcsl::FMT("%s of size %u accessed at index %u"), nameof(), size(), i); } if (!_buf.data()) { __throw(ErrCode::SEGFAULT, mcsl::FMT("null %s dereferenced"), nameof()); } return self[i]; }
+      const T& at(const uint i) const { if (i >= size()) { __throw(Errno::SEGFAULT, mcsl::FMT("%s of size %u accessed at index %u"), nameof(), size(), i); } if (!_buf.data()) { __throw(Errno::SEGFAULT, mcsl::FMT("null %s dereferenced"), nameof()); } return self[i]; }
       const_it begin() const { return const_it{self, 0}; }
       const_it end() const { return const_it{self, size()}; }
       const T& front() const { return self[0]; }

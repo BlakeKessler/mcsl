@@ -44,7 +44,7 @@ template<typename T, uint _capacity> class [[clang::trivial_abi]] mcsl::buf : mc
 template<typename T, uint _capacity> constexpr mcsl::buf<T,_capacity>::buf(const contig_t<T> auto& other):
    _buf{},
    _size(other.size()) {
-      assert(_size <= _capacity, __OVERSIZED_COPY_MSG, ErrCode::SEGFAULT);
+      assert(_size <= _capacity, __OVERSIZED_COPY_MSG, Errno::SEGFAULT);
       
       for (uint i = 0; i < _size; ++i) {
          _buf[i] = other[i];

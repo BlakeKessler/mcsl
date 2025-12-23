@@ -33,7 +33,7 @@ template<uint _capacity> mcsl::uint_n<_capacity>& mcsl::uint_n<_capacity>::opera
    }
    if (carry) {
       if (_size >= _capacity) {
-         __throw(ErrCode::INT_OVERFLOW, mcsl::FMT("mcsl::uint_n<%u> overflow"), _capacity);
+         __throw(Errno::INT_OVERFLOW, mcsl::FMT("mcsl::uint_n<%u> overflow"), _capacity);
       }
       _buf[_size] = carry;
       ++_size;
@@ -51,7 +51,7 @@ template<uint _capacity> mcsl::uint_n<_capacity>& mcsl::uint_n<_capacity>::opera
    }
    if (carry) {
       if (_size >= _capacity) {
-         __throw(ErrCode::INT_OVERFLOW, mcsl::FMT("mcsl::uint_n<%u> overflow"), _capacity);
+         __throw(Errno::INT_OVERFLOW, mcsl::FMT("mcsl::uint_n<%u> overflow"), _capacity);
       }
       _buf[_size] = carry;
       ++_size;

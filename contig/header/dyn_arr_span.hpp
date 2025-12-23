@@ -89,23 +89,23 @@ requires (!requires{other.first_index();}):
 template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(const contig_t<T> auto& other, const uint size)
 requires requires{other.first_index();}:
    dyn_arr_span{other.ptr_to_buf(), other.first_index(), size} {
-      assert(size <= other.size(), __OVERSIZED_SPAN_MSG, ErrCode::SEGFAULT);
+      assert(size <= other.size(), __OVERSIZED_SPAN_MSG, Errno::SEGFAULT);
 }
 template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(const contig_t<T> auto& other, const uint size)
 requires (!requires{other.first_index();}):
    dyn_arr_span{other.ptr_to_buf(), size} {
-      assert(size <= other.size(), __OVERSIZED_SPAN_MSG, ErrCode::SEGFAULT);
+      assert(size <= other.size(), __OVERSIZED_SPAN_MSG, Errno::SEGFAULT);
 }
 
 template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(const contig_t<T> auto& other, const uint begin, const uint size)
 requires requires{other.first_index();}:
    dyn_arr_span{other.ptr_to_buf(), other.first_index()+begin, size} {
-      assert((begin+size) <= other.size(), __OVERSIZED_SPAN_MSG, ErrCode::SEGFAULT);
+      assert((begin+size) <= other.size(), __OVERSIZED_SPAN_MSG, Errno::SEGFAULT);
 }
 template<typename T> constexpr mcsl::dyn_arr_span<T>::dyn_arr_span(const contig_t<T> auto& other, const uint begin, const uint size)
 requires (!requires{other.first_index();}):
    dyn_arr_span{other.ptr_to_buf(), begin, size} {
-      assert((begin+size) <= other.size(), __OVERSIZED_SPAN_MSG, ErrCode::SEGFAULT);
+      assert((begin+size) <= other.size(), __OVERSIZED_SPAN_MSG, Errno::SEGFAULT);
 }
 
 //!construct in place

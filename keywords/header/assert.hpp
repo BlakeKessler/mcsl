@@ -7,16 +7,16 @@
 #include <source_location>
 
 namespace mcsl {
-   [[noreturn]] void __assert_fail(const char* msg, const ErrCode code = ErrCode::UNSPEC, const std::source_location loc = std::source_location::current());
+   [[noreturn]] void __assert_fail(const char* msg, const Errno code = Errno::UNSPEC, const std::source_location loc = std::source_location::current());
 
-   constexpr void __assert(const bool expr, const char* msg = "", const mcsl::ErrCode code = mcsl::ErrCode::UNSPEC, const std::source_location loc = std::source_location::current()) {
+   constexpr void __assert(const bool expr, const char* msg = "", const mcsl::Errno code = mcsl::Errno::UNSPEC, const std::source_location loc = std::source_location::current()) {
       if (!expr) { [[unlikely]]
          mcsl::__assert_fail(msg, code, loc);
       }
    }
    #pragma GCC diagnostic push
    #pragma GCC diagnostic ignored "-Wunused-parameter"
-   constexpr void __assert(const bool expr, const char* msg, const mcsl::ErrCode code, const char* dummy) { if (!expr) { UNREACHABLE; } }
+   constexpr void __assert(const bool expr, const char* msg, const mcsl::Errno code, const char* dummy) { if (!expr) { UNREACHABLE; } }
    constexpr void __assert(const bool expr, const char* msg, const char* dummy1, const char* dummy2 = "") { if (!expr) { UNREACHABLE; } }
    #pragma GCC diagnostic pop
 };
@@ -27,13 +27,13 @@ namespace mcsl {
    void(0)
 
 #ifndef NDEBUG
-   #define debug_assert(expr) assert(expr, #expr, mcsl::ErrCode::DEBUG_ASSERT_FAIL)
+   #define debug_assert(expr) assert(expr, #expr, mcsl::Errno::DEBUG_ASSERT_FAIL)
 #else
    #define debug_assert(expr) void(0)
 #endif
 
 #if defined(SAFE_MODE) || !defined(NDEBUG)
-   #define assume(expr) assert(expr, #expr, mcsl::ErrCode::ASSUMPTION_FAIL)
+   #define assume(expr) assert(expr, #expr, mcsl::Errno::ASSUMPTION_FAIL)
 #else
    #define assume(expr) void(0)
 #endif

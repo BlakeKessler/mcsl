@@ -73,6 +73,8 @@ namespace mcsl {
    class File;
    class Dir;
    struct FmtArgs;
+
+   struct _File;
 };
 
 #endif //MCSL_HPP
