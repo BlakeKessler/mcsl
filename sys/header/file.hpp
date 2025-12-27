@@ -130,7 +130,9 @@ struct mcsl::_File {
    public:
       using SeekMode = _SeekMode;
       using enum SeekMode;
-
+   private:
+      static FileRes _open(_File* file, sint fd, FileFlags flags, sint osFlags);
+   public:
       static FileRes open(cstr path, FileFlags flags, mode_t createMode = DEFAULT_CREATE_MODE);
       static FileRes open(sint fd, FileFlags flags, sint osFlags = flagsToOS(flags));
       Errno close();

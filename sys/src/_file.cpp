@@ -75,20 +75,69 @@ constexpr static ERR ERROR_LEVELS[256] = {
    [EPIPE       ] = ERR::CHANGE_FDES,
 };
 
-mcsl::_File::FileRes mcsl::_File::open(sint fd, FileFlags flags, sint osFlags) {
+mcsl::_File::FileRes mcsl::_File::open(cstr path, FileFlags flags, mode_t createMode) {
+   //sanity checks
+   if (path) {
+      return {.err = Errno::BAD_PATH, .file = nullptr};
+   }
+
+   //convert flags to OS flags
+   sint osFlags = File_flagsToOS(flags);
+
    //allocate file
-   FileRes res = allocFile();
-   if (+res.err) { //check for success
+   _File* file;
+   if (FileRes res = allocFile(); !res.err) {
+      file = res->file;
+   } else {
       return res;
    }
 
+   //open file
+   sint fd;
+   uint tries = 0;
+   Errno err;
+   do {
+      ++tries;
+      //try to open
+      fd = open(path.begin(), osFlags, createMode);
+      if (fd >= 0) { //check for success
+         [[likely]];
+         //return
+         return file->_open(fd, flags, osFlags);
+      }
+      [[unlikely]];
+      err = errno;
+      uint maxTries;
+      switch (ERROR_LEVELS[+err]) {
+         case ERR::MAJOR: maxTries = FILE_TRIES_SOFT_CAP; break;
+         case ERR::MINOR: maxTries = FILE_TRIES_HARD_CAP; break;
+         
+         case ERR::FATAL: maxTries = 0; break;
+
+         case ERR::UNEXP: UNREACHABLE;
+      }
+   } while (tries <= maxTries);
+
+   //return (failure)
+   return {.err = err, .file = nullptr};
+}
+mcsl::_File::FileRes mcsl::_File::open(sint fd, FileFlags flags, sint osFlags) {
+   //allocate file
+   FileRes res = allocFile();
+   if (+res.err) { //error handling
+      return res;
+   }
+   //goto implementation function
+   return res.file->_open(fd, flags, osFlags);
+}
+mcsl::_File::FileRes mcsl::_File::_open(sint fd, FIleFlags flags, sint osFlags) {
    //update fields
-   res.file->fd = fd;
-   res.file->_flags = flags;
-   res.file->_osFlags = osFlags;
-   res.file->err = Errno::NO_ERR;
+   this->fd = fd;
+   this->_flags = flags;
+   this->_osFlags = osFlags;
+   this->err = Errno::NO_ERR;
    //return
-   return res;
+   return {.err = Errno::NO_ERR, .file = this};
 }
 
 sint mcsl::flagsToOS(FileFlags flags) {

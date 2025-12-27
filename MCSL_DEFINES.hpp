@@ -115,6 +115,7 @@ namespace mcsl {
 
       FS_ERR,
       NO__FILES,
+      BAD_PATH,
    };
    constexpr auto operator+(const Errno code) { return std::to_underlying(code); }
 }
@@ -144,7 +145,10 @@ namespace mcsl {
    //low-level IO parameters
    constexpr uint FILE_MAGIC_NUM = 0x58A7E1D8;
    constexpr uint FILE_BUF_PAGES = 1; //number of pages allocated for the global file buffer
-   constexpr sint DEFAULT_OPEN_MODE;
+   constexpr uint FILE_TRIES_HARD_CAP = 8;
+   constexpr uint FILE_TRIES_SOFT_CAP = 16;
+   constexpr uint FILE_PARTIAL_WRITE_CAP = 32;
+   constexpr uint FILE_LONG_RDRW_FACTOR = 2;
 
    //high-level IO parameters
    constexpr uint DEFAULT_INT_RADIX = 10;
