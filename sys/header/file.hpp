@@ -132,8 +132,8 @@ struct mcsl::_File {
       using enum SeekMode;
    private:
       FileRes _open(sint fd, FileFlags flags, sint osFlags);
+      sint _read(arr_span<ubyte> data);
       sint _write(const arr_span<ubyte> data);
-      arr_span<ubyte> _read(arr_span<ubyte> data);
    public:
       static FileRes open(cstr path, FileFlags flags, mode_t createMode = DEFAULT_CREATE_MODE);
       static FileRes open(sint fd, FileFlags flags, sint osFlags = flagsToOS(flags));
