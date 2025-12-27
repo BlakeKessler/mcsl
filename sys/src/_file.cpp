@@ -75,6 +75,123 @@ constexpr static ERR ERROR_LEVELS[256] = {
    [EPIPE       ] = ERR::CHANGE_FDES,
 };
 
+#pragma region rdwr
+mcsl::arr_span<ubyte> mcsl::_File::_read(mcsl::arr_span<ubyte> data) {
+   ubyte* dest = data.begin();
+   sint rem = data.size();
+   sint charsRead = 0;
+
+   sint tries = 0;
+   sint maxTries = 0;
+
+   //core read loop
+   do {
+      ++tries;
+
+      //read
+      sint res = read(fd, dest, rem);
+      //handle results
+      if (res < 0) { //error
+         res = errno;
+         debug_assert(res < (int)sizeof(ERROR_LEVELS));
+         switch (ERROR_LEVELS[res]) {
+            case ERR::MAJOR: maxTries = FILE_TRIES_SOFT_CAP; break;
+            case ERR::MINOR: maxTries = FILE_TRIES_HARD_CAP; break;
+            
+            case ERR::FATAL: maxTries = 0; break;
+
+            case ERR::UNEXP: UNREACHABLE;
+         }
+      }
+      else if (res == 0) { //eof
+         _flags |= SAW_EOF;
+
+         maxTries = 0;
+      }
+      else { //successful read
+         rem -= res;
+         dest += res;
+         charsRead += res;
+
+         maxTries = FILE_PARTIAL_RDRW_CAP;
+      }
+   } while (rem > 0 && tries <= maxTries);
+   return charsRead;
+}
+sint mcsl::_File::_write(const mcsl::arr_span<ubyte> data) {
+   ubyte* buf = data.begin();
+   sint len = data.size();
+
+   sint res;
+   sint tries = 0;
+   sint partials = 0;
+   
+   sint count = 0;
+
+   //write core loop
+   CONTINUE:
+      ++tries;
+
+      //try to write buffer
+      res = write(fd, buf, len);
+      //check if the write was successful
+      if (res >= 0) {
+         //keep track of the number of chars printed
+         count += res;
+         len -= res;
+         buf += res;
+         //check for partial writes
+         if (!len) { //complete write
+            goto BREAK;
+         } else { //partial write
+            //check partial write cap
+            if (++partials > FILE_PARTIAL_RDRW_CAP) {
+               goto BREAK;
+            }
+            goto CONTINUE;
+         }
+         GUARD;
+      }
+   
+      //error handling
+      err = res = errno;
+      debug_assert(res < (int)sizeof(ERROR_LEVELS));
+      switch (ERROR_LEVELS[res]) {
+         //errors that only check against the hard cap
+         case ERR::MINOR:
+            if (tries > FILE_TRIES_HARD_CAP) {
+               err = res;
+               goto BREAK;
+            } else {
+               goto CONTINUE;
+            }
+            UNREACHABLE;
+
+         //errors that check against the soft cap
+         case ERR::MAJOR:
+            if (tries > FILE_TRIES_SOFT_CAP) {
+               err = res;
+               goto BREAK;
+            } else {
+               goto CONTINUE;
+            }
+            UNREACHABLE;
+   
+         //hard failures
+         case ERR::FATAL:
+            err = res;
+            goto BREAK;
+
+         case ERR::UNEXP:
+            UNREACHABLE;
+      }
+   BREAK:
+   
+   //return
+   return count;
+}
+#pragma endregion rdwr
+
 #pragma region open
 mcsl::_File::FileRes mcsl::_File::open(cstr path, FileFlags flags, mode_t createMode) {
    //sanity checks
