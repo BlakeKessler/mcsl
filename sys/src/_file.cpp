@@ -16,34 +16,241 @@
 #define MCSL_LARGEST_MULT_GEQ(x, mod) (x + (-x % mod))
 
 //run global setup
-ubyte mcsl::_File::dummy = []()-> ubyte { mcsl::_File::globalSetup(); return 0; }();
+ubyte mcsl::_File::g.isInit = []()-> ubyte { mcsl::_File::globalSetup(); return mcsl::_File::g.isInit; }();
 
 //error levels (how dangereous an error is)
-constexpr ubyte ERR_UNEXP = 0;
-constexpr ubyte ERR_MINOR = 1;
-constexpr ubyte ERR_MAJOR = 2;
-constexpr ubyte ERR_FATAL = 3;
-//error levels for read and write syscalls
-constexpr static ubyte ERROR_LEVEL_RW[256] = {
-   [EINTR       ] = ERR_MINOR,
-   [EDESTADDRREQ] = ERR_MINOR,
-   [EIO         ] = ERR_MINOR,
-   [EAGAIN      ] = ERR_MINOR,
+enum class ERR : ubyte {
+   UNEXP = 0,
+   MINOR = 1,
+   MAJOR = 2,
+   FATAL = 3,
+
+   RESC_IN_USE = MAJOR, //resource in use
+   OUT_OF_RESC = MAJOR, //out of resources
+   CHANGE_FILE = MAJOR, //file(s) would need to be created/deleted
+   CHANGE_FDES = FATAL, //file descriptor(s) would need to be reopened
+};
+//array mapping syscall errno codes to error levels
+//supported syscalls: read, write, open, openat
+constexpr static ERR ERROR_LEVELS[256] = {
+   [EINTR       ] = ERR::MINOR,
+   [EDESTADDRREQ] = ERR::MINOR,
+   [EIO         ] = ERR::MINOR,
+   [EAGAIN      ] = ERR::MINOR,
 #if EAGAIN != EWOULDBLOCK
-   [EWOULDBLOCK ] = ERR_MINOR,
+   [EWOULDBLOCK ] = ERR::MINOR,
 #endif
 
-   [EPERM ] = ERR_MAJOR,
-   [ENOSPC] = ERR_MAJOR,
-   [EDQUOT] = ERR_MAJOR,
 
-   [EPIPE ] = ERR_FATAL,
-   [EBADF ] = ERR_FATAL,
-   [EFAULT] = ERR_FATAL,
-   [EFBIG ] = ERR_FATAL,
-   [EINVAL] = ERR_FATAL,
+   [EACCES      ] = ERR::MAJOR,
+   [EPERM       ] = ERR::MAJOR,
+   [EDQUOT      ] = ERR::MAJOR,
+
+   [EEXIST      ] = ERR::CHANGE_FILE,
+   [ELOOP       ] = ERR::CHANGE_FILE,
+   [EISDIR      ] = ERR::CHANGE_FILE,
+   [ENOENT      ] = ERR::CHANGE_FILE,
+   [EOVERFLOW   ] = ERR::CHANGE_FILE,
+
+   [EBUSY       ] = ERR::OUT_OF_RESC,
+   [EMFILE      ] = ERR::OUT_OF_RESC,
+   [ENFILE      ] = ERR::OUT_OF_RESC,
+   [ENOMEM      ] = ERR::OUT_OF_RESC,
+   [ENOSPC      ] = ERR::OUT_OF_RESC,
+
+   [ENODEV      ] = ERR::RESC_IN_USE,
+   [ENXIO       ] = ERR::RESC_IN_USE,
+   [ETXTBSY     ] = ERR::RESC_IN_USE,
+
+
+   [EBADF       ] = ERR::FATAL,
+   [EFAULT      ] = ERR::FATAL,
+   [EFBIG       ] = ERR::FATAL,
+   [EINVAL      ] = ERR::FATAL,
+   [ENAMETOOLONG] = ERR::FATAL,
+   [EOPNOTSUPP  ] = ERR::FATAL,
+   [EROFS       ] = ERR::FATAL,
+
+   [ENOTDIR     ] = ERR::CHANGE_FDES,
+   [EPIPE       ] = ERR::CHANGE_FDES,
 };
 
+mcsl::_File::FileRes mcsl::_File::open(sint fd, FileFlags flags, sint osFlags) {
+   //allocate file
+   FileRes res = allocFile();
+   if (+res.err) { //check for success
+      return res;
+   }
+
+   //update fields
+   res.file->fd = fd;
+   res.file->_flags = flags;
+   res.file->_osFlags = osFlags;
+   res.file->err = Errno::NO_ERR;
+   //return
+   return res;
+}
+
+sint mcsl::flagsToOS(FileFlags flags) {
+   sint osFlags = 0;
+   sint tmp;
+
+   // file type
+   tmp = __builtin_popcount(flags & FileFlags::FILE_TYPES);
+   if (tmp > 1) {
+      TODO;
+   }
+   tmp = flags & FileFlag::FILE_TYPES;
+   switch (tmp) {
+      case FileFlags::REGFILE  : break;
+      case FileFlags::TMPFILE  : 
+         osFlags |= O_TMPFILE;
+         if (!(flags & (FileFlags::READ | FileFlags::WRITE))) {
+            TODO();
+         }
+         break;
+      case FileFlags::DIRECTORY: osFlags |= O_DIRECTORY; break;
+      case FileFlags::FIFO     : break;
+      case FileFlags::SOCKET   : break;
+
+      default: UNREACHABLE;
+   }
+
+   // access mode
+   if (flags & FileFlags::PATH) {
+      osFlags |= O_PATH;
+      if (flags & (READ | WRITE)) {
+         TODO();
+      }
+   }
+   else if (flags & FileFlags::WRITE) {
+      if (flags & FileFlags::READ) {
+         osFlags |= O_RDWR;
+      } else {
+         osFlags |= O_WRONLY;
+      }
+   } else if (flags & FileFlags::READ) {
+      osFlags |= O_RDONLY;
+   }
+
+   // file existance reqs
+   if (flags & FileFlags::ERR::IF_EX) {
+      osFlags |= O_CREAT | O_EXCL;
+      
+      if (flags & FileFlags::ERR::IF_NE) {
+         TODO;
+      }
+   }
+   else if (!(flags & FileFlags::ERR::IF_NE)) {
+      osFlags |= O_CREAT;
+   }
+
+   // append
+   if (flags & FileFlags::APPEND) {
+      osFlags |= O_APPEND;
+   }
+
+   // IO mode
+   if (flags & FileFlags::ASYNC) {
+      osFlags |= O_ASYNC;
+   }
+   if (flags & FileFlags::NONBLOCK) {
+      osFlags |= O_NONBLOCK;
+   }
+
+   // synchronization mode
+   if (flags & FileFlags::FSYNC) {
+      osFlags |= O_SYNC;
+   }
+   else if (flags & FileFlags::DSYNC) {
+      osFlags |= O_DSYNC;
+   }
+
+   // metadata updates
+   if (flags & FileFlags::NO_NEW_METADATA) {
+      osFlags |= O_NOATIME;
+   }
+
+   // close on exec
+   if (!(flags & FileFlags::NO_CLO_EXEC)) {
+      osFlags |= O_CLOEXEC;
+   }
+
+   // cache effect
+   if (flags & FileFlags::MIN_OS_CACHE) {
+      osFlags |= O_DIRECT;
+   }
+
+   // return
+   return osFlags;
+}
+#pragma region filealloc
+mcsl::_File::FileRes mcsl::_File::allocFile() {
+   assume(_File::g.isInit);
+
+   //check that there are files available
+   if (!g.availLen) {
+      return FileRes{.err = Errno::NO__FILES, .file = nullptr};
+   }
+
+   //get fnum
+   sint fnum = g.avail[0];
+   assume(fnum >= 0 && fnum < g.fileBufLen);
+   //update fnum list
+   g.avail++;
+   g.availLen--;
+   g.inUseLen++;
+
+   //get file object
+   _File* file = g.fileBuf + fnum;
+   //update file object fields
+   file->magicNum = FILE_MAGIC_NUM;
+   file->fnum = fnum;
+
+   file->len = 0;
+   file->index = 0;
+   file->base = 0;
+   file->buf = nullptr;
+#if defined(SAFE_MODE)
+   file->fd = -1;
+   file->err = Errno::NO_ERR;
+
+   file->_flags = 0;
+   file->_osFlags = 0;
+#endif
+   //return
+   return {.err = Errno::NO_ERR, .file = file};
+}
+mcsl::Errno mcsl::_File::freeFile(_File* file) {
+   debug_assert(file);
+   debug_assert(file->magicNum == FILE_MAGIC_NUM);
+
+   //move file's entry in the inUse list to the back of the inUse section
+   {
+      sint* target = g.inUse + file->fnum;
+      sint* back = g.inUse + g.inUseLen - 1;
+      File* backFile = g.fileBuf + *back;
+
+      sint tmp = *back;
+      *back = *target;
+      *target = tmp;
+
+      file->fnum = *target;
+      backFile->fnum = *back;
+   }
+
+   //update fnum list
+   g.availLen++;
+   g.avail--;
+   g.inUseLen--;
+
+   //unset magic number
+   file->magicNum = ~FILE_MAGIC_NUM;
+   //return
+   return Errno::NO_ERR;
+}
+#pragma endregion filealloc
+#pragma region global
 void mcsl::_File::globalSetup() {
    sint err;
 
@@ -109,17 +316,15 @@ void mcsl::_File::globalSetup() {
    //return
    return;
 }
-
 void mcsl::_File::globalCleanup() {
    //iterate over open files
    int*        it = g.inUse;
    int* const end = g.inUse + g.inUseLen;
-   Errno err;
    for (; it != end; ++it) {
       _File* file = g.fileBuf + *it;
 
       //close file
-      err = file->close();
+      Errno err = file->close();
       if (+err) {
          TODO;
       }
@@ -134,5 +339,6 @@ void mcsl::_File::globalCleanup() {
    // return
    return;
 }
+#pragma endregion global
 
 #endif //MCSL__FILE_CPP

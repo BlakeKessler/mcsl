@@ -8,8 +8,10 @@
 #include "arr_span.hpp"
 
 #include <sys/stat.h>
+#include <sys/types.h>
 
 namespace mcsl {
+   constexpr mode_t DEFAULT_CREATE_MODE = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;
    enum class FileFlags : uint32 {
       READ             =  0_m, // WRITE ? O_RDWR : O_RDONLY
       WRITE            =  1_m, // READ  ? O_RDWR : O_WRONLY
@@ -44,9 +46,10 @@ namespace mcsl {
       
       // read/write buffer
       BUF_SAVE         = 22_m,
+      BUF_USERPROV     = 23_m,
+      BUF_ALL          = BUF_SAVE | BUF_USERPROV,
 
       // aliases
-      BUF_ALL      = BUF_SAVE,
       BUFFERED     = BUF_SAVE,
       READONLY     = READ,
       WRITEONLY    = WRITE,
@@ -100,6 +103,12 @@ struct mcsl::_File {
       slong base; //number of bytes into the file that the beginning of the buffer corresponds to
       ubyte* buf;
 
+   public:
+      struct FileRes {
+         Errno err;
+         _File* file;
+      };
+   private:
       static struct {
          bool isInit;
          uint pageSize;
@@ -112,24 +121,18 @@ struct mcsl::_File {
          sint*   avail;
          sint availLen;
       } g;
-      static ubyte dummy;
 
       static void globalSetup();
       static void globalCleanup();
       
-      struct FileRes {
-         Errno err;
-         _File* file;
-      };
       static FileRes allocFile();
       static Errno freeFile(_File*);
    public:
       using SeekMode = _SeekMode;
       using enum SeekMode;
 
-      static FileRes open(cstr path, FileFlags flags);
-      static FileRes open(sint fd, FileFlags flags);
-      static FileRes open(sint fd, FileFlags flags, sint osFlags);
+      static FileRes open(cstr path, FileFlags flags, mode_t createMode = DEFAULT_CREATE_MODE);
+      static FileRes open(sint fd, FileFlags flags, sint osFlags = flagsToOS(flags));
       Errno close();
       Errno flush();
       Errno sync();
