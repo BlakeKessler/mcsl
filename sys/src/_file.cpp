@@ -75,6 +75,7 @@ constexpr static ERR ERROR_LEVELS[256] = {
    [EPIPE       ] = ERR::CHANGE_FDES,
 };
 
+#pragma region open
 mcsl::_File::FileRes mcsl::_File::open(cstr path, FileFlags flags, mode_t createMode) {
    //sanity checks
    if (path) {
@@ -130,7 +131,7 @@ mcsl::_File::FileRes mcsl::_File::open(sint fd, FileFlags flags, sint osFlags) {
    //goto implementation function
    return res.file->_open(fd, flags, osFlags);
 }
-mcsl::_File::FileRes mcsl::_File::_open(sint fd, FIleFlags flags, sint osFlags) {
+mcsl::_File::FileRes mcsl::_File::_open(sint fd, FileFlags flags, sint osFlags) {
    //update fields
    this->fd = fd;
    this->_flags = flags;
@@ -139,6 +140,7 @@ mcsl::_File::FileRes mcsl::_File::_open(sint fd, FIleFlags flags, sint osFlags) 
    //return
    return {.err = Errno::NO_ERR, .file = this};
 }
+#pragma endregion open
 
 sint mcsl::flagsToOS(FileFlags flags) {
    sint osFlags = 0;
