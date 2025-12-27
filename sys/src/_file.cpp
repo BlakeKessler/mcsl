@@ -141,6 +141,35 @@ mcsl::_File::FileRes mcsl::_File::_open(sint fd, FileFlags flags, sint osFlags) 
    return {.err = Errno::NO_ERR, .file = this};
 }
 #pragma endregion open
+#pragma region close
+mcsl::Errno mcsl::_File::close() {
+   //check state
+   if (!(this->flags & FileFlags::IS_OPEN)) {
+      this->err = Errno::BAD_FILE_STATE;
+      return Errno::BAD_FILE_STATE;
+   }
+
+   //flush
+   if (this->flags & FileFlags::WRITE) {
+      if (Errno err = flush()) { return err; }
+   }
+   //sync
+   if (Errno err = sync()) { return err; }
+
+   sint res = close(this->fd);
+   // mark the file as closed, regardless of the results of the close syscall
+   // the `close` syscall puts the file descriptor back in the pool of available file descriptors before checking for errors
+   // any actionable errors will be caught when trying to flush the file
+   // the above only running for write-capable files should not cause any issues
+   // the errors that can be returned by a `close` call should only be relevant because they can indicate that there was data that didn't get written to disk, which is not a thing for non-write-capable files
+   // for further details, see the man page for `close`
+   this->flags |= FileFlags::IS_CLOSED;
+   this->flags &= ~FileFlags::IS_OPEN;
+
+   //return
+   return freeFile(this);
+}
+#pragma endregion close
 
 sint mcsl::flagsToOS(FileFlags flags) {
    sint osFlags = 0;

@@ -116,6 +116,7 @@ namespace mcsl {
       FS_ERR,
       NO__FILES,
       BAD_PATH,
+      BAD_FILE_STATE,
    };
    constexpr auto operator+(const Errno code) { return std::to_underlying(code); }
 }
