@@ -9,6 +9,7 @@
 
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 namespace mcsl {
    constexpr mode_t DEFAULT_CREATE_MODE = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;
@@ -69,6 +70,15 @@ namespace mcsl {
                      BUF_ALL,
       FOR_SETBUF   = BUF_ALL,
    };
+   constexpr uint32 operator+(FileFlags f) { return std::to_underlying(f); }
+   constexpr bool operator!(FileFlags f) { return +f; }
+   constexpr FileFlags operator~(FileFlags f) { return (FileFlags)~+f; }
+   constexpr FileFlags operator&(FileFlags lhs, FileFlags rhs) { return (FileFlags)(+lhs & +rhs); }
+   constexpr FileFlags operator|(FileFlags lhs, FileFlags rhs) { return (FileFlags)(+lhs | +rhs); }
+   constexpr FileFlags operator^(FileFlags lhs, FileFlags rhs) { return (FileFlags)(+lhs ^ +rhs); }
+   constexpr FileFlags& operator&=(FileFlags& lhs, FileFlags rhs) { return lhs = lhs & rhs; }
+   constexpr FileFlags& operator|=(FileFlags& lhs, FileFlags rhs) { return lhs = lhs | rhs; }
+   constexpr FileFlags& operator^=(FileFlags& lhs, FileFlags rhs) { return lhs = lhs ^ rhs; }
    sint flagsToOS(FileFlags);
 
    enum class _SeekMode {
@@ -123,8 +133,9 @@ struct mcsl::_File {
          sint*   avail;
          sint availLen;
       } g;
+      static bool __dummy;
 
-      static void globalSetup();
+      static bool globalSetup();
       static void globalCleanup();
       
       static FileRes allocFile();
@@ -140,7 +151,8 @@ struct mcsl::_File {
       void ensureBuf();
    public:
       static FileRes open(cstr path, FileFlags flags, mode_t createMode = DEFAULT_CREATE_MODE);
-      static FileRes open(sint fd, FileFlags flags, sint osFlags = flagsToOS(flags));
+      static FileRes open(sint fd, FileFlags flags, sint osFlags);
+      inline static FileRes open(sint fd, FileFlags flags) { return open(fd, flags, flagsToOS(flags)); }
       Errno close();
       Errno flush();
       Errno sync();
@@ -157,7 +169,9 @@ struct mcsl::_File {
       inline slong setpos(slong offset, SeekMode mode = SET) { return seek(offset, mode); }
       inline slong getpos() { return tell(); }
 
-      int getFD();
+      bool eof();
+
+      sint getFD();
 
       struct stat stat();
 };

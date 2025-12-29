@@ -11,13 +11,14 @@
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 #undef NULL
 
 #define MCSL_LARGEST_MULT_GEQ(x, mod) (x + (-x % mod))
 
 //run global setup
-ubyte mcsl::_File::g.isInit = []()-> ubyte { mcsl::_File::globalSetup(); return mcsl::_File::g.isInit; }();
+bool mcsl::_File::__dummy = mcsl::_File::globalSetup();
 
 //error levels (how dangereous an error is)
 enum class ERR : ubyte {
@@ -31,6 +32,7 @@ enum class ERR : ubyte {
    CHANGE_FILE = MAJOR, //file(s) would need to be created/deleted
    CHANGE_FDES = FATAL, //file descriptor(s) would need to be reopened
 };
+constexpr auto operator+(ERR err) { return std::to_underlying(err); }
 //array mapping syscall errno codes to error levels
 //supported syscalls: read, write, open, openat
 constexpr static ERR ERROR_LEVELS[256] = {
@@ -76,13 +78,18 @@ constexpr static ERR ERROR_LEVELS[256] = {
    [EPIPE       ] = ERR::CHANGE_FDES,
 };
 constexpr static uint TRIES_MAP[] = {
-   [UNEXP] = 0,
-   [MINOR] = FILE_TRIES_HARD_CAP,
-   [MAJOR] = FILE_TRIES_SOFT_CAP,
-   [FATAL] = 0
+   [+ERR::UNEXP] = 0,
+   [+ERR::MINOR] = FILE_TRIES_HARD_CAP,
+   [+ERR::MAJOR] = FILE_TRIES_SOFT_CAP,
+   [+ERR::FATAL] = 0
 };
-constexpr getTries(Errno err) {
-   return TRIES_MAP[ERROR_LEVELS[err]];
+constexpr uint getTries(Errno err) {
+   return TRIES_MAP[+ERROR_LEVELS[+err]];
+}
+
+//!NOTE: when implementing setbuf, clear the SAW_EOF flag if left != 0
+bool mcsl::_File::eof() {
+   return +(_flags & FileFlags::SAW_EOF) && !(left && +(_flags & FileFlags::BUFFERED));
 }
 
 #pragma region rdwr
@@ -103,10 +110,11 @@ sint mcsl::_File::_read(mcsl::arr_span<ubyte> data) {
       ++tries;
 
       //read
-      sint res = read(fd, dest, rem);
+      sint res = ::read(fd, dest, rem);
       //handle results
       if (res < 0) { //error
-         err = res = errno;
+         res = errno;
+         err = (Errno)res;
          maxTries = getTries(err);
       }
       else if (res == 0) { //eof
@@ -129,7 +137,7 @@ sint mcsl::_File::_read(mcsl::arr_span<ubyte> data) {
 sint mcsl::_File::_write(const mcsl::arr_span<ubyte> data) {
    debug_assert(data.begin() && data.size());
 
-   ubyte* dest = data.begin();
+   const ubyte* dest = data.begin();
    sint rem = data.size();
    sint count = 0;
 
@@ -141,10 +149,11 @@ sint mcsl::_File::_write(const mcsl::arr_span<ubyte> data) {
       ++tries;
 
       //write
-      sint res = write(fd, dest, rem);
+      sint res = ::write(fd, dest, rem);
       //handle results
       if (res < 0) { //error
-         err = res = errno;
+         res = errno;
+         err = (Errno)res;
          maxTries = getTries(err);
       }
       else { //successful write
@@ -177,6 +186,7 @@ sint mcsl::_File::read(mcsl::arr_span<ubyte> data) {
 
    sint tries = 0;
    sint maxTries = FILE_TRIES_IMPL_CAP;
+   uint cpylen;
 
    do {
       //update iteration counter
@@ -205,23 +215,22 @@ sint mcsl::_File::read(mcsl::arr_span<ubyte> data) {
             debug_assert(left == 0);
             //read
             sint tmp = _read({buf, cap});
+            //check success
+            if (!tmp) {
+               goto CONTINUE;
+            }
             //update len and left
             len = tmp;
             left = tmp;
          }
-         
-         //check that there is something in the buffer now
-         if (!left) { //nothing left in buffer, short circuit the loop iteration
-            goto CONTINUE; //continue, but still check the loop condition
-         }
       }
 
       //debug checks
-      debug_assert(left);
-      debug_assert(rem);
+      debug_assert(left > 0);
+      debug_assert(rem > 0);
 
       //calculate amount of data to copy from buffer
-      sint cpylen = rem < left ? rem : left;
+      cpylen = rem < left ? rem : left;
       debug_assert(cpylen < left);
       //copy data
       memcpy(dest, buf + index, cpylen);
@@ -235,7 +244,9 @@ sint mcsl::_File::read(mcsl::arr_span<ubyte> data) {
 
       //label for continuing while still checking the loop condition
       CONTINUE:
-   } while (rem && tries <= maxTries);
+   } while (rem && tries <= maxTries && !eof());
+
+   return count;
 }
 #pragma endregion rdwr
 
@@ -247,12 +258,12 @@ mcsl::_File::FileRes mcsl::_File::open(cstr path, FileFlags flags, mode_t create
    }
 
    //convert flags to OS flags
-   sint osFlags = File_flagsToOS(flags);
+   sint osFlags = flagsToOS(flags);
 
    //allocate file
    _File* file;
    if (FileRes res = allocFile(); !res.err) {
-      file = res->file;
+      file = res.file;
    } else {
       return res;
    }
@@ -264,19 +275,19 @@ mcsl::_File::FileRes mcsl::_File::open(cstr path, FileFlags flags, mode_t create
    do {
       ++tries;
       //try to open
-      fd = open(path.begin(), osFlags, createMode);
+      fd = ::open(path.begin(), osFlags, createMode);
       if (fd >= 0) { //check for success
          [[likely]];
          //return
          return file->_open(fd, flags, osFlags);
       }
       [[unlikely]];
-      err = errno;
-      maxTries = getTries(err);
+      file->err = (Errno)errno;
+      maxTries = getTries(file->err);
    } while (tries <= maxTries);
 
    //return (failure)
-   return {.err = err, .file = nullptr};
+   return {.err = file->err, .file = nullptr};
 }
 mcsl::_File::FileRes mcsl::_File::open(sint fd, FileFlags flags, sint osFlags) {
    //allocate file
@@ -301,27 +312,28 @@ mcsl::_File::FileRes mcsl::_File::_open(sint fd, FileFlags flags, sint osFlags) 
 //!TODO: release buffer
 mcsl::Errno mcsl::_File::close() {
    //check state
-   if (!(this->flags & FileFlags::IS_OPEN)) {
+   if (!(this->_flags & FileFlags::IS_OPEN)) {
       this->err = Errno::BAD_FILE_STATE;
       return Errno::BAD_FILE_STATE;
    }
 
    //flush
-   if (this->flags & FileFlags::WRITE) {
-      if (Errno err = flush()) { return err; }
+   if (+(this->_flags & FileFlags::WRITE)) {
+      if (Errno err = flush(); +err) { return err; }
    }
    //sync
-   if (Errno err = sync()) { return err; }
+   if (Errno err = sync(); +err) { return err; }
 
-   sint res = close(this->fd);
+   sint res = ::close(this->fd);
    // mark the file as closed, regardless of the results of the close syscall
    // the `close` syscall puts the file descriptor back in the pool of available file descriptors before checking for errors
    // any actionable errors will be caught when trying to flush the file
    // the above only running for write-capable files should not cause any issues
    // the errors that can be returned by a `close` call should only be relevant because they can indicate that there was data that didn't get written to disk, which is not a thing for non-write-capable files
    // for further details, see the man page for `close`
-   this->flags |= FileFlags::IS_CLOSED;
-   this->flags &= ~FileFlags::IS_OPEN;
+   (void)res;
+   this->_flags |= FileFlags::IS_CLOSED;
+   this->_flags &= ~FileFlags::IS_OPEN;
 
    //return
    return freeFile(this);
@@ -330,20 +342,17 @@ mcsl::Errno mcsl::_File::close() {
 
 sint mcsl::flagsToOS(FileFlags flags) {
    sint osFlags = 0;
-   sint tmp;
 
    // file type
-   tmp = __builtin_popcount(flags & FileFlags::FILE_TYPES);
-   if (tmp > 1) {
+   if (__builtin_popcount(+(flags & FileFlags::FILE_TYPES)) > 1) {
       TODO;
    }
-   tmp = flags & FileFlag::FILE_TYPES;
-   switch (tmp) {
+   switch (flags & FileFlags::FILE_TYPES) {
       case FileFlags::REGFILE  : break;
       case FileFlags::TMPFILE  : 
          osFlags |= O_TMPFILE;
          if (!(flags & (FileFlags::READ | FileFlags::WRITE))) {
-            TODO();
+            TODO;
          }
          break;
       case FileFlags::DIRECTORY: osFlags |= O_DIRECTORY; break;
@@ -354,57 +363,57 @@ sint mcsl::flagsToOS(FileFlags flags) {
    }
 
    // access mode
-   if (flags & FileFlags::PATH) {
+   if (+(flags & FileFlags::PATH)) {
       osFlags |= O_PATH;
-      if (flags & (READ | WRITE)) {
-         TODO();
+      if (+(flags & (FileFlags::READ | FileFlags::WRITE))) {
+         TODO;
       }
    }
-   else if (flags & FileFlags::WRITE) {
-      if (flags & FileFlags::READ) {
+   else if (+(flags & FileFlags::WRITE)) {
+      if (+(flags & FileFlags::READ)) {
          osFlags |= O_RDWR;
       } else {
          osFlags |= O_WRONLY;
       }
-   } else if (flags & FileFlags::READ) {
+   } else if (+(flags & FileFlags::READ)) {
       osFlags |= O_RDONLY;
    }
 
    // file existance reqs
-   if (flags & FileFlags::ERR::IF_EX) {
+   if (+(flags & FileFlags::ERR_IF_EX)) {
       osFlags |= O_CREAT | O_EXCL;
       
-      if (flags & FileFlags::ERR::IF_NE) {
+      if (+(flags & FileFlags::ERR_IF_NE)) {
          TODO;
       }
    }
-   else if (!(flags & FileFlags::ERR::IF_NE)) {
+   else if (!(flags & FileFlags::ERR_IF_NE)) {
       osFlags |= O_CREAT;
    }
 
    // append
-   if (flags & FileFlags::APPEND) {
+   if (+(flags & FileFlags::APPEND)) {
       osFlags |= O_APPEND;
    }
 
    // IO mode
-   if (flags & FileFlags::ASYNC) {
+   if (+(flags & FileFlags::ASYNC)) {
       osFlags |= O_ASYNC;
    }
-   if (flags & FileFlags::NONBLOCK) {
+   if (+(flags & FileFlags::NONBLOCK)) {
       osFlags |= O_NONBLOCK;
    }
 
    // synchronization mode
-   if (flags & FileFlags::FSYNC) {
+   if (+(flags & FileFlags::FSYNC)) {
       osFlags |= O_SYNC;
    }
-   else if (flags & FileFlags::DSYNC) {
+   else if (+(flags & FileFlags::DSYNC)) {
       osFlags |= O_DSYNC;
    }
 
    // metadata updates
-   if (flags & FileFlags::NO_NEW_METADATA) {
+   if (+(flags & FileFlags::NO_NEW_METADATA)) {
       osFlags |= O_NOATIME;
    }
 
@@ -414,7 +423,7 @@ sint mcsl::flagsToOS(FileFlags flags) {
    }
 
    // cache effect
-   if (flags & FileFlags::MIN_OS_CACHE) {
+   if (+(flags & FileFlags::MIN_OS_CACHE)) {
       osFlags |= O_DIRECT;
    }
 
@@ -432,7 +441,7 @@ mcsl::_File::FileRes mcsl::_File::allocFile() {
 
    //get fnum
    sint fnum = g.avail[0];
-   assume(fnum >= 0 && fnum < g.fileBufLen);
+   assume(fnum >= 0 && (uint)fnum < g.fileBuf.size());
    //update fnum list
    g.avail++;
    g.availLen--;
@@ -466,7 +475,7 @@ mcsl::Errno mcsl::_File::freeFile(_File* file) {
    {
       sint* target = g.inUse + file->fnum;
       sint* back = g.inUse + g.inUseLen - 1;
-      File* backFile = g.fileBuf + *back;
+      _File* backFile = g.fileBuf + *back;
 
       sint tmp = *back;
       *back = *target;
@@ -488,7 +497,7 @@ mcsl::Errno mcsl::_File::freeFile(_File* file) {
 }
 #pragma endregion filealloc
 #pragma region global
-void mcsl::_File::globalSetup() {
+bool mcsl::_File::globalSetup() {
    sint err;
 
    //ensure that partial initialization can be detected
@@ -551,7 +560,7 @@ void mcsl::_File::globalSetup() {
    };
 
    //return
-   return;
+   return true;
 }
 void mcsl::_File::globalCleanup() {
    //iterate over open files
