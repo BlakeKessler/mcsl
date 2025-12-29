@@ -11,6 +11,9 @@
 #include "raw_str.hpp"
 #include "hw.hpp"
 
+#include <cstdio>
+#undef NULL
+
 namespace mcsl {
    template<typename T> concept Printable = requires (File file, T obj, char mode, FmtArgs fmt) {
       { writef(file, obj, mode, fmt) } -> uint_t;
@@ -70,7 +73,11 @@ class mcsl::File {
       File(FILE*);
       File(sint); //only on systems with a Unix-like/Windows-like file descriptor/handle system
    public:
+#ifdef BUFSIZ
       static constexpr uint DEFAULT_BUF_SIZE = BUFSIZ;
+#else
+      static constexpr uint DEFAULT_BUF_SIZE = 8192;
+#endif
 
       File(const Path fileName, const char* mode);
       File(const Path fileName, const char* mode, arr_span<ubyte> buf, bool ownsBuf = false);
