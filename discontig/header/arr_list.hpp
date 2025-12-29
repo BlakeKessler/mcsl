@@ -79,7 +79,7 @@ template<typename T, uint _bufCapacity> mcsl::arr_list<T,_bufCapacity>::arr_list
    (push_back(initList), ...);
 }
 
-template<typename T, uint _bufCapacity> mcsl::arr_list<T,_bufCapacity>::~arr_list() {
+template<typename T, uint _bufCapacity> mcsl::arr_list<T,_bufCapacity>::~arr_list<T,_bufCapacity>() {
    if (_buf) {
       for (uint i = 0; i < _size; ++i) {
          std::destroy_at(&(self[i]));
