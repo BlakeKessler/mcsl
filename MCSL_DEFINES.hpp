@@ -4,13 +4,18 @@
 
 #define MCSL
 
-#include <cstdint>
-#include <stdfloat>
 #include <utility>
+#include <cstdint>
+#if __has_include(<stdfloat>)
+#include <stdfloat>
+#endif
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+
+
+#define MCSL_STD_STR_SUPPORT 0
 
 //self
 #define self (*this)
@@ -55,7 +60,13 @@ using sword = slong;
 // using float16  = std::float16_t;
 using float32  = float;
 using float64  = double;
+#if LDBL_MANT_DIG == 64
 using float80  = long double;
+#elif LDBL_MANT_DIG == 113
+using float128 = long double;
+#elif LDBL_MANT_DIG == DBL_MANT_DIG
+//nothing useful to do with it
+#endif
 // using float128 = std::float128_t;
 
 // using half   = float16;
@@ -119,6 +130,7 @@ namespace mcsl {
       BAD_FILE_STATE,
    };
    constexpr auto operator+(const Errno code) { return std::to_underlying(code); }
+   constexpr bool operator!(const Errno code) { return !+code; }
 }
 
 //simple integer macros

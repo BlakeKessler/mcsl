@@ -122,6 +122,9 @@ template<typename char_t> constexpr mcsl::str_base<char_t>::operator const str_s
 
 #pragma endregion inlinesrc
 
+#if MCSL_STD_STR_SUPPORT
+#include <string>
+#endif
 //default string hashing implementation
 namespace {
    using namespace mcsl;
@@ -130,12 +133,16 @@ namespace {
       using T = str_slice;
 
       inline uint64 operator()(const T str) const noexcept { return str.hash(); }
+#if MCSL_STD_STR_SUPPORT
       inline uint64 operator()(const std::string_view str) const noexcept { return T::make(str.begin(), str.size()).hash(); }
       inline uint64 operator()(const std::string& str) const noexcept { return T::make(str.data(), str.size()).hash(); }
+#endif
 
       inline uint64 operator()(const T str, uint64 seed) const noexcept { return str.hash(seed); }
+#if MCSL_STD_STR_SUPPORT
       inline uint64 operator()(const std::string_view str, uint64 seed) const noexcept { return T::make(str.begin(), str.size()).hash(seed); }
       inline uint64 operator()(const std::string& str, uint64 seed) const noexcept { return T::make(str.data(), str.size()).hash(seed); }
+#endif
    };
 };
 template<mcsl::str_t str_t> struct mcsl::hash<str_t> : public __strhash {};
