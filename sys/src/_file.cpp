@@ -4,6 +4,7 @@
 #include "file.hpp"
 
 #include "assert.hpp"
+#include "mem.hpp"
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -86,7 +87,10 @@ constexpr getTries(Errno err) {
 
 #pragma region rdwr
 #pragma region rdwrImpl
+//!TODO: calculate appropriate try cap based on the length of the requested read/write
 sint mcsl::_File::_read(mcsl::arr_span<ubyte> data) {
+   debug_assert(data.begin() && data.size());
+
    ubyte* dest = data.begin();
    sint rem = data.size();
    sint count = 0;
@@ -123,6 +127,8 @@ sint mcsl::_File::_read(mcsl::arr_span<ubyte> data) {
    return count;
 }
 sint mcsl::_File::_write(const mcsl::arr_span<ubyte> data) {
+   debug_assert(data.begin() && data.size());
+
    ubyte* dest = data.begin();
    sint rem = data.size();
    sint count = 0;
@@ -152,7 +158,85 @@ sint mcsl::_File::_write(const mcsl::arr_span<ubyte> data) {
    return count;
 }
 #pragma endregion rdwrImpl
+sint mcsl::_File::read(mcsl::arr_span<ubyte> data) {
+   assume(data.begin());
+   assume(_flags & FileFlags::READ);
+   if (!data.size()) { return 0; }
 
+   //unbuffered IO
+   if (!(_flags & FileFlags::BUFFERED)) {
+      return _read(data);
+   }
+
+   //buffered IO
+   ensureBuf();
+
+   ubyte* dest = data.begin();
+   uint rem = data.size();
+   uint count = 0;
+
+   sint tries = 0;
+   sint maxTries = FILE_TRIES_IMPL_CAP;
+
+   do {
+      //update iteration counter
+      ++tries;
+
+      //check if there is data in the buffer
+      if (!left) { //buffer is empty
+         //check if it is worth reading into the buffer for this read
+         if (rem * FILE_LONG_RDRW_FACTOR >= len) { //not worth reading into the buffer
+            //read
+            sint tmp = _read({dest, rem});
+            //update locals
+            count += tmp;
+            dest += tmp;
+            rem -= tmp;
+
+            //check if there are still bytes to read
+            if (!rem) {
+               break;
+            }
+         }
+         else { //worth reading into the buffer
+            //update base and index
+            base += index;
+            index = 0;
+            debug_assert(left == 0);
+            //read
+            sint tmp = _read({buf, cap});
+            //update len and left
+            len = tmp;
+            left = tmp;
+         }
+         
+         //check that there is something in the buffer now
+         if (!left) { //nothing left in buffer, short circuit the loop iteration
+            goto CONTINUE; //continue, but still check the loop condition
+         }
+      }
+
+      //debug checks
+      debug_assert(left);
+      debug_assert(rem);
+
+      //calculate amount of data to copy from buffer
+      sint cpylen = rem < left ? rem : left;
+      debug_assert(cpylen < left);
+      //copy data
+      memcpy(dest, buf + index, cpylen);
+      //update buffer
+      index += cpylen;
+      left -= cpylen;
+      //update locals
+      count += cpylen;
+      dest += cpylen;
+      rem -= cpylen;
+
+      //label for continuing while still checking the loop condition
+      CONTINUE:
+   } while (rem && tries <= maxTries);
+}
 #pragma endregion rdwr
 
 #pragma region open
@@ -214,6 +298,7 @@ mcsl::_File::FileRes mcsl::_File::_open(sint fd, FileFlags flags, sint osFlags) 
 }
 #pragma endregion open
 #pragma region close
+//!TODO: release buffer
 mcsl::Errno mcsl::_File::close() {
    //check state
    if (!(this->flags & FileFlags::IS_OPEN)) {

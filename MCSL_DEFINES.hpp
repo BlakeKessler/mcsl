@@ -146,10 +146,11 @@ namespace mcsl {
    //low-level IO parameters
    constexpr uint FILE_MAGIC_NUM = 0x58A7E1D8;
    constexpr uint FILE_BUF_PAGES = 1; //number of pages allocated for the global file buffer
-   constexpr uint FILE_TRIES_HARD_CAP = 8;
    constexpr uint FILE_TRIES_SOFT_CAP = 16;
-   constexpr uint FILE_PARTIAL_RDRW_CAP = 32;
+   constexpr uint FILE_TRIES_HARD_CAP = 32;
+   constexpr uint FILE_PARTIAL_RDRW_CAP = 64;
    constexpr uint FILE_LONG_RDRW_FACTOR = 2;
+   constexpr uint FILE_TRIES_IMPL_CAP = 8;
 
    //high-level IO parameters
    constexpr uint DEFAULT_INT_RADIX = 10;

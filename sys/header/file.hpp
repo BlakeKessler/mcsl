@@ -98,8 +98,10 @@ struct mcsl::_File {
 
       //buffered IO
       //in `_File` instead of `File` for proper flush-on-exit behavior
-      uint len; //number of initialized bytes in the buffer
-      sint index; //offset of current position from base (seek -> base + index)
+      uint cap;   //capacity of the buffer
+      uint len;   //number of initialized bytes in the buffer
+      uint index; //offset of current position from base (tell() == base + index)
+      uint left;  //number of bytes left in the buffer (index + left == len)
       slong base; //number of bytes into the file that the beginning of the buffer corresponds to
       ubyte* buf;
 
@@ -134,6 +136,8 @@ struct mcsl::_File {
       FileRes _open(sint fd, FileFlags flags, sint osFlags);
       sint _read(arr_span<ubyte> data);
       sint _write(const arr_span<ubyte> data);
+
+      void ensureBuf();
    public:
       static FileRes open(cstr path, FileFlags flags, mode_t createMode = DEFAULT_CREATE_MODE);
       static FileRes open(sint fd, FileFlags flags, sint osFlags = flagsToOS(flags));
