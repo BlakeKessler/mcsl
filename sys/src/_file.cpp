@@ -198,6 +198,10 @@ sint mcsl::_File::read(mcsl::arr_span<ubyte> data) {
          if (rem * FILE_LONG_RDRW_FACTOR >= len) { //not worth reading into the buffer
             //read
             sint tmp = _read({dest, rem});
+            //check success
+            if (!tmp) {
+               goto CONTINUE;
+            }
             //update locals
             count += tmp;
             dest += tmp;
@@ -220,6 +224,7 @@ sint mcsl::_File::read(mcsl::arr_span<ubyte> data) {
                goto CONTINUE;
             }
             //update len and left
+            count += tmp;
             len = tmp;
             left = tmp;
          }
@@ -240,6 +245,92 @@ sint mcsl::_File::read(mcsl::arr_span<ubyte> data) {
       //update locals
       count += cpylen;
       dest += cpylen;
+      rem -= cpylen;
+
+      //label for continuing while still checking the loop condition
+      CONTINUE:
+   } while (rem && tries <= maxTries && !eof());
+
+   return count;
+}
+sint mcsl::_File::write(const mcsl::arr_span<ubyte> data) {
+   assume(data.begin());
+   assume(_flags & FileFlags::WRITE);
+   if (!data.size()) { return 0; }
+
+   //unbuffered IO
+   if (!(_flags & FileFlags::BUFFERED)) {
+      return _write(data);
+   }
+
+   //buffered IO
+   ensureBuf();
+
+   const ubyte* src = data.begin();
+   uint rem = data.size();
+   uint count = 0;
+
+   sint tries = 0;
+   sint maxTries = FILE_TRIES_IMPL_CAP;
+   uint cpylen;
+
+   do {
+      //update iteration counter
+      ++tries;
+
+      //check if there is data in the buffer
+      if (!left) { //buffer is empty
+         //check if it is worth writing into the buffer for this read
+         if (rem * FILE_LONG_RDRW_FACTOR >= len) { //not worth writing into the buffer
+            //read
+            sint tmp = _write(arr_span<ubyte>::make(src, rem));
+            //check success
+            if (!tmp) {
+               goto CONTINUE;
+            }
+            //update locals
+            count += tmp;
+            src += tmp;
+            rem -= tmp;
+
+            //check if there are still bytes to write
+            if (!rem) {
+               break;
+            }
+         }
+         else { //worth writing into the buffer
+            //update base and index
+            base += index;
+            index = 0;
+            debug_assert(left == 0);
+            //write
+            sint tmp = _write({buf, cap});
+            //check success
+            if (!tmp) {
+               goto CONTINUE;
+            }
+            //update len and left
+            count += tmp;
+            len = tmp;
+            left = tmp;
+         }
+      }
+
+      //debug checks
+      debug_assert(left > 0);
+      debug_assert(rem > 0);
+
+      //calculate amount of data to copy from buffer
+      cpylen = rem < left ? rem : left;
+      debug_assert(cpylen < left);
+      //copy data
+      memcpy(buf + index, src, cpylen);
+      //update buffer
+      index += cpylen;
+      left -= cpylen;
+      //update locals
+      count += cpylen;
+      src += cpylen;
       rem -= cpylen;
 
       //label for continuing while still checking the loop condition
