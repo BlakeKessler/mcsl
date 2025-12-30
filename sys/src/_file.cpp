@@ -335,7 +335,7 @@ sint mcsl::_File::write(const mcsl::arr_span<ubyte> data) {
 
       //label for continuing while still checking the loop condition
       CONTINUE:
-   } while (rem && tries <= maxTries && !eof());
+   } while (rem && tries <= maxTries);
 
    return count;
 }
