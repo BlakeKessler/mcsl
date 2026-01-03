@@ -89,14 +89,18 @@ constexpr uint getTries(Errno err) {
 
 //!NOTE: when implementing setbuf, clear the SAW_EOF flag if left != 0
 bool mcsl::_File::eof() {
-   return +(_flags & FileFlags::SAW_EOF) && !(left && +(_flags & FileFlags::BUFFERED));
+   return +(_flags & FileFlags::SAW_EOF) && !(_left && +(_flags & FileFlags::BUFFERED));
 }
 
+//!TODO: no assume or assert statements for file handling
 #pragma region rdwr
 #pragma region rdwrImpl
 //!TODO: calculate appropriate try cap based on the length of the requested read/write
 sint mcsl::_File::_read(mcsl::arr_span<ubyte> data) {
-   debug_assert(data.begin() && data.size());
+   if (!(data.begin() && data.size())) {
+      _err = Errno::FS_NULL_BUF;
+      return FILE_ERROR_VAL;
+   }
 
    ubyte* dest = data.begin();
    sint rem = data.size();
@@ -110,12 +114,12 @@ sint mcsl::_File::_read(mcsl::arr_span<ubyte> data) {
       ++tries;
 
       //read
-      sint res = ::read(fd, dest, rem);
+      sint res = ::read(_fd, dest, rem);
       //handle results
       if (res < 0) { //error
          res = errno;
-         err = (Errno)res;
-         maxTries = getTries(err);
+         _err = (Errno)res;
+         maxTries = getTries(_err);
       }
       else if (res == 0) { //eof
          _flags |= FileFlags::SAW_EOF;
@@ -135,7 +139,10 @@ sint mcsl::_File::_read(mcsl::arr_span<ubyte> data) {
    return count;
 }
 sint mcsl::_File::_write(const mcsl::arr_span<ubyte> data) {
-   debug_assert(data.begin() && data.size());
+   if (!(data.begin() && data.size())) {
+      _err = Errno::FS_NULL_BUF;
+      return FILE_ERROR_VAL;
+   }
 
    const ubyte* dest = data.begin();
    sint rem = data.size();
@@ -149,12 +156,12 @@ sint mcsl::_File::_write(const mcsl::arr_span<ubyte> data) {
       ++tries;
 
       //write
-      sint res = ::write(fd, dest, rem);
+      sint res = ::write(_fd, dest, rem);
       //handle results
       if (res < 0) { //error
          res = errno;
-         err = (Errno)res;
-         maxTries = getTries(err);
+         _err = (Errno)res;
+         maxTries = getTries(_err);
       }
       else { //successful write
          rem -= res;
@@ -193,9 +200,9 @@ sint mcsl::_File::read(mcsl::arr_span<ubyte> data) {
       ++tries;
 
       //check if there is data in the buffer
-      if (!left) { //buffer is empty
+      if (!_left) { //buffer is empty
          //check if it is worth reading into the buffer for this read
-         if (rem * FILE_LONG_RDRW_FACTOR >= len) { //not worth reading into the buffer
+         if (rem * FILE_LONG_RDRW_FACTOR >= _len) { //not worth reading into the buffer
             //read
             sint tmp = _read({dest, rem});
             //check success
@@ -214,34 +221,34 @@ sint mcsl::_File::read(mcsl::arr_span<ubyte> data) {
          }
          else { //worth reading into the buffer
             //update base and index
-            base += index;
-            index = 0;
-            debug_assert(left == 0);
+            _base += _index;
+            _index = 0;
+            debug_assert(_left == 0);
             //read
-            sint tmp = _read({buf, cap});
+            sint tmp = _read({_buf, _cap});
             //check success
             if (!tmp) {
                goto CONTINUE;
             }
             //update len and left
             count += tmp;
-            len = tmp;
-            left = tmp;
+            _len = tmp;
+            _left = tmp;
          }
       }
 
       //debug checks
-      debug_assert(left > 0);
+      debug_assert(_left > 0);
       debug_assert(rem > 0);
 
       //calculate amount of data to copy from buffer
-      cpylen = rem < left ? rem : left;
-      debug_assert(cpylen < left);
+      cpylen = rem < _left ? rem : _left;
+      debug_assert(cpylen < _left);
       //copy data
-      memcpy(dest, buf + index, cpylen);
+      memcpy(dest, _buf + _index, cpylen);
       //update buffer
-      index += cpylen;
-      left -= cpylen;
+      _index += cpylen;
+      _left -= cpylen;
       //update locals
       count += cpylen;
       dest += cpylen;
@@ -279,9 +286,9 @@ sint mcsl::_File::write(const mcsl::arr_span<ubyte> data) {
       ++tries;
 
       //check if there is data in the buffer
-      if (!left) { //buffer is empty
+      if (!_left) { //buffer is empty
          //check if it is worth writing into the buffer for this read
-         if (rem * FILE_LONG_RDRW_FACTOR >= len) { //not worth writing into the buffer
+         if (rem * FILE_LONG_RDRW_FACTOR >= _len) { //not worth writing into the buffer
             //read
             sint tmp = _write(arr_span<ubyte>::make(src, rem));
             //check success
@@ -300,34 +307,34 @@ sint mcsl::_File::write(const mcsl::arr_span<ubyte> data) {
          }
          else { //worth writing into the buffer
             //update base and index
-            base += index;
-            index = 0;
-            debug_assert(left == 0);
+            _base += _index;
+            _index = 0;
+            debug_assert(_left == 0);
             //write
-            sint tmp = _write({buf, cap});
+            sint tmp = _write({_buf, _cap});
             //check success
             if (!tmp) {
                goto CONTINUE;
             }
             //update len and left
             count += tmp;
-            len = tmp;
-            left = tmp;
+            _len = tmp;
+            _left = tmp;
          }
       }
 
       //debug checks
-      debug_assert(left > 0);
+      debug_assert(_left > 0);
       debug_assert(rem > 0);
 
       //calculate amount of data to copy from buffer
-      cpylen = rem < left ? rem : left;
-      debug_assert(cpylen < left);
+      cpylen = rem < _left ? rem : _left;
+      debug_assert(cpylen < _left);
       //copy data
-      memcpy(buf + index, src, cpylen);
+      memcpy(_buf + _index, src, cpylen);
       //update buffer
-      index += cpylen;
-      left -= cpylen;
+      _index += cpylen;
+      _left -= cpylen;
       //update locals
       count += cpylen;
       src += cpylen;
@@ -373,12 +380,12 @@ mcsl::_File::FileRes mcsl::_File::open(cstr path, FileFlags flags, mode_t create
          return file->_open(fd, flags, osFlags);
       }
       [[unlikely]];
-      file->err = (Errno)errno;
-      maxTries = getTries(file->err);
+      file->_err = (Errno)errno;
+      maxTries = getTries(file->_err);
    } while (tries <= maxTries);
 
    //return (failure)
-   return {.err = file->err, .file = nullptr};
+   return {.err = file->_err, .file = nullptr};
 }
 mcsl::_File::FileRes mcsl::_File::open(sint fd, FileFlags flags, sint osFlags) {
    //allocate file
@@ -391,20 +398,19 @@ mcsl::_File::FileRes mcsl::_File::open(sint fd, FileFlags flags, sint osFlags) {
 }
 mcsl::_File::FileRes mcsl::_File::_open(sint fd, FileFlags flags, sint osFlags) {
    //update fields
-   this->fd = fd;
+   this->_fd = fd;
    this->_flags = flags;
    this->_osFlags = osFlags;
-   this->err = Errno::NO_ERR;
+   this->_err = Errno::NO_ERR;
    //return
    return {.err = Errno::NO_ERR, .file = this};
 }
 #pragma endregion open
-#pragma region close
 //!TODO: release buffer
 mcsl::Errno mcsl::_File::close() {
    //check state
    if (!(this->_flags & FileFlags::IS_OPEN)) {
-      this->err = Errno::BAD_FILE_STATE;
+      this->_err = Errno::BAD_FILE_STATE;
       return Errno::BAD_FILE_STATE;
    }
 
@@ -415,7 +421,7 @@ mcsl::Errno mcsl::_File::close() {
    //sync
    if (Errno err = sync(); +err) { return err; }
 
-   sint res = ::close(this->fd);
+   sint res = ::close(this->_fd);
    // mark the file as closed, regardless of the results of the close syscall
    // the `close` syscall puts the file descriptor back in the pool of available file descriptors before checking for errors
    // any actionable errors will be caught when trying to flush the file
@@ -429,7 +435,9 @@ mcsl::Errno mcsl::_File::close() {
    //return
    return freeFile(this);
 }
-#pragma endregion close
+mcsl::Errno mcsl::_File::flush() {
+   TODO;
+}
 
 sint mcsl::flagsToOS(FileFlags flags) {
    sint osFlags = 0;
@@ -541,17 +549,17 @@ mcsl::_File::FileRes mcsl::_File::allocFile() {
    //get file object
    _File* file = g.fileBuf + fnum;
    //update file object fields
-   file->magicNum = FILE_MAGIC_NUM;
-   file->fnum = fnum;
+   file->_magicNum = FILE_MAGIC_NUM;
+   file->_fnum = fnum;
 
-   file->len = 0;
-   file->index = 0;
-   file->base = 0;
-   file->buf = nullptr;
+   file->_len = 0;
+   file->_index = 0;
+   file->_base = 0;
+   file->_buf = nullptr;
 #if defined(SAFE_MODE)
-   file->fd = -1;
-   file->err = Errno::NO_ERR;
-
+   file->_fd = -1;
+   file->_err = Errno::NO_ERR;
+         
    file->_flags = 0;
    file->_osFlags = 0;
 #endif
@@ -560,11 +568,11 @@ mcsl::_File::FileRes mcsl::_File::allocFile() {
 }
 mcsl::Errno mcsl::_File::freeFile(_File* file) {
    debug_assert(file);
-   debug_assert(file->magicNum == FILE_MAGIC_NUM);
+   debug_assert(file->_magicNum == FILE_MAGIC_NUM);
 
    //move file's entry in the inUse list to the back of the inUse section
    {
-      sint* target = g.inUse + file->fnum;
+      sint* target = g.inUse + file->_fnum;
       sint* back = g.inUse + g.inUseLen - 1;
       _File* backFile = g.fileBuf + *back;
 
@@ -572,8 +580,8 @@ mcsl::Errno mcsl::_File::freeFile(_File* file) {
       *back = *target;
       *target = tmp;
 
-      file->fnum = *target;
-      backFile->fnum = *back;
+      file->_fnum = *target;
+      backFile->_fnum = *back;
    }
 
    //update fnum list
@@ -582,7 +590,7 @@ mcsl::Errno mcsl::_File::freeFile(_File* file) {
    g.inUseLen--;
 
    //unset magic number
-   file->magicNum = ~FILE_MAGIC_NUM;
+   file->_magicNum = ~FILE_MAGIC_NUM;
    //return
    return Errno::NO_ERR;
 }

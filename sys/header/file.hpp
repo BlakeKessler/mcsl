@@ -97,23 +97,23 @@ struct mcsl::_File {
    private:
       friend class File;
 
-      uint magicNum;
+      uint _magicNum;
 
-      sint fd;
-      sint fnum;
-      Errno err;
+      sint _fd;
+      sint _fnum;
+      Errno _err;
 
       FileFlags _flags;
       sint _osFlags;
 
       //buffered IO
       //in `_File` instead of `File` for proper flush-on-exit behavior
-      uint cap;   //capacity of the buffer
-      uint len;   //number of initialized bytes in the buffer
-      uint index; //offset of current position from base (tell() == base + index)
-      uint left;  //number of bytes left in the buffer (index + left == len)
-      slong base; //number of bytes into the file that the beginning of the buffer corresponds to
-      ubyte* buf;
+      uint _cap;   //capacity of the buffer
+      uint _len;   //number of initialized bytes in the buffer
+      uint _index; //offset of current position from base (tell() == base + index)
+      uint _left;  //number of bytes left in the buffer (index + left == len)
+      slong _base; //number of bytes into the file that the beginning of the buffer corresponds to
+      ubyte* _buf;
 
    public:
       struct FileRes {

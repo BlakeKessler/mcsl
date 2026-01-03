@@ -128,6 +128,7 @@ namespace mcsl {
       NO__FILES,
       BAD_PATH,
       BAD_FILE_STATE,
+      FS_NULL_BUF,
    };
    constexpr auto operator+(const Errno code) { return std::to_underlying(code); }
    constexpr bool operator!(const Errno code) { return !+code; }
@@ -163,6 +164,8 @@ namespace mcsl {
    constexpr uint FILE_PARTIAL_RDRW_CAP = 64;
    constexpr uint FILE_LONG_RDRW_FACTOR = 2;
    constexpr uint FILE_TRIES_IMPL_CAP = 8;
+   
+   constexpr sint FILE_ERROR_VAL = 0;
 
    //high-level IO parameters
    constexpr uint DEFAULT_INT_RADIX = 10;
