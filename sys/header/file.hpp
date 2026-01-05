@@ -147,8 +147,8 @@ struct mcsl::_File {
       FileRes _open(sint fd, FileFlags flags, sint osFlags);
       sint _read(arr_span<ubyte> data);
       sint _write(const arr_span<ubyte> data);
-
-      void ensureBuf();
+      Errno _ensureBuf();
+      void _setbuf(arr_span<ubyte> data);
    public:
       static FileRes open(cstr path, FileFlags flags, mode_t createMode = DEFAULT_CREATE_MODE);
       static FileRes open(sint fd, FileFlags flags, sint osFlags);

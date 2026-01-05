@@ -12,6 +12,7 @@
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <signal.h>
 
 #undef NULL
 
@@ -31,11 +32,15 @@ enum class ERR : ubyte {
    OUT_OF_RESC = MAJOR, //out of resources
    CHANGE_FILE = MAJOR, //file(s) would need to be created/deleted
    CHANGE_FDES = FATAL, //file descriptor(s) would need to be reopened
+
+   NOT_MAPPING = UNEXP, //should not happen because no fd was specified
+   NO_SPEC_LOC = UNEXP, //should not happen because no location to map was specified
+   BAD_HCPARAM = UNEXP, //should not happen because of other hardcoded parameters
 };
 constexpr auto operator+(ERR err) { return std::to_underlying(err); }
-//array mapping syscall errno codes to error levels
+//array mapping syscall errno codes to error levels for IO-related syscalls
 //supported syscalls: read, write, open, openat
-constexpr static ERR ERROR_LEVELS[256] = {
+constexpr static ERR ERROR_LEVELS_IO[256] = {
    [EINTR       ] = ERR::MINOR,
    [EDESTADDRREQ] = ERR::MINOR,
    [EIO         ] = ERR::MINOR,
@@ -77,14 +82,38 @@ constexpr static ERR ERROR_LEVELS[256] = {
    [ENOTDIR     ] = ERR::CHANGE_FDES,
    [EPIPE       ] = ERR::CHANGE_FDES,
 };
+constexpr static ERR ERROR_LEVELS_MEM[256] = {
+   [ENOMEM             ] = ERR::MAJOR,
+   
+   [EACCES             ] = ERR::NOT_MAPPING,
+   [EBADF              ] = ERR::NOT_MAPPING,
+   [ENFILE             ] = ERR::NOT_MAPPING,
+   [ENODEV             ] = ERR::NOT_MAPPING,
+   [EPERM              ] = ERR::NOT_MAPPING,
+   [ETXTBSY            ] = ERR::NOT_MAPPING,
+   
+   [EEXIST             ] = ERR::NO_SPEC_LOC,
+   //[MAP_FIXED_NOREPLACE] = ERR::NO_SPEC_LOC,
+   [SIGSEGV            ] = ERR::NO_SPEC_LOC,
+   [SIGBUS             ] = ERR::NO_SPEC_LOC,
+   
+   [EAGAIN             ] = ERR::BAD_HCPARAM,
+   [EINVAL             ] = ERR::BAD_HCPARAM,
+   [EOVERFLOW          ] = ERR::BAD_HCPARAM,
+};
 constexpr static uint TRIES_MAP[] = {
    [+ERR::UNEXP] = 0,
    [+ERR::MINOR] = FILE_TRIES_HARD_CAP,
    [+ERR::MAJOR] = FILE_TRIES_SOFT_CAP,
    [+ERR::FATAL] = 0
 };
-constexpr uint getTries(Errno err) {
-   return TRIES_MAP[+ERROR_LEVELS[+err]];
+constexpr uint getTries_io(Errno err) {
+   debug_assert((ulong)err < sizeof(ERROR_LEVELS_IO) / sizeof(ERR));
+   return TRIES_MAP[+ERROR_LEVELS_IO[+err]];
+}
+constexpr uint getTries_mem(Errno err) {
+   debug_assert((ulong)err < sizeof(ERROR_LEVELS_MEM) / sizeof(ERR));
+   return TRIES_MAP[+ERROR_LEVELS_MEM[+err]];
 }
 
 //!NOTE: when implementing setbuf, clear the SAW_EOF flag if left != 0
@@ -115,7 +144,7 @@ sint mcsl::_File::_read(mcsl::arr_span<ubyte> data) {
       if (res < 0) { //error
          res = errno;
          _err = (Errno)res;
-         maxTries = getTries(_err);
+         maxTries = getTries_io(_err);
       }
       else if (res == 0) { //eof
          _flags |= FileFlags::SAW_EOF;
@@ -154,7 +183,7 @@ sint mcsl::_File::_write(const mcsl::arr_span<ubyte> data) {
       if (res < 0) { //error
          res = errno;
          _err = (Errno)res;
-         maxTries = getTries(_err);
+         maxTries = getTries_io(_err);
       }
       else { //successful write
          rem -= res;
@@ -183,7 +212,10 @@ sint mcsl::_File::read(mcsl::arr_span<ubyte> data) {
    }
 
    //buffered IO
-   ensureBuf();
+   if (Errno err = _ensureBuf(); +err) {
+      _err = err;
+      return FILE_ERROR_VAL;
+   }
 
    ubyte* dest = data.begin();
    uint rem = data.size();
@@ -274,7 +306,10 @@ sint mcsl::_File::write(const mcsl::arr_span<ubyte> data) {
    }
 
    //buffered IO
-   ensureBuf();
+   if (Errno err = _ensureBuf(); +err) {
+      _err = err;
+      return FILE_ERROR_VAL;
+   }
 
    const ubyte* src = data.begin();
    uint rem = data.size();
@@ -384,7 +419,7 @@ mcsl::_File::FileRes mcsl::_File::open(cstr path, FileFlags flags, mode_t create
       }
       [[unlikely]];
       file->_err = (Errno)errno;
-      maxTries = getTries(file->_err);
+      maxTries = getTries_io(file->_err);
    } while (tries <= maxTries);
 
    //return (failure)
@@ -440,6 +475,50 @@ mcsl::Errno mcsl::_File::close() {
 }
 mcsl::Errno mcsl::_File::flush() {
    TODO;
+}
+
+Errno mcsl::_File::_ensureBuf() {
+   //debug check that the file is buffered
+   debug_assert(_flags & FileFlags::BUF_SAVE);
+   //return if the file already has a buffer
+   if (_buf) {
+      return Errno::NO_ERR;
+   }
+   //mark the file as having a non-user-provided buffer
+   _flags &= ~FileFlags::BUF_USERPROV;
+   //map a buffer
+   void* ptr;
+   const uint len = g.pageSize;
+   uint tries = 0;
+   uint maxTries;
+   do {
+      ++tries;
+      //try to map
+      ptr = mmap(nullptr, len, MAP_ANONYMOUS | MAP_PRIVATE, PROT_READ | PROT_WRITE, -1, 0);
+      if (ptr != MAP_FAILED) { //check for success
+         [[likely]];
+         //handle success
+         _setbuf({(ubyte*)ptr, len});
+         return Errno::NO_ERR;
+      }
+      //handle failure
+      [[unlikely]];
+      _err = (Errno)errno;
+      maxTries = getTries_mem(_err);
+   } while (tries <= maxTries);
+
+   //handle overall failure
+   return _err;
+}
+void mcsl::_File::_setbuf(arr_span<ubyte> data) {
+   debug_assert(data.begin() && data.begin() != MAP_FAILED);
+   debug_assert(data.size());
+
+   _buf = data.begin();
+   _cap = data.size();
+   _len = 0;
+   _index = 0;
+   _left = 0;
 }
 
 sint mcsl::flagsToOS(FileFlags flags) {
@@ -575,7 +654,7 @@ mcsl::Errno mcsl::_File::freeFile(_File* file) {
 
    //move file's entry in the inUse list to the back of the inUse section
    {
-      sint* taaeget = g.inUse + file->_fnum;
+      sint* target = g.inUse + file->_fnum;
       sint* back = g.inUse + g.inUseLen - 1;
       _File* backFile = g.fileBuf + *back;
 
