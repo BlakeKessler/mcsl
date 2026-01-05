@@ -92,15 +92,11 @@ bool mcsl::_File::eof() {
    return +(_flags & FileFlags::SAW_EOF) && !(_left && +(_flags & FileFlags::BUFFERED));
 }
 
-//!TODO: no assume or assert statements for file handling
 #pragma region rdwr
 #pragma region rdwrImpl
 //!TODO: calculate appropriate try cap based on the length of the requested read/write
 sint mcsl::_File::_read(mcsl::arr_span<ubyte> data) {
-   if (!(data.begin() && data.size())) {
-      _err = Errno::FS_NULL_BUF;
-      return FILE_ERROR_VAL;
-   }
+   debug_assert(data.begin() && data.size());
 
    ubyte* dest = data.begin();
    sint rem = data.size();
@@ -139,10 +135,7 @@ sint mcsl::_File::_read(mcsl::arr_span<ubyte> data) {
    return count;
 }
 sint mcsl::_File::_write(const mcsl::arr_span<ubyte> data) {
-   if (!(data.begin() && data.size())) {
-      _err = Errno::FS_NULL_BUF;
-      return FILE_ERROR_VAL;
-   }
+   debug_assert(data.begin() && data.size());
 
    const ubyte* dest = data.begin();
    sint rem = data.size();
@@ -175,9 +168,14 @@ sint mcsl::_File::_write(const mcsl::arr_span<ubyte> data) {
 }
 #pragma endregion rdwrImpl
 sint mcsl::_File::read(mcsl::arr_span<ubyte> data) {
-   assume(data.begin());
-   assume(_flags & FileFlags::READ);
-   if (!data.size()) { return 0; }
+   if (!(_flags & FileFlags::READ)) {
+      _err = Errno::BAD_FILE_STATE;
+      return FILE_ERROR_VAL;
+   }
+   if (!(data.begin() && data.size())) {
+      _err = Errno::FS_NULL_BUF;
+      return FILE_ERROR_VAL;
+   }
 
    //unbuffered IO
    if (!(_flags & FileFlags::BUFFERED)) {
@@ -261,9 +259,14 @@ sint mcsl::_File::read(mcsl::arr_span<ubyte> data) {
    return count;
 }
 sint mcsl::_File::write(const mcsl::arr_span<ubyte> data) {
-   assume(data.begin());
-   assume(_flags & FileFlags::WRITE);
-   if (!data.size()) { return 0; }
+   if (!(_flags & FileFlags::WRITE)) {
+      _err = Errno::BAD_FILE_STATE;
+      return FILE_ERROR_VAL;
+   }
+   if (!(data.begin() && data.size())) {
+      _err = Errno::FS_NULL_BUF;
+      return FILE_ERROR_VAL;
+   }
 
    //unbuffered IO
    if (!(_flags & FileFlags::BUFFERED)) {
@@ -531,7 +534,7 @@ sint mcsl::flagsToOS(FileFlags flags) {
 }
 #pragma region filealloc
 mcsl::_File::FileRes mcsl::_File::allocFile() {
-   assume(_File::g.isInit);
+   debug_assert(_File::g.isInit);
 
    //check that there are files available
    if (!g.availLen) {
@@ -572,7 +575,7 @@ mcsl::Errno mcsl::_File::freeFile(_File* file) {
 
    //move file's entry in the inUse list to the back of the inUse section
    {
-      sint* target = g.inUse + file->_fnum;
+      sint* taaeget = g.inUse + file->_fnum;
       sint* back = g.inUse + g.inUseLen - 1;
       _File* backFile = g.fileBuf + *back;
 
