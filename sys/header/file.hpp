@@ -149,6 +149,7 @@ struct mcsl::_File {
       sint _write(const arr_span<ubyte> data);
       Errno _ensureBuf();
       void _setbuf(arr_span<ubyte> data);
+      Errno _unmapbuf();
    public:
       static FileRes open(cstr path, FileFlags flags, mode_t createMode = DEFAULT_CREATE_MODE);
       static FileRes open(sint fd, FileFlags flags, sint osFlags);

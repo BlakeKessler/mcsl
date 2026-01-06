@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
+#include <cstdlib>
 
 #undef NULL
 
@@ -436,30 +437,34 @@ mcsl::_File::FileRes mcsl::_File::open(sint fd, FileFlags flags, sint osFlags) {
 }
 mcsl::_File::FileRes mcsl::_File::_open(sint fd, FileFlags flags, sint osFlags) {
    //update fields
-   this->_fd = fd;
-   this->_flags = flags;
-   this->_osFlags = osFlags;
-   this->_err = Errno::NO_ERR;
+   _fd = fd;
+   _flags = flags;
+   _osFlags = osFlags;
+   _err = Errno::NO_ERR;
    //return
    return {.err = Errno::NO_ERR, .file = this};
 }
 #pragma endregion open
-//!TODO: release buffer
 mcsl::Errno mcsl::_File::close() {
    //check state
-   if (!(this->_flags & FileFlags::IS_OPEN)) {
-      this->_err = Errno::BAD_FILE_STATE;
+   if (!(_flags & FileFlags::IS_OPEN)) {
+      _err = Errno::BAD_FILE_STATE;
       return Errno::BAD_FILE_STATE;
    }
 
    //flush
-   if (+(this->_flags & FileFlags::WRITE)) {
+   if (!(~_flags & (FileFlags::WRITE | FileFlags::BUF_SAVE))) {
       if (Errno err = flush(); +err) { return err; }
    }
    //sync
    if (Errno err = sync(); +err) { return err; }
 
-   sint res = ::close(this->_fd);
+   //unmap buffer if applicable
+   if (+(_flags & FileFlags::BUF_SAVE) && !(_flags & FileFlags::BUF_USERPROV)) {
+      if (Errno err = _unmapbuf(); +err) { return err; }
+   }
+
+   sint res = ::close(_fd);
    // mark the file as closed, regardless of the results of the close syscall
    // the `close` syscall puts the file descriptor back in the pool of available file descriptors before checking for errors
    // any actionable errors will be caught when trying to flush the file
@@ -467,14 +472,83 @@ mcsl::Errno mcsl::_File::close() {
    // the errors that can be returned by a `close` call should only be relevant because they can indicate that there was data that didn't get written to disk, which is not a thing for non-write-capable files
    // for further details, see the man page for `close`
    (void)res;
-   this->_flags |= FileFlags::IS_CLOSED;
-   this->_flags &= ~FileFlags::IS_OPEN;
+   _flags |= FileFlags::IS_CLOSED;
+   _flags &= ~FileFlags::IS_OPEN;
 
    //return
    return freeFile(this);
 }
 mcsl::Errno mcsl::_File::flush() {
-   TODO;
+   if (!(~_flags & (FileFlags::WRITE | FileFlags::BUF_SAVE))) {
+      _err = Errno::BAD_FILE_STATE;
+      return Errno::BAD_FILE_STATE;
+   }
+
+   ubyte* src = _buf;
+   sint rem = _len;
+   sint count = 0;
+
+   sint tries = 0;
+   sint maxTries = 0;
+
+   Errno err = Errno::NO_ERR;
+
+   //core write loop
+   do {
+      ++tries;
+
+      //write
+      sint res = ::write(_fd, src, rem);
+      //handle results
+      if (res < 0) { //error
+         res = errno;
+         _err = err = (Errno)res;
+         maxTries = getTries_io(err);
+      }
+      else { //successful write
+         rem -= res;
+         src += res;
+         count += res;
+
+         maxTries = FILE_PARTIAL_RDRW_CAP;
+      }
+   } while (rem > 0 && tries <= maxTries);
+   
+   debug_assert(rem >= 0);
+   if (rem > 0) { //partial flush
+      std::memmove(_buf, src, rem);
+   }
+
+   //update variables
+   _index = 0;
+   _left  = rem;
+   _len  -= count;
+   _base += count;
+
+   //return
+   return err;
+}
+mcsl::Errno mcsl::_File::sync() {
+   decltype(fsync)* const syncfunc = +(_flags & FileFlags::MIN_OS_CACHE) ? &fdatasync : &fsync;
+   sint tries = 0;
+   sint maxTries = 0;
+
+   //core write loop
+   do {
+      ++tries;
+
+      //write
+      sint res = syncfunc(_fd);
+      //handle results
+      if (res >= 0) { //success
+         return Errno::NO_ERR;
+      }
+      //error
+      res = errno;
+      _err = (Errno)res;
+      maxTries = getTries_io(_err);
+   } while (tries <= maxTries);
+   return _err;
 }
 
 Errno mcsl::_File::_ensureBuf() {
@@ -519,6 +593,27 @@ void mcsl::_File::_setbuf(arr_span<ubyte> data) {
    _len = 0;
    _index = 0;
    _left = 0;
+}
+mcsl::Errno mcsl::_File::_unmapbuf() {
+   debug_assert(+(_flags & FileFlags::BUF_SAVE) && !(_flags & FileFlags::BUF_USERPROV));
+   sint res;
+   uint tries = 0;
+   uint maxTries;
+   do {
+      ++tries;
+      //try to unmap
+      res = munmap(_buf, _cap);
+      if (!res) { //check for success
+         [[likely]];
+         //return
+         return Errno::NO_ERR;
+      }
+      [[unlikely]];
+      _err = (Errno)errno;
+      maxTries = getTries_io(_err);
+   } while (tries <= maxTries);
+   //return
+   return _err;
 }
 
 sint mcsl::flagsToOS(FileFlags flags) {
@@ -678,6 +773,7 @@ mcsl::Errno mcsl::_File::freeFile(_File* file) {
 }
 #pragma endregion filealloc
 #pragma region global
+decltype(mcsl::_File::g) mcsl::_File::g{};
 bool mcsl::_File::globalSetup() {
    sint err;
 
@@ -685,7 +781,7 @@ bool mcsl::_File::globalSetup() {
    g.isInit = false;
 
    //register cleanup function to run atexit
-   err = atexit(&globalCleanup);
+   err = std::atexit(&globalCleanup);
    if (err) {
       TODO;
    }
